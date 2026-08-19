@@ -1840,7 +1840,7 @@ function setupFile(id,key){ const inp=$(id); const ta=()=>{ const t=$('#'+key+'I
   }catch(err){ toast('Excel解析失败：'+(err.name||'Error')+' - '+err.message+'｜若已改过代码，请重新打开本页(Cmd+Shift+R)后再试', true); }
 }); }
 function loadScript(src){ return new Promise((res,rej)=>{ const s=document.createElement('script'); s.src=src; s.onload=res; s.onerror=()=>rej(new Error('CDN加载失败')); document.head.appendChild(s); }); }
-setupFile('#salesFile','sales'); setupFile('#invFile','inv'); setupFile('#jztFile','jzt'); setupFile('#tgtFile','tgt'); setupFile('#ganttFile','gantt'); setupFile('#ppFile','purchase');
+setupFile('#salesFile','sales'); setupFile('#invFile','inv'); setupFile('#jztFile','jzt'); setupFile('#tgtFile','tgt'); setupFile('#ganttFile','gantt'); setupFile('#ppFile','pp');
 
 $('#resetBtn').addEventListener('click',()=>{ $('#salesInput').value=sampleSales(); $('#invInput').value=sampleInv(); $('#jztInput').value=sampleJzt(); $('#tgtInput').value=sampleTargets(); $('#ganttInput').value=sampleGantt(); $('#ppInput').value=samplePurchase(); readInputs('replace'); toast('已恢复示例数据（历史已清空，重新计算）'); });
 $('#clearBtn').addEventListener('click',()=>{ if(confirm('确认清空全部数据？')){ $('#salesInput').value=$('#invInput').value=$('#jztInput').value=$('#tgtInput').value=$('#ganttInput').value=$('#ppInput').value=''; STATE={sales:[],inventory:[],jzt:[],targets:[],gantt:[],purchase:[],_raw:{sales:'',inventory:'',jzt:'',targets:'',gantt:'',purchase:''},memo:{sales:'',inventory:'',jzt:''},todo:freshTodo()}; saveState(); renderAll(); saveToService(); setupTodoAll(); toast('已清空全部数据'); } });
