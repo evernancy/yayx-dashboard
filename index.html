@@ -2165,8 +2165,8 @@ async function boot(){
   if(cloudOk){
     try{ const row=await loadBoardState(currentBoard.id); if(row&&row.state&&isUsableState(row.state)){ loaded=row.state; fromWhere='云端'; } }catch(e){ loaded=null; }
   }
-  // 无令牌查看者：优先读公开快照（比本地缓存新鲜、且是团队共享口径）
-  if(!loaded && !ghToken()){
+  // 云端读不到时（无令牌，或 GitHub API 被本机网络拦截）：先试公开快照（github.io 域名，团队共享口径），再退回本地缓存
+  if(!loaded){
     try{ const snap=await fetchPublicSnapshot(); if(snap){ loaded=snap.state; fromWhere='公开快照'; if(snap.name) currentBoard={id:snap.id||currentBoard.id, name:snap.name}; } }catch(e){}
   }
   if(!loaded){ try{ const c=await idbGet(); if(isUsableState(c)){ loaded=c; fromWhere='本地缓存'; } }catch(e){} }
