@@ -2002,6 +2002,11 @@ const GH_REPO='yayx';          // ← 你的仓库名
 const GH_BRANCH='main';                  // ← 仓库默认分支（main 或 master）
 const GH_API='https://api.github.com';
 const GH_BASE=GH_API+'/repos/'+GH_OWNER+'/'+GH_REPO+'/contents';
+// —— 公开只读快照：录入者保存时同步推到公开仓，查看者免令牌经 Pages 同源读取 ——
+const GH_PUB_REPO='yayx-dashboard';
+const GH_PUB_BASE=GH_API+'/repos/'+GH_OWNER+'/'+GH_PUB_REPO+'/contents';
+const SNAPSHOT_PATH='data.json';
+const SNAPSHOT_URL='https://'+GH_OWNER+'.github.io/'+GH_PUB_REPO+'/'+SNAPSHOT_PATH;
 
 function ghHeaders(extra){
   var h={'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28','Authorization':'Bearer '+ghToken()};
@@ -2034,6 +2039,29 @@ async function ghPutFile(path, content, sha, _depth){
       if(f && f.sha) return await ghPutFile(path, content, f.sha, _depth+1);
     }
     throw e;
+  }
+}
+// 拉取公开快照（无需令牌；同源 github.io 或任何静态托管均可）。返回 {id,name,state,updated_at} 或 null
+async function fetchPublicSnapshot(){
+  try{
+    var r=await fetch(SNAPSHOT_URL+'?t='+Date.now(),{cache:'no-store'});
+    if(!r.ok) return null;
+    var snap=await r.json();
+    return (snap && snap.state && isUsableState(snap.state)) ? snap : null;
+  }catch(e){ return null; }
+}
+// 推送公开快照（需令牌；录入者保存时自动同步，查看者随即可见）
+async function ghPutPublicSnapshot(_depth){
+  _depth=_depth||0;
+  var payload={id:currentBoard.id,name:currentBoard.name,state:STATE,updated_at:new Date().toISOString()};
+  var sha=null;
+  try{ var g=await fetch(GH_PUB_BASE+'/'+SNAPSHOT_PATH+'?ref=main',{headers:ghHeaders()}); if(g.ok){ var gd=await g.json(); sha=gd.sha||null; } }catch(e){}
+  var body={message:'snapshot: update '+SNAPSHOT_PATH, content:b64enc(JSON.stringify(payload)), branch:'main'};
+  if(sha) body.sha=sha;
+  var res=await fetch(GH_PUB_BASE+'/'+SNAPSHOT_PATH,{method:'PUT',headers:ghHeaders(),body:JSON.stringify(body)});
+  if(!res.ok){
+    if(_depth<3 && (res.status===409||res.status===422)) return ghPutPublicSnapshot(_depth+1);
+    throw new Error('snapshot push HTTP '+res.status);
   }
 }
 let currentBoard={id:'lijx',name:'李锦记'};
@@ -2102,6 +2130,8 @@ async function saveToService(){
   idbSet(STATE); // 浏览器本地主存储：容量大、离线可用
   try{ await ghUpsertBoard(currentBoard.id, currentBoard.name, STATE); }
   catch(e){ /* 云端不可达：忽略，依赖本地缓存；下次保存会自动重试 */ }
+  // 有令牌时同步公开快照（查看者免令牌只读）
+  try{ if(ghToken()) await ghPutPublicSnapshot(); }catch(e){ /* 快照失败不影响主存储 */ }
 }
 $('#refreshBtn').addEventListener('click',async()=>{
   try{ const row=await ghGetBoard(currentBoard.id); if(row&&row.state&&isUsableState(row.state)){ hydrateFromState(row.state); renderAll(); setupTodoAll(); toast('已从云端刷新「'+currentBoard.name+'」'); } else toast('云端暂无更新'); }
@@ -2130,12 +2160,17 @@ async function boot(){
   if(cloudOk){
     try{ const row=await loadBoardState(currentBoard.id); if(row&&row.state&&isUsableState(row.state)){ loaded=row.state; fromWhere='云端'; } }catch(e){ loaded=null; }
   }
+  // 无令牌查看者：优先读公开快照（比本地缓存新鲜、且是团队共享口径）
+  if(!loaded && !ghToken()){
+    try{ const snap=await fetchPublicSnapshot(); if(snap){ loaded=snap.state; fromWhere='公开快照'; if(snap.name) currentBoard={id:snap.id||currentBoard.id, name:snap.name}; } }catch(e){}
+  }
   if(!loaded){ try{ const c=await idbGet(); if(isUsableState(c)){ loaded=c; fromWhere='本地缓存'; } }catch(e){} }
   if(loaded){
     hydrateFromState(loaded);
     const invN=(STATE.inventory||[]).length, salesN=(STATE.sales||[]).length, jztN=(STATE.jzt||[]).length, gN=(STATE.gantt||[]).length;
     ensureGanttIds();
     if(fromWhere==='云端'){ toast('已从云端加载「'+currentBoard.name+'」（销售 '+salesN+' · 库存 '+invN+' · 京准通 '+jztN+' · 甘特 '+gN+' 行）'); }
+    else if(fromWhere==='公开快照'){ toast('已载入「'+currentBoard.name+'」最新数据（只读模式，由录入同事每日更新）'); }
     else { toast('已从本地缓存恢复「'+currentBoard.name+'」（云端暂不可用，联网后将自动同步）'); }
   } else {
     // 真正的首次使用：本地与云端都无数据 → 载入示例（此分支才会写样例，不会覆盖已有数据）
@@ -2162,13 +2197,19 @@ init();
   document.body.appendChild(badge);
   // —— 无令牌（公开部署版）：引导用户输入一次，存本机浏览器 ——
   function noToken(){ return (typeof ghToken==='function') && !ghToken(); }
+  function askToken(){
+    var t=prompt('请输入 GitHub 访问令牌（仅录入数据的同事需要；纯查看无需输入）：','');
+    if(t && t.trim()){ try{ localStorage.setItem('GH_TOKEN',t.trim()); }catch(e){} location.reload(); }
+  }
   function showTokenSetup(){
     badge.textContent='云端协作 · 未配置令牌（点此设置）';
     badge.style.background='#b45309'; badge.style.cursor='pointer';
-    badge.onclick=function(){
-      var t=prompt('请输入 GitHub 访问令牌（PAT，仅首次设置，保存在本机浏览器）：','');
-      if(t && t.trim()){ try{ localStorage.setItem('GH_TOKEN',t.trim()); }catch(e){} location.reload(); }
-    };
+    badge.onclick=askToken;
+  }
+  function showSnapshotBadge(snap){
+    badge.textContent='数据快照 · '+fmtTime(new Date(Date.parse(snap.updated_at)||Date.now()))+' 更新（只读）';
+    badge.style.background='#185FA5'; badge.style.cursor='pointer';
+    badge.onclick=askToken; // 录入同事可点此升级为可编辑
   }
   function isTyping(){
     var a=document.activeElement; if(!a) return false;
@@ -2211,7 +2252,17 @@ init();
   var syncing=false;
   async function poll(){
     if(syncing) return; syncing=true;
-    if(noToken()){ showTokenSetup(); syncing=false; return; }
+    if(noToken()){
+      var snap=await fetchPublicSnapshot();
+      if(snap){
+        if(JSON.stringify(STATE)!==JSON.stringify(snap.state)){
+          currentBoard={id:snap.id||currentBoard.id, name:snap.name||currentBoard.name};
+          hydrateFromState(snap.state); renderAll(); setupTodoAll();
+        }
+        showSnapshotBadge(snap);
+      } else showTokenSetup();
+      syncing=false; return;
+    }
     try{
             var row=await ghGetBoard(currentBoard.id);
       if(!row||!row.state||!isUsableState(row.state)){ badge.textContent='云端协作 · 已连接（'+currentBoard.name+'）'; return; }
@@ -2229,7 +2280,11 @@ init();
   setInterval(poll, 30000);
   // 首次立即诊断：显示具体连接错误
   (async function diag(){
-    if(noToken()){ showTokenSetup(); return; }
+    if(noToken()){
+      var s=await fetchPublicSnapshot();
+      if(s) showSnapshotBadge(s); else showTokenSetup();
+      return;
+    }
     try{
             var list=await ghListBoards();
       badge.textContent='云端协作 · 已连接（'+currentBoard.name+'）';
