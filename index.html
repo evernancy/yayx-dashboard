@@ -2044,7 +2044,7 @@ async function ghPutFile(path, content, sha, _depth){
 // 拉取公开快照（无需令牌；同源 github.io 或任何静态托管均可）。返回 {id,name,state,updated_at} 或 null
 async function fetchPublicSnapshot(){
   try{
-    var r=await fetch(SNAPSHOT_URL+'?t='+Date.now(),{cache:'no-store'});
+    var r=await fetch(SNAPSHOT_URL,{cache:'no-cache'}); // no-cache=带 ETag 校验，快照未变时 304 秒回，避免每 30s 重拉全量
     if(!r.ok) return null;
     var snap=await r.json();
     return (snap && snap.state && isUsableState(snap.state)) ? snap : null;
