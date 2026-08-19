@@ -2024,7 +2024,18 @@ async function ghApi(method, path, body){
 function b64enc(str){ var bytes=new TextEncoder().encode(str); var bin=''; for(var i=0;i<bytes.length;i++) bin+=String.fromCharCode(bytes[i]); return btoa(bin); }
 function b64dec(b64){ var bin=atob(String(b64).replace(/\s/g,'')); var bytes=new Uint8Array(bin.length); for(var i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i); return new TextDecoder().decode(bytes); }
 async function ghGetFile(path){
-  try{ var d=await ghApi('GET', '/'+path+'?ref='+GH_BRANCH); return {content:d.content?b64dec(d.content):'', sha:d.sha}; }
+  try{
+    var d=await ghApi('GET', '/'+path+'?ref='+GH_BRANCH);
+    if(d.content) return {content:b64dec(d.content), sha:d.sha};
+    // 关键修复：文件 >1MB 时 Contents API 不返回 content（encoding=none），改走 Blob API 按 sha 取全量
+    if(d.sha){
+      try{
+        var br=await fetch(GH_API+'/repos/'+GH_OWNER+'/'+GH_REPO+'/git/blobs/'+d.sha, {headers:ghHeaders()});
+        if(br.ok){ var b=await br.json(); if(b && b.content) return {content:b64dec(b.content), sha:d.sha}; }
+      }catch(_){}
+    }
+    return {content:'', sha:d.sha};
+  }
   catch(e){ if(e.status===404) return null; throw e; }
 }
 async function ghPutFile(path, content, sha, _depth){
@@ -2128,6 +2139,7 @@ function clearInputs(){ $('#salesInput').value=''; $('#invInput').value=''; $('#
 // 自动保存：每次解析/导入/编辑后调用。云端 GitHub(共享,多人可见) + 本地 IndexedDB(离线缓存)。
 async function saveToService(){
   idbSet(STATE); // 浏览器本地主存储：容量大、离线可用
+  if(window.__noCloudPushOnce){ return; } // 保险丝：示例初始化只存本地，不推云端
   try{ await ghUpsertBoard(currentBoard.id, currentBoard.name, STATE); }
   catch(e){ /* 云端不可达：忽略，依赖本地缓存；下次保存会自动重试 */ }
   // 有令牌时同步公开快照（查看者免令牌只读）
@@ -2175,7 +2187,8 @@ async function boot(){
   } else {
     // 真正的首次使用：本地与云端都无数据 → 载入示例（此分支才会写样例，不会覆盖已有数据）
     $('#salesInput').value=sampleSales(); $('#invInput').value=sampleInv(); $('#jztInput').value=sampleJzt(); $('#tgtInput').value=sampleTargets(); $('#ganttInput').value=sampleGantt();
-    readInputs();
+    // 防误覆盖保险丝：示例数据只供本地查看，禁止推送到云端（否则云端读取失败时会拿示例覆盖真实数据）
+    window.__noCloudPushOnce=true; readInputs(); window.__noCloudPushOnce=false;
     if(cloudOk){ toast('已连接云端（GitHub）。「'+currentBoard.name+'」看板初始为示例数据，请上传你的真实数据'); }
     else { var why=listErr?errMsg(listErr):'网络异常'; toast('云端暂不可用（'+(why||'网络异常').slice(0,80)+'），已载入示例数据（离线模式）；配置好云端后会自动同步', true); }
   }
