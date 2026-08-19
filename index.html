@@ -229,14 +229,7 @@
       <div id="jztDataHint" class="hint warn" style="display:none"></div>
     </div>
     <div class="panel"><div class="chart-title">事项（上周 / 本周）</div><div class="todo-grid" id="todo_jzt"></div></div>
-    <div class="panel"><div class="chart-title">投放花费 实际 vs 目标</div><div id="jztSpendCmp"></div></div>
-
-    <div class="grid2">
-      <div class="panel"><div class="chart-title">每日 花费 vs GMV</div><div id="jztTrend"></div></div>
-      <div class="panel"><div class="chart-title">各推广计划 花费</div><div id="jztPlan"></div></div>
-    </div>
-    <div class="panel"><div class="chart-title">各推广计划 ROI（GMV/花费）</div><div id="jztRoi"></div></div>
-    <div class="panel"><div class="chart-title">每日 投放费比（费比 = 当日花费 / 当日实际GMV）</div><div id="jztFeeDaily"></div></div>
+    <div class="panel"><div class="chart-title">各渠道花费（MTD）</div><div id="jztScene"></div></div>
   </section>
   </section>
 
@@ -1007,28 +1000,27 @@ function computeJzt(start,end){
   const roi=totalSpend>0?totalGmv/totalSpend:0;
   const byDate={}; rows.forEach(r=>{ const k=r.date||'未知'; byDate[k]=byDate[k]||{spend:0,gmv:0}; byDate[k].spend+=num(r.spend); byDate[k].gmv+=num(r.gmv); });
   const byPlan={}; rows.forEach(r=>{ const k=r.campaign||'未知'; byPlan[k]=byPlan[k]||{spend:0,gmv:0}; byPlan[k].spend+=num(r.spend); byPlan[k].gmv+=num(r.gmv); });
-  return {totalSpend,totalImp,totalClk,totalOrd,totalGmv,dirAmt,indirAmt,preAmt,totalCart,newCustOrders,newCustAmt,favItem,favShop,dealUsers,ctr,cpc,cpm,cvr,cpa,roi,feeRatio:totalGmv>0?totalSpend/totalGmv:0,byDate,byPlan};
+  // 按营销场景（渠道）分组：花费 / 点击 / 成交金额
+  const byScene={}; rows.forEach(r=>{ const k=(r.scene||'').trim()||'未知'; const s=byScene[k]=byScene[k]||{spend:0,clicks:0,gmv:0}; s.spend+=num(r.spend); s.clicks+=num(r.clicks); s.gmv+=num(r.gmv); });
+  return {totalSpend,totalImp,totalClk,totalOrd,totalGmv,dirAmt,indirAmt,preAmt,totalCart,newCustOrders,newCustAmt,favItem,favShop,dealUsers,ctr,cpc,cpm,cvr,cpa,roi,feeRatio:totalGmv>0?totalSpend/totalGmv:0,byDate,byPlan,byScene};
 }
 function renderJzt(){
   const [start,end]=resolveJztRange();
   const c=computeJzt(start,end);
-  if(!c){ const msg='<div class="empty">未解析到实际投放数据——请在第 3 个「京东/京准通推广数据」框粘贴实际推广明细（需含 日期 / 花费 / 点击 / GMV 等列，Tab 或逗号分隔）。目标行（如「投放花费目标 月 2026-08 380000」）只是目标值，不产生 MTD 花费 / 点击 / ROI 与图表。</div>'; $('#jztTrend').innerHTML=$('#jztPlan').innerHTML=$('#jztRoi').innerHTML=msg; return; }
-  const dates=Object.keys(c.byDate).sort();
-  lineChart('#jztTrend',{labels:dates,series:[{name:'花费',data:dates.map(d=>c.byDate[d].spend)},{name:'GMV',data:dates.map(d=>c.byDate[d].gmv)}],yFmt:fmtMoney});
-  const plans=Object.entries(c.byPlan).sort((a,b)=>b[1].spend-a[1].spend);
-  barChart('#jztPlan',{categories:plans.map(p=>p[0]),series:[{name:'花费',data:plans.map(p=>p[1].spend)}],yFmt:fmtMoney});
-  const roiData=plans.map(([k,v])=>({name:k,value:v.spend>0?v.gmv/v.spend:0}));
-  barChart('#jztRoi',{categories:roiData.map(d=>d.name),series:[{name:'ROI',data:roiData.map(d=>d.value)}],yFmt:v=>v.toFixed(2)});
-  // 每日 投放费比：费比 = 当日花费 / 当日实际GMV（与 MTD 费比同理，MTD = 花费加和 / GMV加和）
-  const feeEl=$('#jztFeeDaily');
-  if(feeEl){
-    const ds=Object.keys(c.byDate).sort();
-    if(ds.length){
-      let ft='<table class="tpl" style="margin-top:8px"><tr><th>日期</th><th>花费</th><th>实际GMV</th><th>费比</th></tr>';
-      ds.forEach(d=>{ const sp=c.byDate[d].spend, gv=c.byDate[d].gmv; const r=gv>0?sp/gv:0; const cls=r<0.2?'pos':(r>=0.4?'neg':''); ft+=`<tr><td>${esc(d)}</td><td>${fmtMoney(sp)}</td><td>${fmtMoney(gv)}</td><td class="${cls}">${(r*100).toFixed(1)}%</td></tr>`; });
-      ft+='</table>'; feeEl.innerHTML=ft;
-    } else feeEl.innerHTML='<div class="empty">暂无数据</div>';
-  }
+  if(!c){ $('#jztScene').innerHTML='<div class="empty">未解析到实际投放数据——请在第 4 个「京东京准通推广数据」框粘贴实际推广明细（需含 日期 / 营销场景 / 花费 / 点击 / GMV 等列，Tab 或逗号分隔）。</div>'; return; }
+  // 各渠道花费（MTD）：渠道=营销场景；成交占比=渠道成交金额/京准通整体成交金额
+  const scenes=Object.entries(c.byScene).sort((a,b)=>b[1].spend-a[1].spend);
+  const tS=c.totalSpend, tG=c.totalGmv;
+  let t='<table class="tpl" style="margin-top:8px"><tr><th>渠道</th><th>花费</th><th>点击</th><th>成交</th><th>CPC</th><th>ROI</th><th>花费占比</th><th>成交占比</th></tr>';
+  scenes.forEach(([name,s])=>{
+    const cpc=s.clicks>0?s.spend/s.clicks:0, roi=s.spend>0?s.gmv/s.spend:0;
+    const spShare=tS>0?s.spend/tS:0, gvShare=tG>0?s.gmv/tG:0;
+    t+=`<tr><td>${esc(name)}</td><td>${fmtMoney(s.spend)}</td><td>${fmt(s.clicks,0)}</td><td>${fmtMoney(s.gmv)}</td><td>${fmtMoney(cpc)}</td><td>${roi.toFixed(2)}</td><td>${fmtPct(spShare)}</td><td>${fmtPct(gvShare)}</td></tr>`;
+  });
+  const totCpc=c.totalClk>0?tS/c.totalClk:0, totRoi=tS>0?tG/tS:0;
+  t+=`<tr style="font-weight:500;border-top:2px solid var(--border-secondary,rgba(0,0,0,.3))"><td>合计</td><td>${fmtMoney(tS)}</td><td>${fmt(c.totalClk,0)}</td><td>${fmtMoney(tG)}</td><td>${fmtMoney(totCpc)}</td><td>${totRoi.toFixed(2)}</td><td>100%</td><td>100%</td></tr>`;
+  t+='</table>';
+  $('#jztScene').innerHTML=t;
 }
 
 /* ---------- 京准通：投放目标 + MTD 同比 ---------- */
@@ -1093,7 +1085,6 @@ function renderJztTargets(){
     {label:'MTD 费比',value:fmtPct(cur.feeRatio),sub:yFee.sub,cls:yFee.cls},
     {label:'MTD 成交金额',value:fmtMoney(cur.gmv),sub:yGmv.sub,cls:yGmv.cls},
   ]);
-  barChart('#jztSpendCmp',{categories:['投放花费'],series:[{name:'实际',data:[cur.spend]},{name:'目标',data:[target]}],yFmt:fmtMoney});
 }
 
 /* ---------- 计算：目标达成 ---------- */
