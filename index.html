@@ -1278,7 +1278,9 @@ function ganttKey(r){ return (r.module||'')+'|'+(r.date||'')+'|'+(r.task||'任�
 function mergeGantt(existing, incoming){
   const m=new Map();
   (existing||[]).forEach(r=>{ if(r&&r.module) m.set(ganttKey(r), r); });
-  (incoming||[]).forEach(r=>{ if(r&&r.module) m.set(ganttKey(r), r); }); // 同键=覆盖更新
+  (incoming||[]).forEach(r=>{ if(!r||!r.module) return; const k=ganttKey(r); const old=m.get(k);
+    if(old && old._gid!=null && r._gid==null) r._gid=old._gid; // 关键修复：重解析的新行继承旧 _gid，避免每次合并都重排 gid 导致弹窗编辑丢目标
+    m.set(k, r); }); // 同键=覆盖更新
   return Array.from(m.values());
 }
 function curMonth(){ const n=new Date(); return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0'); }
@@ -2263,9 +2265,12 @@ init();
 
   // —— 云端轮询：别人更新且你没在输入则自动拉取 ——
   var syncing=false;
+  function modalOpen(){ try{ var m=document.getElementById('ganttModal'); return m && m.classList.contains('show'); }catch(e){ return false; } }
   async function poll(){
     if(syncing) return; syncing=true;
+    if((window.__saving||0)>0){ syncing=false; return; } // 本机有上传在进行：跳过本轮，防止旧云端状态回灌覆盖新编辑
     if(noToken()){
+      if(modalOpen()){ syncing=false; return; } // 编辑弹窗打开时不回灌
       var snap=await fetchPublicSnapshot();
       if(snap){
         if(JSON.stringify(STATE)!==JSON.stringify(snap.state)){
@@ -2280,16 +2285,26 @@ init();
             var row=await ghGetBoard(currentBoard.id);
       if(!row||!row.state||!isUsableState(row.state)){ badge.textContent='云端协作 · 已连接（'+currentBoard.name+'）'; return; }
       var srvUpd=Date.parse(row.updated_at)||0;
-      if(srvUpd>window.__lastSaveAt && !isTyping()){
+      if(srvUpd>window.__lastSaveAt && !isTyping() && !modalOpen()){
         if(JSON.stringify(STATE)!==JSON.stringify(row.state)){ hydrateFromState(row.state); renderAll(); setupTodoAll(); badge.textContent='云端协作 · 已同步 '+fmtTime(new Date()); syncing=false; return; }
       }
       badge.textContent='云端协作 · 已连接 '+currentBoard.name;
     }catch(e){ var msg=errMsg(e); badge.textContent='云端协作 · 离线（'+msg.slice(0,90)+'）'; console.error('[GitHub] 连接失败:', e, '| 字符串化:', JSON.stringify(e)); diagHints(JSON.stringify(e)); }
     finally{ syncing=false; }
   }
-  // 记录本地保存时间，避免把"自己刚保存的"误判成"别人更新的"而回拉
+  // 记录本地保存时间，避免把"自己刚保存的"误判成"别人更新的"而回拉。
+  // 关键修复：__lastSaveAt 必须在【上传开始前】就盖章（原来只在完成后盖章）——
+  // 看板数据 >6MB 上传要几十秒，期间若 poll 触发会把【旧的云端状态】回灌，把刚改的进度等编辑全部抹掉。
+  // 同时用 __saving 计数器让 poll 在上传期间直接跳过，双保险。
   var _origSave=window.saveToService;
-  if(typeof _origSave==='function'){ window.saveToService=async function(){ var r=await _origSave.apply(this,arguments); window.__lastSaveAt=Date.now(); return r; }; }
+  if(typeof _origSave==='function'){
+    window.saveToService=async function(){
+      window.__lastSaveAt=Date.now();
+      window.__saving=(window.__saving||0)+1;
+      try{ var r=await _origSave.apply(this,arguments); window.__lastSaveAt=Date.now(); return r; }
+      finally{ window.__saving=Math.max(0,(window.__saving||1)-1); }
+    };
+  }
   setInterval(poll, 30000);
   // 首次立即诊断：显示具体连接错误
   (async function diag(){
