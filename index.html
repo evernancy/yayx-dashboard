@@ -1167,12 +1167,15 @@ function renderTargets(){
   const scopeTarget=type=>{ if(view==='mtd'){ const ym=end.slice(0,7); const v=tlookup(type,'month',ym); if(v) return v; } return rangeTarget(type,start,end); };
   const tBrand=scopeTarget('brand'), tProc=scopeTarget('procure'), tInt=scopeTarget('internal'), tPos=scopeTarget('pos');
 
-  // POS 缺口（MTD）：结束日期所在月的 MTD 目标 - MTD 达成
+  // POS 缺口（MTD）：按「日」粒度逐日 POS 目标求和 - MTD POS 达成；缺口=max(0, 目标-达成)（达成超目标时不显示负数）
   const ym=end.slice(0,7); const ms=ym+'-01';
   const mtdDays=dateRange(ms,end).filter(d=>d>=start&&d<=end);
   const posMtdActual=sum(mtdDays.map(d=>pos[d]||0));
-  const posMtdTarget=tlookup('pos','month',ym);
-  const posGap=posMtdTarget-posMtdActual;
+  // MTD 目标优先取逐日(by day)POS 目标之和；未设逐日目标时回退到月度 POS 目标
+  let posMtdTarget=mtdDays.reduce((a,d)=>a+tlookup('pos','day',d),0);
+  if(!posMtdTarget) posMtdTarget=tlookup('pos','month',ym);
+  const posGapRaw=posMtdTarget-posMtdActual;
+  const posGap=posGapRaw>0?posGapRaw:0;
 
   $('#targetKpis').innerHTML=kpiHTML([
     {label:'品牌GMV 目标达成',value:tBrand?fmtPct(gmvActual/tBrand):'—',cls:tBrand?(gmvActual>=tBrand?'green':'amber'):'',sub:tBrand?('达成（实际GMV）'+fmtMoney(gmvActual)+' / 品牌目标GMV'+fmtMoney(tBrand)):('达成（实际GMV）'+fmtMoney(gmvActual)+' / 未设目标')},
