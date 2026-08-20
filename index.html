@@ -1166,13 +1166,15 @@ function renderTargets(){
   const mtdDays=dateRange(ms,end).filter(d=>d>=start&&d<=end);
   // POS 目标（MTD）：优先逐日(by day)POS 目标求和；未设逐日目标时回退月度 POS 目标
   const posMtdTarget=mtdDays.reduce((a,d)=>a+tlookup('pos','day',d),0) || tlookup('pos','month',ym);
+  // POS 月度目标（KPI 卡片「POS 目标达成」展示 POS实际 / POS月度目标 用）
+  const tPosMonth=tlookup('pos','month',ym);
 
   // 范围实际与目标
   const gmvActual=sum(days.map(d=>gmv[d]||0));
   const posActual=sum(days.map(d=>pos[d]||0));
   // POS 目标（MTD）统一使用「逐日 by day 求和」（与缺口口径一致）；其余类型沿用原逻辑（月度优先 → 范围求和）
   const scopeTarget=type=>{ if(view==='mtd'){ if(type==='pos'){ if(posMtdTarget) return posMtdTarget; } else { const v=tlookup(type,'month',ym); if(v) return v; } } return rangeTarget(type,start,end); };
-  const tBrand=scopeTarget('brand'), tProc=scopeTarget('procure'), tInt=scopeTarget('internal'), tPos=scopeTarget('pos');
+  const tBrand=scopeTarget('brand'), tProc=scopeTarget('procure'), tInt=scopeTarget('internal');
 
   // POS 缺口（MTD）：逐日(by day)POS 目标之和 - MTD POS 达成；缺口=max(0, 目标-达成)（达成超目标时不显示负数）
   const posMtdActual=sum(mtdDays.map(d=>pos[d]||0));
@@ -1183,7 +1185,7 @@ function renderTargets(){
     {label:'品牌GMV 目标达成',value:tBrand?fmtPct(gmvActual/tBrand):'—',cls:tBrand?(gmvActual>=tBrand?'green':'amber'):'',sub:tBrand?('达成（实际GMV）'+fmtMoney(gmvActual)+' / 品牌目标GMV'+fmtMoney(tBrand)):('达成（实际GMV）'+fmtMoney(gmvActual)+' / 未设目标')},
     {label:'采销GMV 目标达成',value:tProc?fmtPct(gmvActual/tProc):'—',cls:tProc?(gmvActual>=tProc?'green':'amber'):'',sub:tProc?('达成（实际GMV）'+fmtMoney(gmvActual)+' / 采销目标GMV'+fmtMoney(tProc)):('达成（实际GMV）'+fmtMoney(gmvActual)+' / 未设目标')},
     {label:'内部GMV 目标达成',value:tInt?fmtPct(gmvActual/tInt):'—',cls:tInt?(gmvActual>=tInt?'green':'amber'):'',sub:tInt?('达成（实际GMV）'+fmtMoney(gmvActual)+' / 内部目标GMV'+fmtMoney(tInt)):('达成（实际GMV）'+fmtMoney(gmvActual)+' / 未设目标')},
-    {label:'POS 目标达成',value:tPos?fmtPct(posActual/tPos):'—',cls:tPos?(posActual>=tPos?'green':'amber'):'',sub:tPos?('达成（实际POS）'+fmtMoney(posActual)+' / POS目标GMV'+fmtMoney(tPos)):('达成（实际POS）'+fmtMoney(posActual)+' / 未设目标')},
+    {label:'POS 目标达成',value:tPosMonth?fmtPct(posActual/tPosMonth):'—',cls:tPosMonth?(posActual>=tPosMonth?'green':'amber'):'',sub:tPosMonth?('达成（实际POS）'+fmtMoney(posActual)+' / POS月度目标'+fmtMoney(tPosMonth)):('达成（实际POS）'+fmtMoney(posActual)+' / 未设目标')},
     {label:'POS 缺口(MTD目标-MTD达成)',value:fmtMoney(posGap),cls:posGap>0?'red':'green',sub:ym+' MTD'},
   ]);
 
