@@ -73,6 +73,10 @@
   .filelabel{background:#eef2ff;border:1px solid #c7d2fe;color:#3730a3;border-radius:8px;padding:7px 12px;cursor:pointer;font-size:13px;display:inline-block}
   .filelabel:hover{background:#e0e7ff}
   .muted{color:var(--muted);font-size:12px}
+  .timeProgress{display:flex;align-items:center;gap:10px;margin:8px 0 12px;padding:8px 12px;border-radius:8px;background:var(--accent-soft,rgba(59,130,246,.08));border:1px solid var(--accent,rgba(59,130,246,.25));font-size:14px}
+  .timeProgress b{font-size:20px;color:var(--blue);margin-right:2px}
+  .timeProgress .bar{flex:1;height:8px;border-radius:5px;background:var(--line);overflow:hidden;min-width:80px}
+  .timeProgress .bar i{display:block;height:100%;background:var(--blue);border-radius:5px}
   details{border:1px dashed var(--line);border-radius:10px;padding:10px 12px;background:#fcfdff;margin-bottom:10px}
   summary{cursor:pointer;font-weight:600;color:var(--blue)}
   table.tpl{width:100%;border-collapse:collapse;margin-top:8px;font-size:12px}
@@ -175,6 +179,7 @@
         <button class="btn2 ghost" id="tvResetBtn">恢复全部</button>
         <span class="muted">只选一端=查看单日；两端都空=默认全部日期</span>
       </div>
+      <div class="timeProgress" id="tvTimeProgress"></div>
       <div class="kpis" id="targetKpis"></div>
     </div>
     <div class="panel"><div class="chart-title">事项（上周 / 本周）</div><div class="todo-grid" id="todo_sales"></div></div>
@@ -225,6 +230,7 @@
         <button class="btn2 ghost" id="jztResetBtn">恢复整月</button>
         <span class="muted">只选一端=查看单日；两端都空=默认整月</span>
       </div>
+      <div class="timeProgress" id="jztTimeProgress"></div>
       <div class="kpis" id="jztTargetKpis"></div>
       <div id="jztDataHint" class="hint warn" style="display:none"></div>
     </div>
@@ -882,6 +888,27 @@ function kpiHTML(items){ return items.map(it=>`<div class="kpi"><div class="labe
 function ymdAdd(str,n){ let [y,m,dd]=str.split('-').map(Number); const dt=new Date(y,m-1,dd); dt.setDate(dt.getDate()+n); return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`; }
 function dateRange(s,e){ const out=[]; let cur=s; while(cur<=e){ out.push(cur); cur=ymdAdd(cur,1); } return out; }
 function lastDayOfMonth(ym){ const [y,m]=ym.split('-').map(Number); const dt=new Date(y,m,0); return `${y}-${String(m).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`; }
+/* 时间进度：结束日期的「日」/ 当月总天数（百分比）。两端都空时取默认范围（本月至今）。 */
+function timeProgress(end){
+  if(!end || !/^\d{4}-\d{2}-\d{2}$/.test(end)) return null;
+  const ym=end.slice(0,7);
+  const day=parseInt(end.slice(8,10),10);
+  const dim=parseInt(lastDayOfMonth(ym).slice(8,10),10);
+  if(!day || !dim) return null;
+  return {frac:day/dim, day, dim, ym};
+}
+function updateTimeProgress(){
+  [['tvStart','tvEnd','tvTimeProgress'],['jztStart','jztEnd','jztTimeProgress']].forEach(([sid,eid,did])=>{
+    let start=$('#'+sid).value, end=$('#'+eid).value;
+    if(!start && !end){ const b=defaultRange(); start=b[0]; end=b[1]; }
+    else if(start && !end){ end=start; }
+    else if(!start && end){ start=end; }
+    const p=timeProgress(end); const el=$('#'+did); if(!el) return;
+    if(!p){ el.style.display='none'; el.innerHTML=''; return; }
+    el.style.display='flex';
+    el.innerHTML=`时间进度（${p.ym}）：<b>${fmtPct(p.frac)}</b><span class="muted">结束日 ${p.day} 天 / 当月 ${p.dim} 天</span><span class="bar"><i style="width:${(p.frac*100).toFixed(1)}%"></i></span>`;
+  });
+}
 function allDates(){ const s=STATE.sales.map(r=>r.date).filter(Boolean); const i=STATE.inventory.map(r=>r.date).filter(Boolean); const a=s.concat(i); return a.length?a:['2026-08-01']; }
 
 /* ---------- 计算：销售 ---------- */
@@ -1660,6 +1687,7 @@ function renderAll(){
   refreshInvDateOptions();
   renderSales(); renderInv(); renderJzt(); renderJztTargets(); renderTargets(); renderOverview();
   populateGanttMonth('营销','#ganttMkt'); populateGanttMonth('设计','#ganttDesign'); populateGanttMonth('数据','#ganttData');
+  updateTimeProgress();
   $('#lastUpdate').textContent='更新于 '+new Date().toLocaleString('zh-CN');
 }
 
@@ -1669,11 +1697,11 @@ function setSubview(name){ lijxSub=name; $$('.subtab').forEach(t=>t.classList.to
 function setView(v){ $$('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===v)); $$('section[data-section]').forEach(s=>s.style.display=s.dataset.section===v?'block':'none'); if(v==='lijx'){ setSubview(lijxSub); } renderAll(); }
 $$('.tab').forEach(t=>t.addEventListener('click',()=>setView(t.dataset.view)));
 $$('.subtab').forEach(t=>t.addEventListener('click',()=>setSubview(t.dataset.view)));
-function applyTvDates(){ renderTargets(); }
+function applyTvDates(){ renderTargets(); updateTimeProgress(); }
 ['tvStart','tvEnd'].forEach(id=>{ const el=$(id); if(el) el.addEventListener('change',applyTvDates); });
 const tvApplyBtn=$('#tvApplyBtn'); if(tvApplyBtn) tvApplyBtn.addEventListener('click',applyTvDates);
 const tvResetBtn=$('#tvResetBtn'); if(tvResetBtn) tvResetBtn.addEventListener('click',()=>{ $('#tvStart').value=''; $('#tvEnd').value=''; applyTvDates(); });
-function applyJztDates(){ renderJzt(); renderJztTargets(); }
+function applyJztDates(){ renderJzt(); renderJztTargets(); updateTimeProgress(); }
 function refreshInvDateOptions(){
   const sel=$('#invDate'); if(!sel) return;
   const dates=[...new Set(STATE.inventory.map(r=>r.date).filter(Boolean))].sort().reverse(); // 降序：最新在前
