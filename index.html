@@ -1807,9 +1807,32 @@ const tgtTplBtn=$('#tgtTplBtn'); if(tgtTplBtn) tgtTplBtn.addEventListener('click
   toast('已下载 Excel 模板（.xlsx，含「目标数据」+「填写说明」两个 Sheet）');
 });
 
+// 修复：部分导出的 xlsx 会把维度声明成 A1:V1048576（整张表最大行），但只有前几千行有数据。
+// 若不处理，sheetToTsv 会按声明行数循环百万次导致浏览器卡死/崩溃。这里扫描真实有数据的单元格，
+// 把 !ref 缩到实际使用的矩形（首行~最后有数据行），再交给 sheetToTsv。
+function trimSheet(ws){
+  if(!ws||!ws['!ref']) return ws;
+  let maxR=0,maxC=0;
+  for(const k in ws){
+    if(k[0]==='!') continue;
+    const m=/^([A-Z]+)(\d+)$/.exec(k); if(!m) continue;
+    const r=parseInt(m[2],10), col=m[1];
+    let c=0; for(const ch of col) c=c*26+(ch.charCodeAt(0)-64);
+    if(r>maxR){ maxR=r; maxC=Math.max(maxC,c); }
+  }
+  if(maxR===0) return ws;
+  const range=XLSX.utils.decode_range(ws['!ref']);
+  range.e.r=maxR-1;
+  range.e.c=Math.max(range.e.c,maxC-1);
+  ws['!ref']=XLSX.utils.encode_range(range);
+  return ws;
+}
+
 function sheetToTsv(ws){
   if(!ws || !ws['!ref']) return '';
   const range=XLSX.utils.decode_range(ws['!ref']);
+  // 安全上限：单表超过 30 万行直接报错，避免浏览器卡死/崩溃
+  if((range.e.r-range.s.r+1)>300000) throw new Error('工作表行数过多（超过 30 万行），请先在 Excel 中删除空白行或用「复制粘贴」方式录入');
   const out=[];
   for(let r=range.s.r;r<=range.e.r;++r){
     const row=[];
@@ -1841,6 +1864,7 @@ function setupFile(id,key){ const inp=$(id); const ta=()=>{ const t=$('#'+key+'I
       const u8=new Uint8Array(ab); // 关键：浏览器 arrayBuffer 是 ArrayBuffer，必须转 Uint8Array，否则 XLSX.read 抛 Invalid array length
       const wb=XLSX.read(u8,{type:'array',cellDates:true,cellStyles:false,cellNF:false,cellHTML:false,cellFormula:false});
       const ws=wb.Sheets[wb.SheetNames[0]];
+      trimSheet(ws);
       const text=sheetToTsv(ws);
       if(!text.trim()) throw new Error('工作表为空或无法解析，请确认首个工作表包含数据');
       ta().value=text; readInputs();
