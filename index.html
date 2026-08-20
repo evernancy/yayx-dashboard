@@ -1194,10 +1194,10 @@ function renderTargets(){
   else if(view==='year'){ const ys=uniq(days.map(d=>d.slice(0,4))).sort(); labels=ys; ys.forEach(y=>{ const ds=days.filter(d=>d.startsWith(y)); gmvAct.push(sum(ds.map(d=>gmv[d]||0))); gmvTgt.push(tlookup('brand','year',y)); posAct.push(sum(ds.map(d=>pos[d]||0))); posTgt.push(sum(ds.map(d=>tlookup('pos','day',d)))); }); }
   else if(view==='mtd'){ const ds=dateRange(ms,end).filter(d=>d>=start&&d<=end); labels=ds; let cg=0,cp=0; ds.forEach(d=>{ cg+=(gmv[d]||0); cp+=(pos[d]||0); gmvAct.push(cg); posAct.push(cp); const mt=tlookup('brand','month',ym); gmvTgt.push(mt); posTgt.push(tlookup('pos','day',d)); }); }
 
-  // GMV 图：与 POS 图同格式（柱状图；实际=累计GMV，目标=品牌目标）
-  barChart('#targetGmv',{categories:labels,series:[{name:'实际GMV',data:gmvAct},{name:'品牌目标',data:gmvTgt}],yFmt:fmtMoney});
-  // POS 图：MTD 累计实际 vs 各日(by day)POS 目标
-  barChart('#targetPos',{categories:labels,series:[{name:'实际POS',data:posAct},{name:'POS目标',data:posTgt}],yFmt:fmtMoney});
+  // GMV 图：按日（by day）实际 vs 按日(by day)品牌目标，与 POS 图同格式（柱状图）
+  barChart('#targetGmv',{categories:days,series:[{name:'实际GMV',data:days.map(d=>gmv[d]||0)},{name:'品牌目标',data:days.map(d=>tlookup('brand','day',d))}],yFmt:fmtMoney});
+  // POS 图：按日（by day）实际POS vs 按日(by day)POS目标
+  barChart('#targetPos',{categories:days,series:[{name:'实际POS',data:days.map(d=>pos[d]||0)},{name:'POS目标',data:days.map(d=>tlookup('pos','day',d))}],yFmt:fmtMoney});
 
   // 明细表：按日（时间 / 品牌by-day目标 / 实际GMV / GMV达成率 / POS by-day目标 / POS实际 / POS达成率）
   const rateCell=(act,tgt)=>{ if(!tgt) return '<td>—</td>'; const r=act/tgt; return `<td class="${r>=1?'pos':'neg'}">${fmtPct(r)}</td>`; };
