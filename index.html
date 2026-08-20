@@ -167,7 +167,7 @@
   <section data-sub="sales">
     <div class="panel" style="border-top:3px solid var(--blue)">
       <h2>销售目标达成</h2>
-      <p class="hint">GMV 品牌/采销/内部目标 与 POS 目标的达成追踪（按月累计 MTD）。日期范围可调；POS 实际 = 采购价表「全国昨日出库商品件数 × 全国采购价 ÷ 1.129」按日加总。</p>
+      <p class="hint">GMV 品牌/采销/内部目标 与 POS 目标的达成追踪（按月累计 MTD）。日期范围可调；POS 实际 = 浮码数据表「全国昨日出库商品件数 × 浮码 ÷ 1.129」按日加总。</p>
       <div class="row">
         <span>起始</span><input type="date" id="tvStart">
         <span>结束</span><input type="date" id="tvEnd">
@@ -313,14 +313,14 @@
       </details>
 
       <details>
-        <summary>3 · 采购价（单独录入，不并入库存周转数据）</summary>
-        <p class="hint">采购价与库存周转数据相互独立，本框单独录入、单独存储。表头：时间 / SKU / 全国采购价 / 全国昨日出库商品件数（列名自动识别，缺列留空）。「全国采购价 × 全国昨日出库商品件数 ÷ 1.129」用于计算 POS 实际数据。同一「时间 + SKU」重复录入即覆盖更新。</p>
+        <summary>3 · 浮码数据（单独录入，不并入库存周转数据）</summary>
+        <p class="hint">浮码数据与库存周转数据相互独立，本框单独录入、单独存储。表头：时间 / SKU / 浮码 / 全国昨日出库商品件数（列名自动识别，缺列留空）。「浮码 × 全国昨日出库商品件数 ÷ 1.129」用于计算 POS 实际数据。同一「时间 + SKU」重复录入即覆盖更新。</p>
         <div class="row">
           <label class="filelabel">上传文件<input type="file" id="ppFile" accept=".csv,.xlsx,.xls" hidden></label>
           <button class="btn2 ghost" data-fill="purchase">填入模板</button>
           <button class="btn2 ghost clearBtn" data-which="purchase">清除历史</button>
         </div>
-        <textarea id="ppInput" placeholder="时间&#9;SKU&#9;全国采购价&#9;全国昨日出库商品件数（采购价单独录入；用于计算POS；缺列留空，列名自动识别）"></textarea>
+        <textarea id="ppInput" placeholder="时间&#9;SKU&#9;浮码&#9;全国昨日出库商品件数（浮码单独录入；用于计算POS；缺列留空，列名自动识别）"></textarea>
         <div class="diag" id="diagPp"></div>
       </details>
 
@@ -371,7 +371,7 @@
           <tr><th>模块</th><th>推荐列（顺序不限，系统自动识别）</th></tr>
           <tr><td>销售</td><td>时间 / 商品名称 / SKU / 品牌 / 类目(一二三级) / 店铺名称 / 经营模式 / 浏览量 / 访客数 / 成交人数 / 成交单量 / 成交商品件数 / 成交金额 / 加购人数 …</td></tr>
           <tr><td>库存周转</td><td>日期 / 全国库存（件数） / 库存金额 / 库存周转（天） / 近7天销售（件数） / 近7天销售（金额） / 近14天销售（件数） / 近14天销售（金额） / 日均销售（件数） / 日均销售（金额） / 60+长库龄金额 / 60+长库龄金额（基调） / 60+长库龄金额（复调） / 滞销金额 / 滞销金额（基调） / 滞销金额（复调） / PV现货率 / 实库现货率 / 巢湖库存 / 全链路周转 —— 供应链库存周转模板（每日一行聚合），缺列留空不影响其余</td></tr>
-          <tr><td>采购价<br>(独立录入)</td><td>时间 / SKU / 全国采购价 / 全国昨日出库商品件数 —— <b>单独录入、单独存储</b>，不并入库存周转数据；「采购价 × 昨日出库件数 ÷ 1.129」用于计算 POS 实际；同「时间+SKU」覆盖更新，缺列留空</td></tr>
+          <tr><td>浮码数据<br>(独立录入)</td><td>时间 / SKU / 浮码 / 全国昨日出库商品件数 —— <b>单独录入、单独存储</b>，不并入库存周转数据；「浮码 × 昨日出库件数 ÷ 1.129」用于计算 POS 实际；同「时间+SKU」覆盖更新，缺列留空</td></tr>
           <tr><td>京准通</td><td>日期 / 营销场景 / 计划ID / 推广计划 / 跟单SKU ID·名称 / 展现数 / 点击数 / 花费 / 直接·间接·总订单行与金额 / 加购数 / 转化率(%) / 平均订单成本 / 投产比 / 预售·新客·关注·成交用户 等（共 36 列）</td></tr>
           <tr><td>目标</td><td>类型(品牌GMV/采销GMV/内部GMV/POS/京准通花费即投放花费) / 粒度(day/month/year) / 周期(2026-08-01或2026-08或2026) / 目标值</td></tr>
           <tr><td>营销/设计/数据<br>(甘特图)</td><td>模块(营销/设计/数据) / 日期(开始日) / 结束日期(可选) / <b>开始时间(可选,时:分)</b> / <b>结束时间(可选,时:分)</b> / 任务 / 负责人 / 进度(%) / 状态 / 备注　—— 三模块<b>共用一个输入框</b>，按「模块」列自动分流到对应甘特图；同「模块+日期+任务」覆盖，不同任务新增</td></tr>
@@ -496,10 +496,10 @@ const ALIAS = {
   end:['期末库存','期末','end','closing','end_inv','现货库存'],
   invQty:['期间销量','销量','销售数量','出库量','出库件数','sold','inv_sales','period_sales','昨日出库商品件数'],
   invDays:['周转天数','天数','days','turnover_days','预计可售天数'],
-  purchase:['采购价','采购成本','进价','买价','purchase','cost_price','buy_price','price','全国采购价'],
+  purchase:['采购价','采购成本','进价','买价','purchase','cost_price','buy_price','price','全国采购价','浮码'],
   aging:['库龄天数','库龄','长库龄','aging','age_days','库存天数'],
   exposure:['曝光量','曝光','pv','page_view','exposure'],
-  // —— 采购价（单独录入，不并入库存周转）——
+  // —— 浮码数据（单独录入，不并入库存周转）——
   ppQty:['采购数量','进货数量','采购量','purchase_qty','purchaseqty','入库数量'],
   supplier:['供应商','供货商','supplier','vendor','厂家'],
   ppOutQty:['全国昨日出库商品件数','昨日出库件数','全国昨日出库件数','out_qty','yesterday_outbound','daily_outbound'],
@@ -611,7 +611,7 @@ function parseTable(text){
 
 /* ---------- 追加式合并：导入新数据时不清空历史，按业务键去重（同日同维度覆盖、不同则追加） ---------- */
 // 业务键：取行中“非纯数值”的字段拼接（date 必然参与；商品名/SKU/品牌/计划等维度参与；金额/点击等数值不参与，便于同日更新）
-// 商品/编码类维度即使为纯数字也必须纳入业务键（如采购价表的 SKU 是纯数字，否则同日多行会被错误合并成 1 行，导致 13790 行仅剩 18 行）
+// 商品/编码类维度即使为纯数字也必须纳入业务键（如浮码数据表的 SKU 是纯数字，否则同日多行会被错误合并成 1 行，导致 13790 行仅剩 18 行）
 const KEY_DIMS=new Set(['sku','skuname','product','itemcode','itemname','barcode','货号','编码','item_code']);
 function rowKey(o){ const parts=[]; for(const k in o){ const v=o[k]; if(v===undefined||v===null||v==='') continue; const s=String(v).trim(); const lk=k.toLowerCase(); if(!KEY_DIMS.has(lk) && /^[\d.,\s]+$/.test(s)) continue; parts.push(k+'='+s); } parts.sort(); return parts.join('\u0001'); }
 function mergeRows(existing, incoming){ const m=new Map(); (existing||[]).forEach(r=>{ if(r&&Object.keys(r).length) m.set(rowKey(r), r); }); (incoming||[]).forEach(r=>{ if(r&&Object.keys(r).length) m.set(rowKey(r), r); }); return Array.from(m.values()); }
@@ -776,7 +776,7 @@ function sampleGantt(){
 数据\t${d(1)}\t${d(10)}\t08:00\t20:00\t月度经营分析看板\t钱七\t30\t进行中\tSQL+可视化
 数据\t${d(4)}\t\t09:00\t\t竞品价格监控\t孙八\t80\t进行中\t爬虫已上线`;}
 
-function samplePurchase(){return `时间\tSKU\t全国采购价\t全国昨日出库商品件数
+function samplePurchase(){return `时间\tSKU\t浮码\t全国昨日出库商品件数
 2026-08-17\tSKU-BE-01\t89.5\t1200
 2026-08-17\tSKU-SW-02\t235\t800
 2026-08-17\tSKU-FG-03\t58\t1500
@@ -938,7 +938,7 @@ function computeInv(asOf){
   return {all, cur, dates, maxDate, target, avgDays, slow};
 }
 function posDailyMap(){
-  // POS 实际 = Σ（全国采购价 × 全国昨日出库商品件数）÷ 1.129，按日聚合（数据源：采购价输入区）
+  // POS 实际 = Σ（浮码 × 全国昨日出库商品件数）÷ 1.129，按日聚合（数据源：浮码数据输入区）
   const m={};
   (STATE.purchase||[]).forEach(r=>{
     const d=String(r.date||'').slice(0,10); if(!d) return;
@@ -946,7 +946,7 @@ function posDailyMap(){
     const v=price*outQ/1.129; if(v) m[d]=(m[d]||0)+v;
   });
   if(Object.keys(m).length) return m;
-  // 回退：采购价表为空时用库存表估算（库存金额 / 1.129）
+  // 回退：浮码数据表为空时用库存表估算（库存金额 / 1.129）
   STATE.inventory.forEach(r=>{ const d=r.date; if(!d) return;
     const amt=(r.invAmount!==undefined && num(r.invAmount)>0)? num(r.invAmount) : (num(r.invQty)*num(r.purchase));
     const v=amt/1.129; if(v) m[d]=(m[d]||0)+v; }); return m;
@@ -1495,7 +1495,7 @@ function findDateCol(header, which){
 }
 // date 是否落在 [d, ed] 内（ed 空=只看 d 当天）
 function dateInRange(date, d, ed){ if(!d) return false; if(!ed) return d===date; return date>=d && date<=ed; }
-const CLEAR_NAME={sales:'销售',inventory:'库存周转',jzt:'京准通',targets:'目标',gantt:'甘特图',purchase:'采购价'};
+const CLEAR_NAME={sales:'销售',inventory:'库存周转',jzt:'京准通',targets:'目标',gantt:'甘特图',purchase:'浮码'};
 let cmWhich=null;
 const CLEAR_EL={sales:'#salesInput',inventory:'#invInput',jzt:'#jztInput',targets:'#tgtInput',gantt:'#ganttInput',purchase:'#ppInput'};
 // 目标「类型」列下标
@@ -1714,7 +1714,7 @@ function readInputs(mode, silent){
   STATE.inventory=mergeRows(STATE.inventory||[], parseTable(stripTargets(STATE._raw.inventory, push))); // 库存为每日全量快照：按业务键(含时间)去重即可，不聚合(快照数值不应相加)
   STATE.jzt=mergeRows(STATE.jzt||[], aggregateRows(parseTable(stripTargets(STATE._raw.jzt, push))));
   STATE.targets=mergeTargetRows(STATE.targets||[], tgt);
-  // 采购价：单独录入、单独存储，不并入库存周转；按业务键(时间+SKU)去重，同时同SKU覆盖；「采购价×昨日出库件数÷1.129」供 posDailyMap 计算 POS
+  // 浮码数据：单独录入、单独存储，不并入库存周转；按业务键(时间+SKU)去重，同时同SKU覆盖；「浮码×昨日出库件数÷1.129」供 posDailyMap 计算 POS
   STATE.purchase=mergeRows(STATE.purchase||[], parseTable(STATE._raw.purchase||''));
   // 甘特图：营销/设计/数据 共用一个输入框，按「模块」列自动分流；同「模块+日期+任务」覆盖，不同则追加（不清历史）
   const gRows=parseGantt(STATE._raw.gantt||'');
