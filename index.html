@@ -1161,19 +1161,21 @@ function renderTargets(){
   const days=dateRange(start,end).filter(d=>d>=start&&d<=end);
   const types=[['brand','品牌GMV'],['procure','采销GMV'],['internal','内部GMV'],['pos','POS']];
 
+  // MTD 日期范围与 POS 逐日(by day)目标之和（缺口 / 图表 / KPI 统一口径）
+  const ym=end.slice(0,7); const ms=ym+'-01';
+  const mtdDays=dateRange(ms,end).filter(d=>d>=start&&d<=end);
+  // POS 目标（MTD）：优先逐日(by day)POS 目标求和；未设逐日目标时回退月度 POS 目标
+  const posMtdTarget=mtdDays.reduce((a,d)=>a+tlookup('pos','day',d),0) || tlookup('pos','month',ym);
+
   // 范围实际与目标
   const gmvActual=sum(days.map(d=>gmv[d]||0));
   const posActual=sum(days.map(d=>pos[d]||0));
-  const scopeTarget=type=>{ if(view==='mtd'){ const ym=end.slice(0,7); const v=tlookup(type,'month',ym); if(v) return v; } return rangeTarget(type,start,end); };
+  // POS 目标（MTD）统一使用「逐日 by day 求和」（与缺口口径一致）；其余类型沿用原逻辑（月度优先 → 范围求和）
+  const scopeTarget=type=>{ if(view==='mtd'){ if(type==='pos'){ if(posMtdTarget) return posMtdTarget; } else { const v=tlookup(type,'month',ym); if(v) return v; } } return rangeTarget(type,start,end); };
   const tBrand=scopeTarget('brand'), tProc=scopeTarget('procure'), tInt=scopeTarget('internal'), tPos=scopeTarget('pos');
 
-  // POS 缺口（MTD）：按「日」粒度逐日 POS 目标求和 - MTD POS 达成；缺口=max(0, 目标-达成)（达成超目标时不显示负数）
-  const ym=end.slice(0,7); const ms=ym+'-01';
-  const mtdDays=dateRange(ms,end).filter(d=>d>=start&&d<=end);
+  // POS 缺口（MTD）：逐日(by day)POS 目标之和 - MTD POS 达成；缺口=max(0, 目标-达成)（达成超目标时不显示负数）
   const posMtdActual=sum(mtdDays.map(d=>pos[d]||0));
-  // MTD 目标优先取逐日(by day)POS 目标之和；未设逐日目标时回退到月度 POS 目标
-  let posMtdTarget=mtdDays.reduce((a,d)=>a+tlookup('pos','day',d),0);
-  if(!posMtdTarget) posMtdTarget=tlookup('pos','month',ym);
   const posGapRaw=posMtdTarget-posMtdActual;
   const posGap=posGapRaw>0?posGapRaw:0;
 
@@ -1188,13 +1190,13 @@ function renderTargets(){
   // 图表：按视图
   let labels=[], gmvAct=[], gmvTgt=[], posAct=[], posTgt=[];
   if(view==='day'){ labels=days; labels.forEach(d=>{ gmvAct.push(gmv[d]||0); gmvTgt.push(tlookup('brand','day',d)); posAct.push(pos[d]||0); posTgt.push(tlookup('pos','day',d)); }); }
-  else if(view==='month'){ const msU=uniq(days.map(d=>d.slice(0,7))).sort(); labels=msU; msU.forEach(m=>{ const ds=days.filter(d=>d.startsWith(m)); gmvAct.push(sum(ds.map(d=>gmv[d]||0))); gmvTgt.push(tlookup('brand','month',m)); posAct.push(sum(ds.map(d=>pos[d]||0))); posTgt.push(tlookup('pos','month',m)); }); }
-  else if(view==='year'){ const ys=uniq(days.map(d=>d.slice(0,4))).sort(); labels=ys; ys.forEach(y=>{ const ds=days.filter(d=>d.startsWith(y)); gmvAct.push(sum(ds.map(d=>gmv[d]||0))); gmvTgt.push(tlookup('brand','year',y)); posAct.push(sum(ds.map(d=>pos[d]||0))); posTgt.push(tlookup('pos','year',y)); }); }
-  else if(view==='mtd'){ const ds=dateRange(ms,end).filter(d=>d>=start&&d<=end); labels=ds; let cg=0,cp=0; ds.forEach(d=>{ cg+=(gmv[d]||0); cp+=(pos[d]||0); gmvAct.push(cg); posAct.push(cp); const mt=tlookup('brand','month',ym); const mp=tlookup('pos','month',ym); gmvTgt.push(mt); posTgt.push(mp); }); }
+  else if(view==='month'){ const msU=uniq(days.map(d=>d.slice(0,7))).sort(); labels=msU; msU.forEach(m=>{ const ds=days.filter(d=>d.startsWith(m)); gmvAct.push(sum(ds.map(d=>gmv[d]||0))); gmvTgt.push(tlookup('brand','month',m)); posAct.push(sum(ds.map(d=>pos[d]||0))); posTgt.push(sum(ds.map(d=>tlookup('pos','day',d)))); }); }
+  else if(view==='year'){ const ys=uniq(days.map(d=>d.slice(0,4))).sort(); labels=ys; ys.forEach(y=>{ const ds=days.filter(d=>d.startsWith(y)); gmvAct.push(sum(ds.map(d=>gmv[d]||0))); gmvTgt.push(tlookup('brand','year',y)); posAct.push(sum(ds.map(d=>pos[d]||0))); posTgt.push(sum(ds.map(d=>tlookup('pos','day',d)))); }); }
+  else if(view==='mtd'){ const ds=dateRange(ms,end).filter(d=>d>=start&&d<=end); labels=ds; let cg=0,cp=0; ds.forEach(d=>{ cg+=(gmv[d]||0); cp+=(pos[d]||0); gmvAct.push(cg); posAct.push(cp); const mt=tlookup('brand','month',ym); gmvTgt.push(mt); posTgt.push(tlookup('pos','day',d)); }); }
 
-  // GMV 图：目标按「日」粒度（实际=当日GMV，目标=当日品牌目标）
-  lineChart('#targetGmv',{labels:days,series:[{name:'实际GMV',data:days.map(d=>gmv[d]||0)},{name:'品牌目标',data:days.map(d=>tlookup('brand','day',d))}],yFmt:fmtMoney});
-  // POS 图：保持 MTD 累计实际 vs 月度目标
+  // GMV 图：与 POS 图同格式（柱状图；实际=累计GMV，目标=品牌目标）
+  barChart('#targetGmv',{categories:labels,series:[{name:'实际GMV',data:gmvAct},{name:'品牌目标',data:gmvTgt}],yFmt:fmtMoney});
+  // POS 图：MTD 累计实际 vs 各日(by day)POS 目标
   barChart('#targetPos',{categories:labels,series:[{name:'实际POS',data:posAct},{name:'POS目标',data:posTgt}],yFmt:fmtMoney});
 
   // 明细表：按日（时间 / 品牌by-day目标 / 实际GMV / GMV达成率 / POS by-day目标 / POS实际 / POS达成率）
