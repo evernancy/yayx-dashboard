@@ -301,7 +301,7 @@
   <section data-section="input" style="display:none">
     <div class="panel">
       <h2>数据输入区</h2>
-      <p class="hint">三种方式任选：① 从 Excel 复制后直接粘贴（含表头）② 粘贴 CSV 文本 ③ 上传 .csv / .xlsx 文件。修改后图表自动实时更新，并自动保存在本机浏览器中。</p>
+      <p class="hint">三种方式任选：① 从 Excel 复制后直接粘贴（含表头）② 粘贴 CSV 文本 ③ 上传 .csv / .xlsx 文件。<b>所有上传（无论全量还是增量）均按「增量更新」处理</b>：新数据与已有数据按业务键合并（同键更新、新键追加），<b>重复的数据自动忽略</b>，历史数据保留不清空；如需清空某一数据集请用各区「清除历史」按钮。修改后图表自动实时更新，并自动保存在本机浏览器中。</p>
 
       <details open>
         <summary>1 · 销售数据</summary>
@@ -670,14 +670,18 @@ function parseTable(text){
 /* ---------- 追加式合并：导入新数据时不清空历史，按业务键去重（同日同维度覆盖、不同则追加） ---------- */
 // 业务键：取行中“非纯数值”的字段拼接（date 必然参与；商品名/SKU/品牌/计划等维度参与；金额/点击等数值不参与，便于同日更新）
 // 商品/编码类维度即使为纯数字也必须纳入业务键（如浮码数据表的 SKU 是纯数字，否则同日多行会被错误合并成 1 行，导致 13790 行仅剩 18 行）
+// ext_ 未识别列（备注等辅助信息）不参与业务键：全量上传时表头多/少一列不会把同一行判成不同行 → 重复数据自动忽略
 const KEY_DIMS=new Set(['sku','skuname','product','itemcode','itemname','barcode','货号','编码','item_code']);
-function rowKey(o){ const parts=[]; for(const k in o){ const v=o[k]; if(v===undefined||v===null||v==='') continue; const s=String(v).trim(); const lk=k.toLowerCase(); if(!KEY_DIMS.has(lk) && /^[\d.,\s]+$/.test(s)) continue; parts.push(k+'='+s); } parts.sort(); return parts.join('\u0001'); }
+function rowKey(o){ const parts=[]; for(const k in o){ if(k.indexOf('ext_')===0) continue; const v=o[k]; if(v===undefined||v===null||v==='') continue; const s=String(v).trim(); const lk=k.toLowerCase(); if(!KEY_DIMS.has(lk) && /^[\d.,\s]+$/.test(s)) continue; parts.push(k+'='+s); } parts.sort(); return parts.join('\u0001'); }
 function mergeRows(existing, incoming){ const m=new Map(); (existing||[]).forEach(r=>{ if(r&&Object.keys(r).length) m.set(rowKey(r), r); }); (incoming||[]).forEach(r=>{ if(r&&Object.keys(r).length) m.set(rowKey(r), r); }); return Array.from(m.values()); }
 function toNum(v){ const n=Number(String(v).replace(/,/g,'')); return isNaN(n)?0:n; }
 // 按业务键聚合：同商品同天多行（源数据冗余）金额相加，消除冗余且不改变总 GMV；文本维度取首个。先聚合再合并，使每日追加/全量重导都幂等。
+// 全量上传时若同一行被重复粘贴/重复出现（所有字段完全相同），先按全字段去重忽略，避免金额被重复相加而翻倍。
 function aggregateRows(rows){
+  const seenRaw=new Set(); const uniq=[];
+  (rows||[]).forEach(r=>{ if(!r||!Object.keys(r).length) return; const j=JSON.stringify(r); if(!seenRaw.has(j)){ seenRaw.add(j); uniq.push(r); } });
   const m=new Map();
-  (rows||[]).forEach(r=>{ if(!r||!Object.keys(r).length) return; const k=rowKey(r);
+  uniq.forEach(r=>{ if(!r||!Object.keys(r).length) return; const k=rowKey(r);
     if(!m.has(k)){ m.set(k, Object.assign({}, r)); }
     else { const agg=m.get(k); for(const f in agg){ const s=String(agg[f]||'').trim(); if(/^[\d.,]+$/.test(s)) agg[f]=String(toNum(agg[f])+toNum(r[f])); } }
   });
@@ -1841,18 +1845,34 @@ function readInputs(mode, silent){
   SECTIONS.forEach(w=>{ const b=STATE.brands[brandOf[w]]; const cur=$('#'+TA[w]).value; b._raw[w]=(mode==='replace')?cur:((w==='targets'?mergeTargetsText(b._raw[w]||'',cur):mergeRaw(b._raw[w]||'',cur))); });
   // 甘特图：三模块共享，不按品牌拆分
   STATE.ganttRaw=(mode==='replace')?($('#ganttInput').value):mergeRaw(STATE.ganttRaw||'', $('#ganttInput').value);
-  // 2) 仅重建被编辑品牌的明细数组（其余品牌不动，避免无谓重算）
+  // 2) 仅重建被编辑品牌的明细数组（其余品牌不动，避免无谓重算）；统计 新增行 / 忽略的重复行
+  let statAdd=0, statDup=0;
   edited.forEach(brand=>{
     const b=STATE.brands[brand];
     const seen={}; const tgt=[];
     const push=r=>{ if(!isTargetRow(r)) return; const k=(r.ttype||'')+'|'+(r.tgran||'')+'|'+(r.tperiod||''); if(!seen[k]){ seen[k]=1; tgt.push(r); } };
     parseTargets(b._raw.targets).forEach(push);
     [b._raw.sales,b._raw.inventory,b._raw.jzt].forEach(t=>{ parseTargets(t).forEach(push); });
-    b.sales=mergeRows(b.sales||[], aggregateRows(parseTable(stripTargets(b._raw.sales, push))));
-    b.inventory=mergeRows(b.inventory||[], parseTable(stripTargets(b._raw.inventory, push)));
-    b.jzt=mergeRows(b.jzt||[], aggregateRows(parseTable(stripTargets(b._raw.jzt, push))));
-    b.targets=mergeTargetRows(b.targets||[], tgt);
-    b.purchase=mergeRows(b.purchase||[], parseTable(b._raw.purchase||''));
+    const salesIn=aggregateRows(parseTable(stripTargets(b._raw.sales, push)));
+    const invIn=parseTable(stripTargets(b._raw.inventory, push));
+    const jztIn=aggregateRows(parseTable(stripTargets(b._raw.jzt, push)));
+    const ppIn=parseTable(b._raw.purchase||'');
+    const tgtIn=tgt;
+    // 增量上传(merge)：与已有数据按业务键合并（重复自动忽略）；全量替换(replace)：以文本框为准整组重建
+    if(mode==='replace'){
+      b.sales=salesIn; b.inventory=invIn; b.jzt=jztIn; b.targets=tgtIn; b.purchase=ppIn;
+    } else {
+      const sb=b.sales.length, ib=b.inventory.length, jb=b.jzt.length, pb=b.purchase.length, tb=b.targets.length;
+      b.sales=mergeRows(b.sales||[], salesIn);
+      b.inventory=mergeRows(b.inventory||[], invIn);
+      b.jzt=mergeRows(b.jzt||[], jztIn);
+      b.targets=mergeTargetRows(b.targets||[], tgtIn);
+      b.purchase=mergeRows(b.purchase||[], ppIn);
+      statAdd+=(b.sales.length-sb)+(b.inventory.length-ib)+(b.jzt.length-jb)+(b.purchase.length-pb)+(b.targets.length-tb);
+      statDup+=Math.max(0, salesIn.length-(b.sales.length-sb)) + Math.max(0, invIn.length-(b.inventory.length-ib))
+             + Math.max(0, jztIn.length-(b.jzt.length-jb)) + Math.max(0, ppIn.length-(b.purchase.length-pb))
+             + Math.max(0, tgtIn.length-(b.targets.length-tb));
+    }
   });
   // 甘特图重建（共享）
   STATE.gantt=mergeGantt(STATE.gantt||[], parseGantt(STATE.ganttRaw||''));
@@ -1861,7 +1881,7 @@ function readInputs(mode, silent){
   SECTIONS.forEach(w=>{ const b=STATE.brands[brandOf[w]]; updateDiag(b._raw[w], (w==='targets'?parseTargets(b._raw[w]).length:b[w].length), DIAG[w]); });
   updateDiag(STATE.ganttRaw, STATE.gantt.length, 'Gantt');
   saveState(); renderAll(); saveToService();
-  if(!silent) toast(mode==='replace' ? '已替换数据并自动存储（刷新/重开不丢）' : '已追加/更新数据并自动存储（刷新/重开不丢，历史保留）');
+  if(!silent) toast(mode==='replace' ? '已按文本框内容全量重建并自动存储（刷新/重开不丢）' : ('已按增量更新并自动存储：新增 '+statAdd+' 行、重复 '+statDup+' 行已自动忽略（刷新/重开不丢，历史保留）'));
 }
 $('#applyBtn').addEventListener('click',readInputs);
 let deb; $('#salesInput').addEventListener('input',()=>{ clearTimeout(deb); deb=setTimeout(readInputs,700); });
