@@ -137,8 +137,7 @@
   <div class="tabs">
     <div class="tab active" data-view="overview">总览</div>
     <div class="tab" data-view="lijx" data-brand="李锦记">李锦记</div>
-    <div class="tab" data-view="lijx" data-brand="麦维他自营">麦维他自营</div>
-    <div class="tab" data-view="lijx" data-brand="麦维他POP">麦维他POP</div>
+    <div class="tab" data-view="lijx" data-brand="麦维他">麦维他</div>
     <div class="tab" data-view="lijx" data-brand="丝蕴">丝蕴</div>
     <div class="tab" data-view="lijx" data-brand="和路雪">和路雪</div>
     <div class="tab" data-view="lijx" data-brand="家乐">家乐</div>
@@ -1254,6 +1253,10 @@ function renderTargets(){
   // 麦维他：自营 / POP 两个渠道品牌（销售目标达成只按 GMV 口径，无 POS）
   const isMwZy=STATE.currentBrand==='麦维他自营', isMwPop=STATE.currentBrand==='麦维他POP', isMw=isMwZy||isMwPop;
   if(isMw){ return renderMaiweiTargets(start,end,isMwZy?'麦维他自营':'麦维他POP'); }
+  // 非麦维他品牌：恢复默认图表标题（麦维他专用标题仅在麦维他渠道切换时修改，切换回其他品牌必须还原）
+  { const gT=$('#targetGmvTitle'); if(gT) gT.textContent='GMV 实际 vs 品牌目标';
+    const pT=$('#targetPosTitle'); if(pT) pT.textContent='POS 实际 vs POS目标';
+    const tT=$('#targetTableTitle'); if(tT) tT.textContent='达成明细（按日：时间 / 品牌目标(by day) / 实际GMV / GMV达成率 / POS目标(by day) / POS实际 / POS达成率）'; }
   const gmv={}; B().sales.forEach(r=>{ if(r.date>=start&&r.date<=end) gmv[r.date]=(gmv[r.date]||0)+num(r.amount); });
   const pos=posDailyMap();
   const days=dateRange(start,end).filter(d=>d>=start&&d<=end);
@@ -1857,12 +1860,20 @@ $$('.tab').forEach(t=>t.addEventListener('click',()=>{
   }
 }));
 $$('.subtab').forEach(t=>t.addEventListener('click',()=>setSubview(t.dataset.view)));
-/* 品牌切换：顶部 6 个品牌 tab + 数据输入区各 section 品牌选择器联动 */
+/* 品牌切换：顶部 6 个品牌 tab（麦维他含自营/POP 两渠道）+ 数据输入区各 section 品牌选择器联动 */
 function syncBrandUI(){
-  $$('.tab[data-view="lijx"][data-brand]').forEach(p=>p.classList.toggle('active', currentView==='lijx' && p.dataset.brand===STATE.currentBrand));
+  // 顶部 tab 高亮：麦维他 tab 在当前品牌为「麦维他自营 / 麦维他POP」时均高亮
+  $$('.tab[data-view="lijx"][data-brand]').forEach(p=>{
+    const b=p.dataset.brand;
+    const active = b==='麦维他' ? (STATE.currentBrand==='麦维他自营'||STATE.currentBrand==='麦维他POP') : (STATE.currentBrand===b);
+    p.classList.toggle('active', currentView==='lijx' && active);
+  });
+  // 输入区选择器：麦维他渠道保持当前渠道（自营/POP），其余品牌选自身
   ['sales','inventory','purchase','jzt','targets'].forEach(w=>{ const sel=document.getElementById('brand_'+w); if(sel) sel.value=STATE.currentBrand; });
 }
 function switchBrand(name){
+  // 「麦维他」为顶层品牌 tab，实际数据按渠道存于「麦维他自营」（默认渠道）
+  if(name==='麦维他') name='麦维他自营';
   if(!STATE.brands[name]) return;
   STATE.currentBrand=name;
   syncBrandUI();
