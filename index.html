@@ -177,8 +177,8 @@
   <!-- SALES -->
   <section data-sub="sales">
     <div class="panel" style="border-top:3px solid var(--blue)">
-      <h2>销售目标达成</h2>
-      <p class="hint">GMV 品牌/采销/内部目标 与 POS 目标的达成追踪（按月累计 MTD）。日期范围可调；POS 实际 = 浮码数据表「全国昨日出库商品件数 × 浮码 ÷ 1.129」按日加总。<b>麦维他（自营 / POP）</b>按渠道区分展示：图1=自营GMV实际 vs 品牌目标，图2=POP GMV实际 vs 品牌目标，无 POS 口径。</p>
+      <h2>自营销售目标达成</h2>
+      <p class="hint">麦维他自营 GMV（销售成交金额）目标达成追踪（按月累计 MTD）。日期范围可调。</p>
       <div class="row">
         <span>起始</span><input type="date" id="tvStart">
         <span>结束</span><input type="date" id="tvEnd">
@@ -187,14 +187,19 @@
         <span class="muted">只选一端=查看单日；两端都空=默认全部日期</span>
       </div>
       <div class="timeProgress" id="tvTimeProgress"></div>
-      <div class="kpis" id="targetKpis"></div>
+      <div class="kpis" id="zyTargetKpis"></div>
     </div>
     <div class="panel"><div class="chart-title">事项（上周 / 本周）</div><div class="todo-grid" id="todo_sales"></div></div>
-    <div class="grid2">
-      <div class="panel"><div class="chart-title" id="targetGmvTitle">GMV 实际 vs 品牌目标</div><div id="targetGmv"></div></div>
-      <div class="panel"><div class="chart-title" id="targetPosTitle">POS 实际 vs POS目标</div><div id="targetPos"></div></div>
+    <div class="panel">
+      <h2>POP销售目标达成</h2>
+      <p class="hint">麦维他POP GMV（销售成交金额）目标达成追踪（按月累计 MTD）。</p>
+      <div class="kpis" id="popTargetKpis"></div>
     </div>
-    <div class="panel"><div class="chart-title" id="targetTableTitle">达成明细（按日：时间 / 品牌目标(by day) / 实际GMV / GMV达成率 / POS目标(by day) / POS实际 / POS达成率）</div><div id="targetTable"></div></div>
+    <div class="grid2">
+      <div class="panel"><div class="chart-title" id="targetGmvTitle">自营GMV实际 vs 品牌目标</div><div id="targetGmv"></div></div>
+      <div class="panel"><div class="chart-title" id="targetPosTitle">POP GMV实际 vs 品牌目标</div><div id="targetPos"></div></div>
+    </div>
+    <div class="panel"><div class="chart-title" id="targetTableTitle">达成明细（按日：时间 / 自营目标(by day) / 自营实际GMV / 自营GMV达成率 / POP目标(by day) / POP实际GMV / POPGMV达成率）</div><div id="targetTable"></div></div>
   </section>
 
   <!-- INVENTORY -->
@@ -1313,12 +1318,11 @@ function renderTargets(){
   if(!B().targets.length) $('#targetTable').insertAdjacentHTML('beforebegin','<div class="muted" style="margin-bottom:6px">未检测到目标数据，请在「数据输入区 → 目标数据」粘贴（类型/粒度/周期/目标值）。</div>');
 }
 
-// 麦维他专用：销售目标达成区分自营/POP 两渠道 —— 图1=自营GMV实际 vs 品牌目标，图2=POP GMV 实际 vs 品牌目标（无 POS 口径）
-function renderMaiweiTargets(start,end,curName){
+// 麦维他专用：销售目标达成区分自营/POP 两渠道 —— 拆成两个面板（自营/POP），各自 KPI + 图表，合并明细表
+function renderMaiweiTargets(start,end){
   const zyName='麦维他自营', popName='麦维他POP';
   const gmvOf=name=>{ const g={}; const b=STATE.brands[name]||{sales:[]}; (b.sales||[]).forEach(r=>{ if(r.date>=start&&r.date<=end) g[r.date]=(g[r.date]||0)+num(r.amount); }); return g; };
   const zyGmv=gmvOf(zyName), popGmv=gmvOf(popName);
-  const curGmv=curName===zyName?zyGmv:popGmv;
   const days=dateRange(start,end).filter(d=>d>=start&&d<=end);
   // 目标查询（指定品牌，按 品牌GMV/采销GMV/内部GMV 类型）：by day 优先、回退月/年
   const tgtOf=(name,type,d)=>{ const b=STATE.brands[name]||{targets:[]}; const ry=targetRefYear(); const tgt={};
@@ -1336,39 +1340,52 @@ function renderMaiweiTargets(start,end,curName){
     const y2=s.slice(0,4);
     if(s===y2+'-01-01' && e===y2+'-12-31'){ const v=tgtOf(name,type,s); if(v) return v; }
     return 0; };
-  const curActual=sum(days.map(d=>curGmv[d]||0));
   const zyActual=sum(days.map(d=>zyGmv[d]||0));
   const popActual=sum(days.map(d=>popGmv[d]||0));
   const ym=end.slice(0,7); const ms=ym+'-01';
   const mtdDays=dateRange(ms,end).filter(d=>d>=start&&d<=end);
-  // GMV 缺口（当前渠道）：MTD 目标（逐日 by day 求和，未设则月度） - MTD 实际
-  const curTgtMtd=mtdDays.reduce((a,d)=>a+tgtOf(curName,'brand',d),0) || tgtOf(curName,'brand',ym);
-  const curActMtd=sum(mtdDays.map(d=>curGmv[d]||0));
-  const gmvGap=Math.max(0, curTgtMtd-curActMtd);
-  const tBrand=rangeTargetOf(curName,'brand',start,end);
-  const tProc=rangeTargetOf(curName,'procure',start,end);
-  const tInt=rangeTargetOf(curName,'internal',start,end);
-  $('#targetKpis').innerHTML=kpiHTML([
-    {label:curName+' GMV 目标达成',value:tBrand?fmtPct(curActual/tBrand):'—',cls:tBrand?(curActual>=tBrand?'green':'amber'):'',sub:tBrand?('达成（实际GMV）'+fmtMoney(curActual)+' / 品牌目标GMV'+fmtMoney(tBrand)):('达成（实际GMV）'+fmtMoney(curActual)+' / 未设目标')},
-    {label:'采销GMV 目标达成',value:tProc?fmtPct(curActual/tProc):'—',cls:tProc?(curActual>=tProc?'green':'amber'):'',sub:tProc?('达成（实际GMV）'+fmtMoney(curActual)+' / 采销目标GMV'+fmtMoney(tProc)):('达成（实际GMV）'+fmtMoney(curActual)+' / 未设目标')},
-    {label:'内部GMV 目标达成',value:tInt?fmtPct(curActual/tInt):'—',cls:tInt?(curActual>=tInt?'green':'amber'):'',sub:tInt?('达成（实际GMV）'+fmtMoney(curActual)+' / 内部目标GMV'+fmtMoney(tInt)):('达成（实际GMV）'+fmtMoney(curActual)+' / 未设目标')},
-    {label:'GMV 缺口(MTD目标-MTD达成)',value:fmtMoney(gmvGap),cls:gmvGap>0?'red':'green',sub:ym+' MTD · '+curName},
+  // GMV 缺口（自营 / POP）：MTD 品牌GMV目标（逐日 by day 求和，未设则月度） - MTD GMV 实际
+  function gapOf(name, gmvByDay){
+    const t=mtdDays.reduce((a,d)=>a+tgtOf(name,'brand',d),0) || tgtOf(name,'brand',ym);
+    const a=sum(mtdDays.map(d=>gmvByDay[d]||0));
+    return Math.max(0, t-a);
+  }
+  const zyGap = gapOf(zyName, zyGmv);
+  const popGap = gapOf(popName, popGmv);
+  // KPI：自营
+  const zyTBrand=rangeTargetOf(zyName,'brand',start,end);
+  const zyTProc=rangeTargetOf(zyName,'procure',start,end);
+  const zyTInt=rangeTargetOf(zyName,'internal',start,end);
+  $('#zyTargetKpis').innerHTML=kpiHTML([
+    {label:'麦维他自营 GMV 目标达成',value:zyTBrand?fmtPct(zyActual/zyTBrand):'—',cls:zyTBrand?(zyActual>=zyTBrand?'green':'amber'):'',sub:zyTBrand?('达成（实际GMV）'+fmtMoney(zyActual)+' / 品牌目标GMV'+fmtMoney(zyTBrand)):('达成（实际GMV）'+fmtMoney(zyActual)+' / 未设目标')},
+    {label:'采销GMV 目标达成',value:zyTProc?fmtPct(zyActual/zyTProc):'—',cls:zyTProc?(zyActual>=zyTProc?'green':'amber'):'',sub:zyTProc?('达成（实际GMV）'+fmtMoney(zyActual)+' / 采销目标GMV'+fmtMoney(zyTProc)):('达成（实际GMV）'+fmtMoney(zyActual)+' / 未设目标')},
+    {label:'内部GMV 目标达成',value:zyTInt?fmtPct(zyActual/zyTInt):'—',cls:zyTInt?(zyActual>=zyTInt?'green':'amber'):'',sub:zyTInt?('达成（实际GMV）'+fmtMoney(zyActual)+' / 内部目标GMV'+fmtMoney(zyTInt)):('达成（实际GMV）'+fmtMoney(zyActual)+' / 未设目标')},
+    {label:'自营 GMV 缺口(MTD目标-MTD达成)',value:fmtMoney(zyGap),cls:zyGap>0?'red':'green',sub:ym+' MTD · 麦维他自营'},
   ]);
-  // 图1：自营GMV 实际 vs 品牌目标（固定展示麦维他自营渠道）
+  // KPI：POP
+  const popTBrand=rangeTargetOf(popName,'brand',start,end);
+  const popTProc=rangeTargetOf(popName,'procure',start,end);
+  const popTInt=rangeTargetOf(popName,'internal',start,end);
+  $('#popTargetKpis').innerHTML=kpiHTML([
+    {label:'麦维他POP GMV 目标达成',value:popTBrand?fmtPct(popActual/popTBrand):'—',cls:popTBrand?(popActual>=popTBrand?'green':'amber'):'',sub:popTBrand?('达成（实际GMV）'+fmtMoney(popActual)+' / 品牌目标GMV'+fmtMoney(popTBrand)):('达成（实际GMV）'+fmtMoney(popActual)+' / 未设目标')},
+    {label:'采销GMV 目标达成',value:popTProc?fmtPct(popActual/popTProc):'—',cls:popTProc?(popActual>=popTProc?'green':'amber'):'',sub:popTProc?('达成（实际GMV）'+fmtMoney(popActual)+' / 采销目标GMV'+fmtMoney(popTProc)):('达成（实际GMV）'+fmtMoney(popActual)+' / 未设目标')},
+    {label:'内部GMV 目标达成',value:popTInt?fmtPct(popActual/popTInt):'—',cls:popTInt?(popActual>=popTInt?'green':'amber'):'',sub:popTInt?('达成（实际GMV）'+fmtMoney(popActual)+' / 内部目标GMV'+fmtMoney(popTInt)):('达成（实际GMV）'+fmtMoney(popActual)+' / 未设目标')},
+    {label:'POP GMV 缺口(MTD目标-MTD达成)',value:fmtMoney(popGap),cls:popGap>0?'red':'green',sub:ym+' MTD · 麦维他POP'},
+  ]);
+  // 图：自营 / POP
   barChart('#targetGmv',{categories:days,series:[{name:'自营GMV实际',data:days.map(d=>zyGmv[d]||0)},{name:'品牌目标',data:days.map(d=>tgtOf(zyName,'brand',d))}],yFmt:fmtMoney});
-  // 图2：POP GMV 实际 vs 品牌目标（固定展示麦维他POP渠道）
   barChart('#targetPos',{categories:days,series:[{name:'POP GMV实际',data:days.map(d=>popGmv[d]||0)},{name:'品牌目标',data:days.map(d=>tgtOf(popName,'brand',d))}],yFmt:fmtMoney});
-  // 动态标题
+  // 动态标题（固定：麦维他品牌下展示自营/POP 对比）
   const gT=$('#targetGmvTitle'); if(gT) gT.textContent='自营GMV实际 vs 品牌目标';
-  const pT=$('#targetPosTitle'); if(pT) pT.textContent='POP GMV 实际 vs 品牌目标';
-  const tT=$('#targetTableTitle'); if(tT) tT.textContent='达成明细（按日：时间 / 品牌目标(by day) / 自营GMV / 自营达成率 / POP GMV / POP达成率）';
-  // 明细表：时间 / 品牌目标(by day) / 自营GMV / 自营达成率 / POP GMV / POP达成率
+  const pT=$('#targetPosTitle'); if(pT) pT.textContent='POP GMV实际 vs 品牌目标';
+  const tT=$('#targetTableTitle'); if(tT) tT.textContent='达成明细（按日：时间 / 自营目标(by day) / 自营实际GMV / 自营GMV达成率 / POP目标(by day) / POP实际GMV / POPGMV达成率）';
+  // 合并明细表：时间 / 自营目标(by day) / 自营实际GMV / 自营GMV达成率 / POP目标(by day) / POP实际GMV / POPGMV达成率
   const rateCell=(act,tgt)=>{ if(!tgt) return '<td>—</td>'; const r=act/tgt; return `<td class="${r>=1?'pos':'neg'}">${fmtPct(r)}</td>`; };
   const detailDays=Array.from(new Set([...Object.keys(zyGmv),...Object.keys(popGmv),...days])).filter(d=>d>=start&&d<=end).sort();
-  let head='<tr><th>时间</th><th>品牌目标(by day)</th><th>自营GMV</th><th>自营达成率</th><th>POP GMV</th><th>POP达成率</th></tr>';
+  let head='<tr><th>时间</th><th>自营目标(by day)</th><th>自营实际GMV</th><th>自营GMV达成率</th><th>POP目标(by day)</th><th>POP实际GMV</th><th>POPGMV达成率</th></tr>';
   let body='';
-  detailDays.forEach(d=>{ const bT=tgtOf(zyName,'brand',d), zg=zyGmv[d]||0, pg=popGmv[d]||0, pT=tgtOf(popName,'brand',d);
-    body+=`<tr><td>${d}</td><td>${fmtMoney(bT)}</td><td>${fmtMoney(zg)}</td>${rateCell(zg,bT)}<td>${fmtMoney(pg)}</td>${rateCell(pg,pT)}</tr>`; });
+  detailDays.forEach(d=>{ const zyTd=tgtOf(zyName,'brand',d), zg=zyGmv[d]||0, popTd=tgtOf(popName,'brand',d), pg=popGmv[d]||0;
+    body+=`<tr><td>${d}</td><td>${fmtMoney(zyTd)}</td><td>${fmtMoney(zg)}</td>${rateCell(zg,zyTd)}<td>${fmtMoney(popTd)}</td><td>${fmtMoney(pg)}</td>${rateCell(pg,popTd)}</tr>`; });
   $('#targetTable').innerHTML=`<table class="tbl"><thead>${head}</thead><tbody>${body}</tbody></table>`;
   if(!(STATE.brands[zyName]||{}).targets || !(STATE.brands[zyName]||{}).targets.length) $('#targetTable').insertAdjacentHTML('beforebegin','<div class="muted" style="margin-bottom:6px">未检测到「'+zyName+'」目标数据，请在「数据输入区 → 目标数据」选择对应品牌粘贴（类型/粒度/周期/目标值）。</div>');
 }
