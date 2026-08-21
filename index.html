@@ -137,7 +137,8 @@
   <div class="tabs">
     <div class="tab active" data-view="overview">总览</div>
     <div class="tab" data-view="lijx" data-brand="李锦记">李锦记</div>
-    <div class="tab" data-view="lijx" data-brand="麦维他">麦维他</div>
+    <div class="tab" data-view="lijx" data-brand="麦维他自营">麦维他自营</div>
+    <div class="tab" data-view="lijx" data-brand="麦维他POP">麦维他POP</div>
     <div class="tab" data-view="lijx" data-brand="丝蕴">丝蕴</div>
     <div class="tab" data-view="lijx" data-brand="和路雪">和路雪</div>
     <div class="tab" data-view="lijx" data-brand="家乐">家乐</div>
@@ -178,7 +179,7 @@
   <section data-sub="sales">
     <div class="panel" style="border-top:3px solid var(--blue)">
       <h2>销售目标达成</h2>
-      <p class="hint">GMV 品牌/采销/内部目标 与 POS 目标的达成追踪（按月累计 MTD）。日期范围可调；POS 实际 = 浮码数据表「全国昨日出库商品件数 × 浮码 ÷ 1.129」按日加总。</p>
+      <p class="hint">GMV 品牌/采销/内部目标 与 POS 目标的达成追踪（按月累计 MTD）。日期范围可调；POS 实际 = 浮码数据表「全国昨日出库商品件数 × 浮码 ÷ 1.129」按日加总。<b>麦维他（自营 / POP）</b>按渠道区分展示：图1=自营GMV实际 vs 品牌目标，图2=POP GMV实际 vs 品牌目标，无 POS 口径。</p>
       <div class="row">
         <span>起始</span><input type="date" id="tvStart">
         <span>结束</span><input type="date" id="tvEnd">
@@ -191,10 +192,10 @@
     </div>
     <div class="panel"><div class="chart-title">事项（上周 / 本周）</div><div class="todo-grid" id="todo_sales"></div></div>
     <div class="grid2">
-      <div class="panel"><div class="chart-title">GMV 实际 vs 品牌目标</div><div id="targetGmv"></div></div>
-      <div class="panel"><div class="chart-title">POS 实际 vs POS目标</div><div id="targetPos"></div></div>
+      <div class="panel"><div class="chart-title" id="targetGmvTitle">GMV 实际 vs 品牌目标</div><div id="targetGmv"></div></div>
+      <div class="panel"><div class="chart-title" id="targetPosTitle">POS 实际 vs POS目标</div><div id="targetPos"></div></div>
     </div>
-    <div class="panel"><div class="chart-title">达成明细（按日：时间 / 品牌目标(by day) / 实际GMV / GMV达成率 / POS目标(by day) / POS实际 / POS达成率）</div><div id="targetTable"></div></div>
+    <div class="panel"><div class="chart-title" id="targetTableTitle">达成明细（按日：时间 / 品牌目标(by day) / 实际GMV / GMV达成率 / POS目标(by day) / POS实际 / POS达成率）</div><div id="targetTable"></div></div>
   </section>
 
   <!-- INVENTORY -->
@@ -309,7 +310,8 @@
           <span class="muted" style="font-size:12px">品牌</span>
           <select id="brand_sales" class="secBrand" data-sec="sales" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px">
             <option value="李锦记">李锦记</option>
-            <option value="麦维他">麦维他</option>
+            <option value="麦维他自营">麦维他自营</option>
+            <option value="麦维他POP">麦维他POP</option>
             <option value="丝蕴">丝蕴</option>
             <option value="和路雪">和路雪</option>
             <option value="家乐">家乐</option>
@@ -329,7 +331,8 @@
           <span class="muted" style="font-size:12px">品牌</span>
           <select id="brand_inventory" class="secBrand" data-sec="inventory" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px">
             <option value="李锦记">李锦记</option>
-            <option value="麦维他">麦维他</option>
+            <option value="麦维他自营">麦维他自营</option>
+            <option value="麦维他POP">麦维他POP</option>
             <option value="丝蕴">丝蕴</option>
             <option value="和路雪">和路雪</option>
             <option value="家乐">家乐</option>
@@ -351,7 +354,8 @@
           <span class="muted" style="font-size:12px">品牌</span>
           <select id="brand_purchase" class="secBrand" data-sec="purchase" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px">
             <option value="李锦记">李锦记</option>
-            <option value="麦维他">麦维他</option>
+            <option value="麦维他自营">麦维他自营</option>
+            <option value="麦维他POP">麦维他POP</option>
             <option value="丝蕴">丝蕴</option>
             <option value="和路雪">和路雪</option>
             <option value="家乐">家乐</option>
@@ -372,7 +376,8 @@
           <span class="muted" style="font-size:12px">品牌</span>
           <select id="brand_jzt" class="secBrand" data-sec="jzt" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px">
             <option value="李锦记">李锦记</option>
-            <option value="麦维他">麦维他</option>
+            <option value="麦维他自营">麦维他自营</option>
+            <option value="麦维他POP">麦维他POP</option>
             <option value="丝蕴">丝蕴</option>
             <option value="和路雪">和路雪</option>
             <option value="家乐">家乐</option>
@@ -392,7 +397,8 @@
           <span class="muted" style="font-size:12px">品牌</span>
           <select id="brand_targets" class="secBrand" data-sec="targets" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px">
             <option value="李锦记">李锦记</option>
-            <option value="麦维他">麦维他</option>
+            <option value="麦维他自营">麦维他自营</option>
+            <option value="麦维他POP">麦维他POP</option>
             <option value="丝蕴">丝蕴</option>
             <option value="和路雪">和路雪</option>
             <option value="家乐">家乐</option>
@@ -851,7 +857,7 @@ function samplePurchase(){return `时间\tSKU\t浮码\t全国昨日出库商品�
 /* ---------- 状态与持久化 ---------- */
 const STORE_KEY='ecom_dashboard_v2';
 // 多品牌：每个品牌独立存储 销售/库存周转/浮码/京准通/目标/待办/原始输入；甘特图为三模块共享（不按品牌拆分）
-const BRANDS=['李锦记','麦维他','丝蕴','和路雪','家乐','联合利华'];
+const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 function freshBrand(){ return { sales:[], inventory:[], purchase:[], jzt:[], targets:[], _raw:{sales:'',inventory:'',jzt:'',targets:'',purchase:''}, todo:freshTodo() }; }
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 let STATE=emptyState();
@@ -1245,6 +1251,9 @@ function renderTargets(){
   buildTargetMap();
   const view='mtd';
   const [start,end]=resolveTvRange();
+  // 麦维他：自营 / POP 两个渠道品牌（销售目标达成只按 GMV 口径，无 POS）
+  const isMwZy=STATE.currentBrand==='麦维他自营', isMwPop=STATE.currentBrand==='麦维他POP', isMw=isMwZy||isMwPop;
+  if(isMw){ return renderMaiweiTargets(start,end,isMwZy?'麦维他自营':'麦维他POP'); }
   const gmv={}; B().sales.forEach(r=>{ if(r.date>=start&&r.date<=end) gmv[r.date]=(gmv[r.date]||0)+num(r.amount); });
   const pos=posDailyMap();
   const days=dateRange(start,end).filter(d=>d>=start&&d<=end);
@@ -1299,6 +1308,66 @@ function renderTargets(){
   detailDays.forEach(d=>{ const bT=tlookup('brand','day',d), g=gmv[d]||0, pT=tlookup('pos','day',d), p=pos[d]||0; body+=`<tr><td>${d}</td><td>${fmtMoney(bT)}</td><td>${fmtMoney(g)}</td>${rateCell(g,bT)}<td>${fmtMoney(pT)}</td><td>${fmtMoney(p)}</td>${rateCell(p,pT)}</tr>`; });
   $('#targetTable').innerHTML=`<table class="tbl"><thead>${head}</thead><tbody>${body}</tbody></table>`;
   if(!B().targets.length) $('#targetTable').insertAdjacentHTML('beforebegin','<div class="muted" style="margin-bottom:6px">未检测到目标数据，请在「数据输入区 → 目标数据」粘贴（类型/粒度/周期/目标值）。</div>');
+}
+
+// 麦维他专用：销售目标达成区分自营/POP 两渠道 —— 图1=自营GMV实际 vs 品牌目标，图2=POP GMV 实际 vs 品牌目标（无 POS 口径）
+function renderMaiweiTargets(start,end,curName){
+  const zyName='麦维他自营', popName='麦维他POP';
+  const gmvOf=name=>{ const g={}; const b=STATE.brands[name]||{sales:[]}; (b.sales||[]).forEach(r=>{ if(r.date>=start&&r.date<=end) g[r.date]=(g[r.date]||0)+num(r.amount); }); return g; };
+  const zyGmv=gmvOf(zyName), popGmv=gmvOf(popName);
+  const curGmv=curName===zyName?zyGmv:popGmv;
+  const days=dateRange(start,end).filter(d=>d>=start&&d<=end);
+  // 目标查询（指定品牌，按 品牌GMV/采销GMV/内部GMV 类型）：by day 优先、回退月/年
+  const tgtOf=(name,type,d)=>{ const b=STATE.brands[name]||{targets:[]}; const ry=targetRefYear(); const tgt={};
+    (b.targets||[]).forEach(r=>{ const t=normType(r.ttype), p=normPeriod(r.tperiod,ry); let g=normGran(r.tgran); if(!g) g=p.length===10?'day':(p.length===7?'month':'year'); const v=num(r.tvalue); if(t&&g&&p) tgt[t+'|'+g+'|'+p]=v; });
+    if(tgt[type+'|day|'+d]) return tgt[type+'|day|'+d];
+    const mm=d.slice(5); if(tgt[type+'|month|'+mm]) return tgt[type+'|month|'+mm];
+    const yy=d.slice(0,4); if(tgt[type+'|year|'+yy]) return tgt[type+'|year|'+yy];
+    return 0; };
+  const rangeTargetOf=(name,type,s,e)=>{
+    const ds=dateRange(s,e); let sd=0,has=false;
+    ds.forEach(d=>{ const v=tgtOf(name,type,d); if(v){ sd+=v; has=true; } });
+    if(has) return sd;
+    const ym2=s.slice(0,7);
+    if(s===ym2+'-01' && e===lastDayOfMonth(ym2)){ const v=tgtOf(name,type,s); if(v) return v; }
+    const y2=s.slice(0,4);
+    if(s===y2+'-01-01' && e===y2+'-12-31'){ const v=tgtOf(name,type,s); if(v) return v; }
+    return 0; };
+  const curActual=sum(days.map(d=>curGmv[d]||0));
+  const zyActual=sum(days.map(d=>zyGmv[d]||0));
+  const popActual=sum(days.map(d=>popGmv[d]||0));
+  const ym=end.slice(0,7); const ms=ym+'-01';
+  const mtdDays=dateRange(ms,end).filter(d=>d>=start&&d<=end);
+  // GMV 缺口（当前渠道）：MTD 目标（逐日 by day 求和，未设则月度） - MTD 实际
+  const curTgtMtd=mtdDays.reduce((a,d)=>a+tgtOf(curName,'brand',d),0) || tgtOf(curName,'brand',ym);
+  const curActMtd=sum(mtdDays.map(d=>curGmv[d]||0));
+  const gmvGap=Math.max(0, curTgtMtd-curActMtd);
+  const tBrand=rangeTargetOf(curName,'brand',start,end);
+  const tProc=rangeTargetOf(curName,'procure',start,end);
+  const tInt=rangeTargetOf(curName,'internal',start,end);
+  $('#targetKpis').innerHTML=kpiHTML([
+    {label:curName+' GMV 目标达成',value:tBrand?fmtPct(curActual/tBrand):'—',cls:tBrand?(curActual>=tBrand?'green':'amber'):'',sub:tBrand?('达成（实际GMV）'+fmtMoney(curActual)+' / 品牌目标GMV'+fmtMoney(tBrand)):('达成（实际GMV）'+fmtMoney(curActual)+' / 未设目标')},
+    {label:'采销GMV 目标达成',value:tProc?fmtPct(curActual/tProc):'—',cls:tProc?(curActual>=tProc?'green':'amber'):'',sub:tProc?('达成（实际GMV）'+fmtMoney(curActual)+' / 采销目标GMV'+fmtMoney(tProc)):('达成（实际GMV）'+fmtMoney(curActual)+' / 未设目标')},
+    {label:'内部GMV 目标达成',value:tInt?fmtPct(curActual/tInt):'—',cls:tInt?(curActual>=tInt?'green':'amber'):'',sub:tInt?('达成（实际GMV）'+fmtMoney(curActual)+' / 内部目标GMV'+fmtMoney(tInt)):('达成（实际GMV）'+fmtMoney(curActual)+' / 未设目标')},
+    {label:'GMV 缺口(MTD目标-MTD达成)',value:fmtMoney(gmvGap),cls:gmvGap>0?'red':'green',sub:ym+' MTD · '+curName},
+  ]);
+  // 图1：自营GMV 实际 vs 品牌目标（固定展示麦维他自营渠道）
+  barChart('#targetGmv',{categories:days,series:[{name:'自营GMV实际',data:days.map(d=>zyGmv[d]||0)},{name:'品牌目标',data:days.map(d=>tgtOf(zyName,'brand',d))}],yFmt:fmtMoney});
+  // 图2：POP GMV 实际 vs 品牌目标（固定展示麦维他POP渠道）
+  barChart('#targetPos',{categories:days,series:[{name:'POP GMV实际',data:days.map(d=>popGmv[d]||0)},{name:'品牌目标',data:days.map(d=>tgtOf(popName,'brand',d))}],yFmt:fmtMoney});
+  // 动态标题
+  const gT=$('#targetGmvTitle'); if(gT) gT.textContent='自营GMV实际 vs 品牌目标';
+  const pT=$('#targetPosTitle'); if(pT) pT.textContent='POP GMV 实际 vs 品牌目标';
+  const tT=$('#targetTableTitle'); if(tT) tT.textContent='达成明细（按日：时间 / 品牌目标(by day) / 自营GMV / 自营达成率 / POP GMV / POP达成率）';
+  // 明细表：时间 / 品牌目标(by day) / 自营GMV / 自营达成率 / POP GMV / POP达成率
+  const rateCell=(act,tgt)=>{ if(!tgt) return '<td>—</td>'; const r=act/tgt; return `<td class="${r>=1?'pos':'neg'}">${fmtPct(r)}</td>`; };
+  const detailDays=Array.from(new Set([...Object.keys(zyGmv),...Object.keys(popGmv),...days])).filter(d=>d>=start&&d<=end).sort();
+  let head='<tr><th>时间</th><th>品牌目标(by day)</th><th>自营GMV</th><th>自营达成率</th><th>POP GMV</th><th>POP达成率</th></tr>';
+  let body='';
+  detailDays.forEach(d=>{ const bT=tgtOf(zyName,'brand',d), zg=zyGmv[d]||0, pg=popGmv[d]||0, pT=tgtOf(popName,'brand',d);
+    body+=`<tr><td>${d}</td><td>${fmtMoney(bT)}</td><td>${fmtMoney(zg)}</td>${rateCell(zg,bT)}<td>${fmtMoney(pg)}</td>${rateCell(pg,pT)}</tr>`; });
+  $('#targetTable').innerHTML=`<table class="tbl"><thead>${head}</thead><tbody>${body}</tbody></table>`;
+  if(!(STATE.brands[zyName]||{}).targets || !(STATE.brands[zyName]||{}).targets.length) $('#targetTable').insertAdjacentHTML('beforebegin','<div class="muted" style="margin-bottom:6px">未检测到「'+zyName+'」目标数据，请在「数据输入区 → 目标数据」选择对应品牌粘贴（类型/粒度/周期/目标值）。</div>');
 }
 
 /* ---------- 总览 ---------- */
@@ -2211,6 +2280,8 @@ function normalizeState(st){
   if(!st || typeof st!=='object') return emptyState();
   const out=emptyState();
   if(st.brands && typeof st.brands==='object'){
+    // 兼容旧版：麦维他 → 麦维他自营（历史数据归入自营渠道，不丢失）
+    if(st.brands['麦维他'] && !st.brands['麦维他自营']) st.brands['麦维他自营']=st.brands['麦维他'];
     BRANDS.forEach(b=>{ const src=st.brands[b]||{}; const dst=out.brands[b];
       dst.sales=Array.isArray(src.sales)?src.sales:[]; dst.inventory=Array.isArray(src.inventory)?src.inventory:[];
       dst.purchase=Array.isArray(src.purchase)?src.purchase:[]; dst.jzt=Array.isArray(src.jzt)?src.jzt:[]; dst.targets=Array.isArray(src.targets)?src.targets:[];
