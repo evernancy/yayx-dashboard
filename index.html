@@ -136,7 +136,12 @@
   <div class="boardbar" id="boardBar" style="display:none"></div>
   <div class="tabs">
     <div class="tab active" data-view="overview">总览</div>
-    <div class="tab" data-view="lijx">李锦记</div>
+    <div class="tab" data-view="lijx" data-brand="李锦记">李锦记</div>
+    <div class="tab" data-view="lijx" data-brand="麦维他">麦维他</div>
+    <div class="tab" data-view="lijx" data-brand="丝蕴">丝蕴</div>
+    <div class="tab" data-view="lijx" data-brand="和路雪">和路雪</div>
+    <div class="tab" data-view="lijx" data-brand="家乐">家乐</div>
+    <div class="tab" data-view="lijx" data-brand="联合利华">联合利华</div>
     <div class="tab" data-view="gantt_mkt">营销日历</div>
     <div class="tab" data-view="gantt_design">设计日历</div>
     <div class="tab" data-view="gantt_data">数据日历</div>
@@ -167,15 +172,6 @@
         <div class="subtab" data-view="jzt">京准通推广</div>
         <div class="subtab" data-view="inventory">库存周转</div>
         <div class="subtab" data-view="zhongtai">中台</div>
-      </div>
-      <div class="boardbar" id="brandBar" style="margin:10px 0 16px">
-        <span class="bb-label">品牌：</span>
-        <button class="bb-pill" data-brand="李锦记">李锦记</button>
-        <button class="bb-pill" data-brand="麦维他">麦维他</button>
-        <button class="bb-pill" data-brand="丝蕴">丝蕴</button>
-        <button class="bb-pill" data-brand="和路雪">和路雪</button>
-        <button class="bb-pill" data-brand="家乐">家乐</button>
-        <button class="bb-pill" data-brand="联合利华">联合利华</button>
       </div>
 
   <!-- SALES -->
@@ -1760,13 +1756,35 @@ function renderAll(){
 
 /* ---------- 交互 ---------- */
 let lijxSub='sales';
+let currentView='overview';
 function setSubview(name){ lijxSub=name; $$('.subtab').forEach(t=>t.classList.toggle('active',t.dataset.view===name)); const root=document.querySelector('[data-section="lijx"]'); if(root) root.querySelectorAll('[data-sub]').forEach(s=>{ s.style.display=(s.dataset.sub===name)?'block':'none'; }); }
-function setView(v){ $$('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===v)); $$('section[data-section]').forEach(s=>s.style.display=s.dataset.section===v?'block':'none'); if(v==='lijx'){ setSubview(lijxSub); } renderAll(); }
-$$('.tab').forEach(t=>t.addEventListener('click',()=>setView(t.dataset.view)));
+function setView(v){
+  currentView=v;
+  $$('.tab').forEach(t=>{
+    if(t.dataset.view==='lijx' && t.dataset.brand){
+      // 品牌 tab：仅在「lijx 视图」+「该品牌为当前品牌」时高亮
+      t.classList.toggle('active', v==='lijx' && t.dataset.brand===STATE.currentBrand);
+    } else {
+      t.classList.toggle('active', t.dataset.view===v);
+    }
+  });
+  $$('section[data-section]').forEach(s=>s.style.display=s.dataset.section===v?'block':'none');
+  if(v==='lijx'){ setSubview(lijxSub); }
+  renderAll();
+}
+$$('.tab').forEach(t=>t.addEventListener('click',()=>{
+  if(t.dataset.view==='lijx' && t.dataset.brand){
+    // 顶部品牌 tab：先切品牌再切视图
+    switchBrand(t.dataset.brand);
+    setView('lijx');
+  } else {
+    setView(t.dataset.view);
+  }
+}));
 $$('.subtab').forEach(t=>t.addEventListener('click',()=>setSubview(t.dataset.view)));
-/* 品牌切换：看板区顶部品牌栏 + 数据输入区各 section 品牌选择器联动 */
+/* 品牌切换：顶部 6 个品牌 tab + 数据输入区各 section 品牌选择器联动 */
 function syncBrandUI(){
-  $$('#brandBar .bb-pill').forEach(p=>p.classList.toggle('active',p.dataset.brand===STATE.currentBrand));
+  $$('.tab[data-view="lijx"][data-brand]').forEach(p=>p.classList.toggle('active', currentView==='lijx' && p.dataset.brand===STATE.currentBrand));
   ['sales','inventory','purchase','jzt','targets'].forEach(w=>{ const sel=document.getElementById('brand_'+w); if(sel) sel.value=STATE.currentBrand; });
 }
 function switchBrand(name){
@@ -1777,7 +1795,6 @@ function switchBrand(name){
   renderAll(); setupTodoAll(); saveState();
   toast('已切换到品牌「'+name+'」');
 }
-$$('#brandBar .bb-pill').forEach(p=>p.addEventListener('click',()=>switchBrand(p.dataset.brand)));
 // 数据输入区：某个 section 切换品牌 → 仅将该 section 的文本框填充为目标品牌的原始输入（不影响其他 section）
 $$('.secBrand').forEach(sel=>sel.addEventListener('change',()=>{
   const w=sel.dataset.sec, b=STATE.brands[sel.value]; if(!b) return;
@@ -2409,7 +2426,6 @@ init();
   // —— 看板切换栏 ——
   window.renderBoardBar=function(){
     var bar=document.getElementById('boardBar'); if(!bar) return;
-    var lijxTab=document.querySelector('.tab[data-view="lijx"]'); if(lijxTab) lijxTab.textContent=currentBoard.name; // 父标签同步显示当前看板名
     ghListBoards().then(function(list){
       bar.innerHTML='';
       var lab=document.createElement('span'); lab.className='bb-label'; lab.textContent='看板：'; bar.appendChild(lab);
