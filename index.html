@@ -337,6 +337,7 @@
           </select>
           <label class="filelabel">上传文件<input type="file" id="invFile" accept=".csv,.xlsx,.xls" hidden></label>
           <button class="btn2 ghost" data-fill="inventory">填入模板</button>
+          <button class="btn2 ghost" id="invTplBtn">下载填写模板</button>
           <button class="btn2 ghost clearBtn" data-which="inventory">清除历史</button>
         </div>
         <textarea id="invInput" placeholder="日期&#9;全国库存（件数）&#9;库存金额&#9;库存周转（天）&#9;近7天销售（件数）&#9;近7天销售（金额）&#9;近14天销售（件数）&#9;近14天销售（金额）&#9;日均销售（件数）&#9;日均销售（金额）&#9;60+长库龄金额&#9;60+长库龄金额（基调）&#9;60+长库龄金额（复调）&#9;滞销金额&#9;滞销金额（基调）&#9;滞销金额（复调）&#9;PV现货率&#9;实库现货率&#9;巢湖库存&#9;全链路周转（供应链库存周转模板；缺列留空，列名自动识别）"></textarea>
@@ -358,6 +359,7 @@
           </select>
           <label class="filelabel">上传文件<input type="file" id="ppFile" accept=".csv,.xlsx,.xls" hidden></label>
           <button class="btn2 ghost" data-fill="purchase">填入模板</button>
+          <button class="btn2 ghost" id="ppTplBtn">下载填写模板</button>
           <button class="btn2 ghost clearBtn" data-which="purchase">清除历史</button>
         </div>
         <textarea id="ppInput" placeholder="时间&#9;SKU&#9;浮码&#9;全国昨日出库商品件数（浮码单独录入；用于计算POS；缺列留空，列名自动识别）"></textarea>
@@ -1955,6 +1957,79 @@ const tgtTplBtn=$('#tgtTplBtn'); if(tgtTplBtn) tgtTplBtn.addEventListener('click
   const blob=new Blob([wbout],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='目标数据填写模板.xlsx'; a.click();
   toast('已下载 Excel 模板（.xlsx，含「目标数据」+「填写说明」两个 Sheet）');
+});
+
+// 下载库存周转填写模板（真实 .xlsx：20 列供应链库存周转模板，含示例行与空行，附填写说明表）
+const invTplBtn=$('#invTplBtn'); if(invTplBtn) invTplBtn.addEventListener('click',()=>{
+  const t=new Date(); const y=t.getFullYear(), m=String(t.getMonth()+1).padStart(2,'0');
+  const d=n=>`${y}-${m}-${String(n).padStart(2,'0')}`;
+  const rows=[
+    ['日期','全国库存（件数）','库存金额','库存周转（天）','近7天销售（件数）','近7天销售（金额）','近14天销售（件数）','近14天销售（金额）','日均销售（件数）','日均销售（金额）','60+长库龄金额','60+长库龄金额（基调）','60+长库龄金额（复调）','滞销金额','滞销金额（基调）','滞销金额（复调）','PV现货率','实库现货率','巢湖库存','全链路周转'],
+    [d(1),12500,2860000,32.5,2100,485000,4200,968000,300,69200,180000,120000,60000,95000,60000,35000,0.96,0.94,3200,38.2],
+    [d(2),12100,2773000,31.8,2250,520000,4300,991000,322,74200,175000,115000,60000,92000,58000,34000,0.95,0.93,3100,37.6],
+    [d(3),11850,2715000,31.2,2380,549000,4500,1037000,340,78300,168000,110000,58000,90000,56000,34000,0.95,0.92,3050,37.1],
+    ['','','','','','','','','','','','','','','','','','','',''],
+    ['','','','','','','','','','','','','','','','','','','',''],
+    ['','','','','','','','','','','','','','','','','','','','']
+  ];
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:12},{wch:14},{wch:12},{wch:12},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14},{wch:16},{wch:16},{wch:12},{wch:16},{wch:16},{wch:10},{wch:10},{wch:10},{wch:12}];
+  const wsHelp=XLSX.utils.aoa_to_sheet([
+    ['列','说明','示例'],
+    ['日期','库存快照日期（每日一行）','2026-08-01'],
+    ['全国库存（件数）','当日全国总库存件数','12500'],
+    ['库存金额','当日库存总金额','2860000'],
+    ['库存周转（天）','库存周转天数','32.5'],
+    ['近7天销售（件数/金额）','近7天销售件数与金额','2100 / 485000'],
+    ['近14天销售（件数/金额）','近14天销售件数与金额','4200 / 968000'],
+    ['日均销售（件数/金额）','日均销售件数与金额','300 / 69200'],
+    ['60+长库龄金额','含基调/复调两列，可分别填','180000 / 120000 / 60000'],
+    ['滞销金额','含基调/复调两列，可分别填','95000 / 60000 / 35000'],
+    ['PV现货率 / 实库现货率','0~1 小数','0.96 / 0.94'],
+    ['巢湖库存','巢湖仓库存','3200'],
+    ['全链路周转','全链路周转天数','38.2']
+  ]);
+  wsHelp['!cols']=[{wch:22},{wch:52},{wch:24}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '库存周转');
+  XLSX.utils.book_append_sheet(wb, wsHelp, '填写说明');
+  const wbout=XLSX.write(wb,{bookType:'xlsx',type:'array'});
+  const blob=new Blob([wbout],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='库存周转填写模板.xlsx'; a.click();
+  toast('已下载 Excel 模板（.xlsx，含「库存周转」+「填写说明」两个 Sheet，每日一行）');
+});
+
+// 下载浮码数据填写模板（真实 .xlsx：时间/SKU/浮码/全国昨日出库商品件数，含示例行与空行，附填写说明表）
+const ppTplBtn=$('#ppTplBtn'); if(ppTplBtn) ppTplBtn.addEventListener('click',()=>{
+  const t=new Date(); const y=t.getFullYear(), m=String(t.getMonth()+1).padStart(2,'0');
+  const d=n=>`${y}-${m}-${String(n).padStart(2,'0')}`;
+  const rows=[
+    ['时间','SKU','浮码','全国昨日出库商品件数'],
+    [d(1),'SKU-BE-01',89.5,1200],
+    [d(1),'SKU-SW-02',235,800],
+    [d(1),'SKU-FG-03',58,1500],
+    ['','','',''],
+    ['','','',''],
+    ['','','','']
+  ];
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:12},{wch:14},{wch:10},{wch:20}];
+  const wsHelp=XLSX.utils.aoa_to_sheet([
+    ['列','说明','示例'],
+    ['时间','数据日期（每日一行×SKU）','2026-08-01'],
+    ['SKU','商品编码（纯数字或字母均可）','SKU-BE-01'],
+    ['浮码','商品浮码（单价）','89.5'],
+    ['全国昨日出库商品件数','昨日全国出库件数','1200'],
+    ['POS 计算','浮码 × 全国昨日出库商品件数 ÷ 1.129，按日加总 = POS 实际','89.5 × 1200 ÷ 1.129 ≈ 95129.3']
+  ]);
+  wsHelp['!cols']=[{wch:12},{wch:52},{wch:26}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '浮码数据');
+  XLSX.utils.book_append_sheet(wb, wsHelp, '填写说明');
+  const wbout=XLSX.write(wb,{bookType:'xlsx',type:'array'});
+  const blob=new Blob([wbout],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='浮码数据填写模板.xlsx'; a.click();
+  toast('已下载 Excel 模板（.xlsx，含「浮码数据」+「填写说明」两个 Sheet，同一时间+SKU 重复上传即覆盖更新）');
 });
 
 // 修复：部分导出的 xlsx 会把维度声明成 A1:V1048576（整张表最大行），但只有前几千行有数据。
