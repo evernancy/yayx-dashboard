@@ -1593,19 +1593,16 @@ function renderGantt(module, elId, ym){
   const isMonthView=(ganttViewMode[module]==='month');
   if(!ganttWeekStart[module]){ ganttWeekStart[module] = (td>=ms && td<=me) ? mondayOf(td) : rs; }
   let mc=ganttWeekStart[module]; if(mc<rs) mc=rs; if(mc>maxw) mc=maxw; ganttWeekStart[module]=mc;
-  // 整月视图：显示月份所有天（从1号或之前周一到最后一天）；周视图：7天
+  // 整月视图：仅显示当月 1 号~月末（不含上月尾巴/下月头）；周视图：7天
   const days=[];
   if(isMonthView){
-    const d0=new Date(ms.slice(0,4),ms.slice(5,7)-1,1); const wd0=d0.getDay(); const startOffset=wd0===0?6:wd0-1; /* 周一对齐 */
-    let cur=new Date(d0); cur.setDate(cur.getDate()-startOffset);
+    const d0=new Date(ms.slice(0,4),ms.slice(5,7)-1,1);
     const lastD=new Date(me.slice(0,4),me.slice(5,7)-1,+me.slice(8,10));
-    while(cur<=lastD || cur.getDay()!==1 || cur<lastD){ /* 补到周末 */
+    let cur=new Date(d0);
+    while(cur<=lastD){
       days.push(cur.getFullYear()+'-'+String(cur.getMonth()+1).padStart(2,'0')+'-'+String(cur.getDate()).padStart(2,'0'));
       cur.setDate(cur.getDate()+1);
-      if(days.length>45) break; /* 安全上限 */
     }
-    /* 确保最后一天包含在内 */
-    const ldStr=me; if(!days.includes(ldStr)) days.push(ldStr);
   } else {
     for(let k=0;k<7;k++) days.push(ymdAdd(mc,k));
   }
