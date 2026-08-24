@@ -189,12 +189,12 @@
       <div class="timeProgress" id="tvTimeProgress"></div>
       <div class="kpis" id="zyTargetKpis"></div>
     </div>
-    <div class="panel"><div class="chart-title">事项（上周 / 本周）</div><div class="todo-grid" id="todo_sales"></div></div>
     <div class="panel" id="popTargetPanel">
       <h2 id="popTargetTitle">POP销售目标达成</h2>
       <p class="hint">麦维他POP GMV（销售成交金额）目标达成追踪（按月累计 MTD）。</p>
       <div class="kpis" id="popTargetKpis"></div>
     </div>
+    <div class="panel"><div class="chart-title">事项（上周 / 本周）</div><div class="todo-grid" id="todo_sales"></div></div>
     <div class="grid2">
       <div class="panel"><div class="chart-title" id="targetGmvTitle">自营GMV实际 vs 品牌目标</div><div id="targetGmv"></div></div>
       <div class="panel"><div class="chart-title" id="targetPosTitle">POP GMV实际 vs 品牌目标</div><div id="targetPos"></div></div>
@@ -1896,13 +1896,14 @@ function syncBrandUI(){
 }
 function switchBrand(name){
   // 「麦维他」为顶层品牌 tab，实际数据按渠道存于「麦维他自营」（默认渠道）
+  const displayName=name;
   if(name==='麦维他') name='麦维他自营';
   if(!STATE.brands[name]) return;
   STATE.currentBrand=name;
   syncBrandUI();
   fillInputsForCurrentBrand();
   renderAll(); setupTodoAll(); saveState();
-  toast('已切换到品牌「'+name+'」');
+  toast('已切换到品牌「'+displayName+'」');
 }
 // 数据输入区：某个 section 切换品牌 → 仅将该 section 的文本框填充为目标品牌的原始输入（不影响其他 section）
 $$('.secBrand').forEach(sel=>sel.addEventListener('change',()=>{
