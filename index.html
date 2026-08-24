@@ -1673,8 +1673,8 @@ function renderGantt(module, elId, ym){
       const prog=Math.max(0,Math.min(100,num(r.progress)||0));
       const oc=ownerColor(r.owner);
       const bx=sBarX+2, by=y+5, bw=Math.max(sBarW-4,8), bh=rowH-10;
-      // 底色半透明矩形
-      g+=`<rect x="${bx}" y="${by}" width="${bw}" height="${bh}" rx="5" fill="${oc}" fill-opacity="0.15" stroke="${oc}" stroke-width="0.5" stroke-opacity="0.3"/>`;
+      // 底色矩形（提高不透明度确保即使 0% 进度也可见）
+      g+=`<rect x="${bx}" y="${by}" width="${bw}" height="${bh}" rx="5" fill="${oc}" fill-opacity="0.35" stroke="${oc}" stroke-width="1" stroke-opacity="0.6"/>`;
       // 进度填充（有进度时才画）
       const isFirstSeg=(segs[0][0]===csi);
       const pw=bw*prog/100;
