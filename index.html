@@ -2457,8 +2457,17 @@ function setupFile(id,key){ const inp=$(id); const ta=()=>{ const t=$('#'+key+'I
       const text=sheetToTsv(ws);
       if(!text.trim()) throw new Error('工作表为空或无法解析，请确认首个工作表包含数据');
       ta().value=text;
-      /* 甘特图上传始终用 replace 模式（避免多次上传 merge 导致旧序列号等脏数据污染 ganttRaw） */
-      readInputs(key==='gantt' ? 'replace' : mode);
+      /* 甘特图上传：只替换甘特图数据（不影响销售/库存等其他段，防止误清空） */
+      if(key==='gantt'){
+        STATE.ganttRaw=text;
+        const ganttParsed=parseGantt(text);
+        STATE.gantt=mergeGantt([], ganttParsed); // replace 模式：清空历史只用本次数据
+        ensureGanttIds();
+        updateDiag(STATE.ganttRaw, STATE.gantt.length, 'Gantt', ganttParsed.length);
+        saveState(); renderAll(); saveToService();
+      } else {
+        readInputs(mode);
+      }
       toast('Excel 解析完成：'+(text.split('\n').length-1)+' 行已导入并存储');
     }
   }catch(err){ toast('Excel解析失败：'+(err.name||'Error')+' - '+err.message+'｜若已改过代码，请重新打开本页(Cmd+Shift+R)后再试', true); }
