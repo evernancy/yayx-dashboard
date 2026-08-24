@@ -206,7 +206,7 @@
   <section data-sub="inventory">
     <div class="panel">
       <h2>库存周转数据</h2>
-      <p class="hint"><b>模板 1（库存明细，逐 SKU）</b>：每行 = 一个 SKU 在某天的库存快照，含 时间 / 商品名称 / SKU / 品牌 / 一级~三级类目 / 店铺名称 / 供应商 / 全国采购价 / 库存件数 / 现货库存 / 可用库存 / 近7~90日出库商品件数 / 月至今出库商品件数 / 预计可售天数 / 无货pv / PV现货率 等全量列（列名自动识别，缺列留空）。同一「时间 + SKU」重复录入即覆盖更新。<br><b>看板已搭好以下 13 个库存周转指标（直接读列、缺列留空）：</b>库存金额、库存周转（天）、近7天销售（金额）、近14天销售（金额）、日均销售（金额）、60-90天长库龄预警金额（及基调/复调）、90天以上长库龄金额（及基调/复调）、PV现货率、实库现货率。<b>各指标的汇总/派生计算逻辑稍后由你确认后再接入。</b></p>
+      <p class="hint"><b>模板 1（库存明细，逐 SKU）</b>：每行 = 一个 SKU 在某天的库存快照，含 时间 / 商品名称 / SKU / 品牌 / 一级~三级类目 / 店铺名称 / 供应商 / 全国采购价 / 库存件数 / 现货库存 / 可用库存 / 近7~90日出库商品件数 / 月至今出库商品件数 / 预计可售天数 / 无货pv / PV现货率 等全量列（列名自动识别，缺列留空）。同一「时间 + SKU」重复录入即覆盖更新。<br><b>库存周转模块仅展示以下 13 个指标</b>（其余指标不再展示）：库存金额、库存周转（天）、近7天销售（金额）、近14天销售（金额）、日均销售（金额）、60-90天长库龄预警金额（及基调/复调）、90天以上长库龄金额（及基调/复调）、PV现货率、实库现货率。<br><b>库存金额已接计算逻辑</b>：库存金额 = Σ(库存明细:现货库存 × 全国采购价) + Σ(采购单:采购金额，按「订购时间」同日归并)；其余 12 项暂按读列展示（缺列留空）。</p>
       <div class="row" style="margin:6px 0 10px">
         <span>查看日期</span>
         <select id="invDate" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px"></select>
@@ -617,6 +617,10 @@ const ALIAS = {
   // —— 供应链「库存周转」每日聚合模板（20 列）——
   invQtyTotal:['全国库存（件数）','全国库存','库存件数','total_inv','inv_qty_total'],
   invAmount:['库存金额','inv_amount','stock_amount','库存总值'],
+  // —— 库存明细（模板1·逐SKU）专用：库存金额派生 = Σ(现货库存×全国采购价) + 采购单采购金额 ——
+  spotQty:['现货库存','现货','现货数量','on_hand','available_spot','spot_qty'],
+  purPrice:['全国采购价','采购价','单品采购价','unit_cost','purchase_price'],
+  poAmt:['采购金额','purchase_amount','po_amount','采购总金额','采购额'],
   turnDays:['库存周转（天）','库存周转天','turnover_days','库存周转'],
   s7qty:['近7天销售（件数）','近7天销售件数','s7_qty','近7天销量件数','7天销量(件)'],
   s7amt:['近7天销售（金额）','近7天销售金额','s7_amt','近7天销量金额','7天销量(额)'],
@@ -1096,6 +1100,7 @@ function invRow(r){
   return {
     date: r.date||'',
     invQtyTotal: g('invQtyTotal'), invAmount: g('invAmount'), turnDays: g('turnDays'),
+    spotQty: g('spotQty'), purPrice: g('purPrice'),
     s7qty: g('s7qty'), s7amt: g('s7amt'), s14qty: g('s14qty'), s14amt: g('s14amt'),
     dqty: g('dqty'), damt: g('damt'),
     age60: g('age60'), age60_j: g('age60_j'), age60_f: g('age60_f'),
@@ -1110,8 +1115,17 @@ function computeInv(asOf){
   const dates=[...new Set(rows.map(r=>r.date).filter(Boolean))].sort();
   const maxDate=dates[dates.length-1];
   const target=asOf||maxDate;                              // 选定查看日（默认最新）
-  // 每个日期取最后一条（每日全量快照），缺失列自然为 0、显示时留空
-  const all=dates.map(d=>{ const dr=rows.filter(r=>r.date===d); return invRow(dr[dr.length-1])||{date:d}; });
+  // 采购单：按「订购时间」归到对应日期（列名自动识别，缺日期则跳过）
+  const poByDate={};
+  (B().purchase_order||[]).forEach(r=>{ const d=String(r.date||r.订购时间||'').slice(0,10); if(!d) return; poByDate[d]=(poByDate[d]||0)+num(r.poAmt!==undefined?r.poAmt:r.采购金额); });
+  // 每个日期：12 项指标取最后一条快照（读列）；库存金额=Σ(库存明细:现货库存×全国采购价) + 当日采购单采购金额（派生）
+  const all=dates.map(d=>{
+    const dr=rows.filter(r=>r.date===d);
+    const x=invRow(dr[dr.length-1])||{date:d};
+    let sumSpot=0; dr.forEach(r=>{ const q=num(r.spotQty), p=num(r.purPrice); if(q||p) sumSpot+=q*p; });
+    x.invAmount = sumSpot + (poByDate[d]||0);
+    return x;
+  });
   const cur=all.find(x=>x.date===target)||all[all.length-1];
   if(!cur) return null;
   const turnArr=all.map(x=>x.turnDays).filter(v=>!isNaN(v));
@@ -1155,12 +1169,13 @@ function renderInv(){
     {label:'实库现货率',value:pctShow(x.realRate),cls:pctCls(x.realRate)},
   ]);
   lineChart('#invRate',{labels:c.dates, series:[
+    {name:'库存金额',data:c.all.map(x=>x.invAmount||null)},
     {name:'库存周转(天)',data:c.all.map(x=>x.turnDays||null)},
-    {name:'全链路周转',data:c.all.map(x=>x.fullChain||null)},
-  ], yFmt:v=>v==null?'—':v.toFixed(1)});
+  ], yFmt:v=>v==null?'—':(v>1000?fmt(v,0):v.toFixed(1))});
   lineChart('#invDays',{labels:c.dates, series:[
-    {name:'全国库存(件)',data:c.all.map(x=>x.invQtyTotal||null)},
-    {name:'日均销售(件)',data:c.all.map(x=>x.dqty||null)},
+    {name:'近7天销售(额)',data:c.all.map(x=>x.s7amt||null)},
+    {name:'近14天销售(额)',data:c.all.map(x=>x.s14amt||null)},
+    {name:'日均销售(额)',data:c.all.map(x=>x.damt||null)},
   ], yFmt:v=>v==null?'—':fmt(v,0)});
   let t='<table class="tpl" style="margin-top:8px"><tr><th>日期</th><th>库存金额</th><th>周转(天)</th><th>近7天销(额)</th><th>近14天销(额)</th><th>日均销(额)</th><th>60-90天预警</th><th>90天以上</th><th>60-90(基调)</th><th>60-90(复调)</th><th>90+(基调)</th><th>90+(复调)</th><th>PV现货率</th><th>实库现货率</th></tr>';
   c.all.forEach(x=>{ t+=`<tr><td>${esc(x.date)}</td><td>${fmtMoney(x.invAmount)}</td><td>${x.turnDays?x.turnDays.toFixed(1):'—'}</td><td>${fmtMoney(x.s7amt)}</td><td>${fmtMoney(x.s14amt)}</td><td>${fmtMoney(x.damt)}</td><td>${fmtMoney(x.age60)}</td><td>${fmtMoney(x.age90)}</td><td>${fmtMoney(x.age60_j)}</td><td>${fmtMoney(x.age60_f)}</td><td>${fmtMoney(x.age90_j)}</td><td>${fmtMoney(x.age90_f)}</td><td>${pctShow(x.pvRate)}</td><td>${pctShow(x.realRate)}</td></tr>`; });
@@ -1523,7 +1538,6 @@ function renderOverview(){
   const items=[];
   if(s){ items.push({label:'销售总额',value:fmtMoney(s.totalAmt),cls:'blue'}); items.push({label:'成交人数',value:fmt(s.totalBuyers,0)+' 人'}); }
   if(j){ items.push({label:'京准通花费',value:fmtMoney(j.totalSpend),cls:'red'}); items.push({label:'京准通GMV',value:fmtMoney(j.totalGmv),cls:'green'}); items.push({label:'推广ROI',value:j.roi.toFixed(2),cls:j.roi>=1?'green':'red'}); }
-  if(inv){ items.push({label:'平均周转(天)',value:inv.avgDays.toFixed(1)+'天'}); items.push({label:'长周转日数(>60)',value:inv.slow+'天',cls:inv.slow>0?'red':'green'}); }
   if(!items.length) ov.innerHTML='<div class="empty">尚未提供任何数据，请前往「数据输入区」</div>';
   else ov.innerHTML=kpiHTML(items);
   if(s){ const d=Object.keys(s.byDate).sort(); lineChart('#ovSalesTrend',{labels:d,series:[{name:'销售额',data:d.map(x=>s.byDate[x])}],yFmt:fmtMoney}); const ch=Object.entries(s.byChannel).sort((a,b)=>b[1]-a[1]); donutChart('#ovChannel',{data:ch.map(([k,v])=>({name:k,value:v})),yFmt:fmtMoney}); }
