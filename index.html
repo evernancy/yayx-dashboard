@@ -2670,7 +2670,7 @@ init();
       if(modalOpen()){ syncing=false; return; } // 编辑弹窗打开时不回灌
       var snap=await fetchPublicSnapshot();
       if(snap){
-        if(JSON.stringify(STATE)!==JSON.stringify(snap.state)){
+        if(JSON.stringify(dataOnly(STATE))!==JSON.stringify(dataOnly(snap.state))){
           currentBoard={id:snap.id||currentBoard.id, name:snap.name||currentBoard.name};
           hydrateFromState(snap.state); renderAll(); setupTodoAll();
         }
