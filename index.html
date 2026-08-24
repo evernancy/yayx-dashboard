@@ -2045,11 +2045,71 @@ function readInputs(mode, silent){
   if(!silent) toast(mode==='replace' ? '已按文本框内容全量重建并自动存储（刷新/重开不丢）' : ('已按增量更新并自动存储：新增 '+statAdd+' 行、重复 '+statDup+' 行已自动忽略（刷新/重开不丢，历史保留）'));
 }
 $('#applyBtn').addEventListener('click',readInputs);
-// 按数据内「品牌」列重新归户：修复已错归到其他品牌的历史数据（如丝蕴京准通误存到李锦记）
-$('#rehomeBtn').addEventListener('click',()=>{
+function showTransferDialog(){
+  const d=document.createElement('div'); d.id='transferDlg'; d.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:center;justify-content:center';
+  const navBrands=['李锦记','麦维他','丝蕴','和路雪','家乐','联合利华'];
+  const sections=[{k:'sales',l:'销售数据'},{k:'jzt',l:'京准通'},{k:'purchase',l:'浮码数据'}];
+  function realB(b){ return b==='麦维他'?'麦维他自营':b; }
+  function dispB(b){ return b==='麦维他自营'?'麦维他':b; }
+  d.innerHTML='<div style="background:var(--card);border-radius:12px;padding:24px;width:540px;max-width:90vw;box-shadow:0 8px 32px rgba(0,0,0,.3)">'+
+    '<h3 style="margin:0 0 16px;color:var(--text)">跨品牌数据迁移</h3>'+
+    '<p style="margin:0 0 14px;color:var(--text2);font-size:13px">将某个品牌的整块数据移动到另一个品牌。用于修复导入时选错品牌导致的数据错归（如京准通无「品牌」列，只能手动迁移）。</p>'+
+    '<div style="display:flex;gap:12px;margin-bottom:14px;align-items:flex-end">'+
+      '<label style="flex:1"><span style="font-size:13px;color:var(--text2)">数据类型</span><select id="xfSec" style="width:100%;margin-top:4px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text)">'+sections.map(s=>'<option value="'+s.k+'">'+s.l+'</option>').join('')+'</select></label>'+
+      '<label style="flex:1"><span style="font-size:13px;color:var(--text2)">从（源品牌）</span><select id="xfFrom" style="width:100%;margin-top:4px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text)"></select></label>'+
+      '<label style="flex:1"><span style="font-size:13px;color:var(--text2)">移到（目标品牌）</span><select id="xfTo" style="width:100%;margin-top:4px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text)"></select></label>'+
+    '</div>'+
+    '<div id="xfPreview" style="background:var(--bg2);border-radius:8px;padding:12px;font-size:12px;color:var(--text2);max-height:120px;overflow:auto;margin-bottom:14px;display:none"></div>'+
+    '<div style="display:flex;gap:10px;justify-content:flex-end">'+
+      '<button class="btn2 ghost" id="xfCancel" style="padding:7px 18px">取消</button>'+
+      '<button class="btn2 primary" id="xfDo" style="padding:7px 18px;background:var(--blue);color:#fff;border-color:var(--blue)" disabled>确认迁移</button>'+
+    '</div></div>';
+  document.body.appendChild(d);
+  const secSel=$('#xfSec'), fromSel=$('#xfFrom'), toSel=$('#xfTo'), prev=$('#xfPreview'), doBtn=$('#xfDo');
+  function buildFromOptions(sec){ const cur=fromSel.value;
+    fromSel.innerHTML=navBrands.map(b=>{ const rb=realB(b); const raw=(STATE.brands[rb]&&STATE.brands[rb]._raw[sec])||''; const rows=raw.replace(/\r/g,'').split('\n').filter(l=>l.trim()).length;
+      return'<option value="'+rb+'"'+(cur===rb?' selected':'')+'>'+dispB(rb)+(rows?' ('+rows+'行)':' (空)')+'</option>'; }).join(''); }
+  function buildToOptions(){ const cur=toSel.value;
+    toSel.innerHTML=navBrands.map(b=>{ const rb=realB(b); return'<option value="'+rb+'"'+(cur===rb?' selected':'')+(b==='麦维他'?' disabled':'')+'>'+dispB(rb)+'</option>'; }).join(''); }
+  buildFromOptions(secSel.value); buildToOptions();
+  function refresh(){ const sec=secSel.value, from=fromSel.value, to=toSel.value;
+    const raw=(STATE.brands[from]&&STATE.brands[from]._raw[sec])||''; const lines=raw.replace(/\r/g,'').split('\n').filter(l=>l.trim());
+    doBtn.disabled=(from===to || !lines.length);
+    if(lines.length){ prev.style.display='block'; prev.innerHTML='<b>预览（前5行）：</b><pre style="margin:4px 0 0;white-space:pre-wrap;max-height:90px;overflow:auto">'+lines.slice(0,6).join('\n')+'</pre><div style="margin-top:6px">共 <b>'+lines.length+'</b> 行数据将从「'+dispB(from)+'」→「'+dispB(to)+'」</div>'; } else { prev.style.display='none'; }
+  }
+  secSel.addEventListener('change',()=>{ buildFromOptions(secSel.value); refresh(); });
+  fromSel.addEventListener('change',refresh);
+  toSel.addEventListener('change',refresh);
+  refresh();
+  return new Promise(resolve=>{
+    $('#xfCancel').addEventListener('click',()=>{ d.remove(); resolve(null); });
+    $('#xfDo').addEventListener('click',()=>{
+      const sec=secSel.value, from=fromSel.value, to=toSel.value;
+      if(from===to){ d.remove(); resolve(0); return; }
+      const raw=(STATE.brands[from]&&STATE.brands[from]._raw[sec])||''; const lines=raw.replace(/\r/g,'').split('\n').filter(l=>l.trim());
+      if(!lines.length){ d.remove(); resolve(0); return; }
+      const toBrand=STATE.brands[to]; if(!toBrand){ d.remove(); resolve(0); return; }
+      toBrand._raw[sec]=mergeRaw(toBrand._raw[sec]||'', raw);
+      STATE.brands[from]._raw[sec]='';
+      d.remove(); resolve(lines.length);
+    });
+    d.addEventListener('click',e=>{ if(e.target===d) { d.remove(); resolve(null); } });
+  });
+}
+
+// 按数据内「品牌」列重新归户 + 无品牌列时提供手动迁移
+$('#rehomeBtn').addEventListener('click',async ()=>{
   const n=rehomeAllByBrand();
-  saveState(); renderAll(); saveToService(); syncBrandUI();
-  toast(n? ('已按「品牌」列重新归户，移动了 '+n+' 行到对应品牌（已自动存储）') : '已按「品牌」列检查，无跨品牌错归数据需调整');
+  if(n>0){ saveState(); renderAll(); saveToService(); syncBrandUI();
+    toast('已按「品牌」列重新归户，移动了 '+n+' 行到对应品牌（已自动存储）'); return; }
+  // 无品牌列或无错归 → 弹出手动迁移
+  const moved=await showTransferDialog();
+  if(moved==null) return; // 取消
+  if(moved>0){ saveState(); renderAll(); saveToService(); syncBrandUI();
+    toast('已手动迁移 '+moved+' 行数据到目标品牌（已自动存储）');
+  } else {
+    toast('未执行迁移（源品牌该数据为空或源目标相同）');
+  }
 });
 let deb; $('#salesInput').addEventListener('input',()=>{ clearTimeout(deb); deb=setTimeout(readInputs,700); });
 $('#invInput').addEventListener('input',()=>{ clearTimeout(deb); deb=setTimeout(readInputs,700); });
