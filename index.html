@@ -2257,12 +2257,12 @@ const ganttTplBtn=$('#ganttTplBtn'); if(ganttTplBtn) ganttTplBtn.addEventListene
   const ws2=XLSX.utils.aoa_to_sheet(sh);
   ws2['!cols']=[{wch:16},{wch:80}];
   const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws2, '填写说明');
   XLSX.utils.book_append_sheet(wb, ws, '模板');
+  XLSX.utils.book_append_sheet(wb, ws2, '填写说明');
   const wbout=XLSX.write(wb,{bookType:'xlsx',type:'array'});
   const blob=new Blob([wbout],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='甘特图填写模板_营销设计数据.xlsx'; a.click();
-  toast('已下载 Excel 模板（含「填写说明」+「模板」两个 Sheet，按「模块」列分流）');
+  toast('已下载 Excel 模板（含「模板」+「填写说明」两个 Sheet，首个 Sheet 为「模板」，按「模块」列分流）');
 });
 
 // 下载目标数据填写模板（真实 .xlsx：类型/粒度/周期/目标值，含示例行与空行，附填写说明表）
