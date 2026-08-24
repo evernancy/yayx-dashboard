@@ -794,6 +794,12 @@ function stripTargets(text, onTarget){
   return out.join('\n');
 }
 
+/* 把目标行数组序列化为文本（类型 粒度 周期 目标值，空格分隔），与 parseTargets 无表头模式互逆；用于把 targets 数组回填 _raw.targets，确保清除/重建时数据不丢 */
+function targetRowsToText(rows){
+  if(!Array.isArray(rows)||!rows.length) return '';
+  return rows.map(r=>`${(r.ttype||'').trim()} ${(r.tgran||'').trim()} ${(r.tperiod||'').trim()} ${(r.tvalue!==undefined?r.tvalue:'')}`.trim()).join('\n');
+}
+
 /* ---------- 样本数据 ---------- */
 function sampleSales(){return `时间\t商品名称\tSKU\t品牌\t一级类目\t二级类目\t三级类目\t店铺名称\t经营模式\t浏览量\t访客数\t人均浏览量\t平均停留时长\t成交人数\t成交转化率\t成交单量\t成交商品件数\t成交金额\t成交客单价\t加购人数\t加购转化率\t加购商品件数
 2026-08-01\t蓝牙耳机\tSKU-BE-01\t声学\t数码\t影音\t耳机\t京东自营旗舰店\t自营\t5200\t3800\t1.37\t95\t320\t8.42%\t300\t360\t107800\t359.33\t540\t14.21%\t410
@@ -2081,8 +2087,8 @@ function readInputs(mode, silent){
     const b=STATE.brands[brand];
     const seen={}; const tgt=[];
     const push=r=>{ if(!isTargetRow(r)) return; const k=(r.ttype||'')+'|'+(r.tgran||'')+'|'+(r.tperiod||''); if(!seen[k]){ seen[k]=1; tgt.push(r); } };
+    // 目标数据只从专属的「目标数据」输入框(_raw.targets)解析，禁止从销售/库存/京准通里乱抽目标行（那是导致目标数据被销售明细污染、清除时丢失的根因）
     parseTargets(b._raw.targets).forEach(push);
-    [b._raw.sales,b._raw.inventory,b._raw.jzt].forEach(t=>{ parseTargets(t).forEach(push); });
     const salesIn=aggregateRows(parseTable(stripTargets(b._raw.sales, push)));
     const invIn=parseTable(stripTargets(b._raw.inventory, push));
     const jztIn=aggregateRows(parseTable(stripTargets(b._raw.jzt, push)));
@@ -2446,7 +2452,10 @@ function normalizeState(st){
     BRANDS.forEach(b=>{ const src=st.brands[b]||{}; const dst=out.brands[b];
       dst.sales=Array.isArray(src.sales)?src.sales:[]; dst.inventory=Array.isArray(src.inventory)?src.inventory:[];
       dst.purchase=Array.isArray(src.purchase)?src.purchase:[]; dst.jzt=Array.isArray(src.jzt)?src.jzt:[]; dst.targets=Array.isArray(src.targets)?src.targets:[];
-      dst._raw=Object.assign({sales:'',inventory:'',jzt:'',targets:'',purchase:''}, src._raw||{}); dst.todo=src.todo||freshTodo(); });
+      dst._raw=Object.assign({sales:'',inventory:'',jzt:'',targets:'',purchase:''}, src._raw||{});
+      // 反向同步：若 _raw.targets 缺失（旧数据/历史 bug 导致），用已解析的 targets 数组回填，确保清除/重建时有正确文本来源、不会丢目标
+      if(!dst._raw.targets||!dst._raw.targets.trim()) dst._raw.targets=targetRowsToText(dst.targets);
+      dst.todo=src.todo||freshTodo(); });
   } else {
     const lij=out.brands['李锦记']; const oraw=st._raw||{};
     lij.sales=Array.isArray(st.sales)?st.sales:[]; lij.inventory=Array.isArray(st.inventory)?st.inventory:[];
@@ -2653,7 +2662,7 @@ function hydrateFromState(st){
 function fillInputsForCurrentBrand(){
   const b=B();
   $('#salesInput').value=b._raw.sales||''; $('#invInput').value=b._raw.inventory||''; $('#jztInput').value=b._raw.jzt||'';
-  $('#tgtInput').value=b._raw.targets||''; $('#ppInput').value=b._raw.purchase||''; $('#ganttInput').value=STATE.ganttRaw||'';
+  $('#tgtInput').value=(b._raw.targets&&b._raw.targets.trim())?b._raw.targets:targetRowsToText(b.targets||[]); $('#ppInput').value=b._raw.purchase||''; $('#ganttInput').value=STATE.ganttRaw||'';
   // 同步品牌栏与各输入区品牌选择器为当前品牌
   syncBrandUI();
 }
