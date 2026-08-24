@@ -545,14 +545,14 @@ const ALIAS = {
   date:['日期','时间','date','day','dt'],
   channel:['渠道','平台','来源','店铺名称','店铺','store','channel'],
   product:['商品','产品','商品名称','sku名','名称','product','item','goods','spu'],
-  sku:['sku','sku编码','编码','货号','item_code'],
+  sku:['sku','sku编码','编码','货号','item_code','商品id','商品id'],
   brand:['品牌','brand','brand_name'],
   cat1:['一级类目','类目1','cat1','level1','cate1'],
   cat2:['二级类目','类目2','cat2','level2','cate2'],
   cat3:['三级类目','类目3','cat3','level3','cate3'],
   bizModel:['经营模式','业务模式','经营类型','biz_model','model'],
   qty:['销量','数量','销售数量','件数','成交商品件数','商品件数','qty','quantity','sales','units'],
-  buyers:['成交人数','买家数','购买人数','客户数','下单人数','人数','buyers','customers','unique_buyers','purchasers','users'],
+  buyers:['成交人数','买家数','购买人数','客户数','下单人数','人数','buyers','customers','unique_buyers','purchasers','users','成交客户数'],
   amount:['销售额','营收','收入','成交金额','营业额','amount','revenue','sales_amount','gmv_amt'],
   cost:['成本','成本额','cost','cogs'],
   refund:['退款','退款额','refund','refunds'],
@@ -563,6 +563,8 @@ const ALIAS = {
   cvr:['成交转化率','转化率','cvr','conversion_rate','conv_rate'],
   orders:['订单数','订单','转化','订单量','成交单量','单量','orders','order','conversions','conv'],
   aov:['客单价','成交客单价','aov','avg_order_value'],
+  uvValue:['uv价值','uv_value','uv_val'],
+  unitPrice:['件单价','unit_price','price_per_unit'],
   cartUsers:['加购人数','加购用户','cart_users','atc_users','加购数'],
   cartCvr:['加购转化率','cart_cvr','atc_rate','加购率'],
   cartQty:['加购商品件数','加购件数','cart_qty','atc_qty'],
@@ -815,6 +817,13 @@ function sampleSales(){return `时间\t商品名称\tSKU\t品牌\t一级类目\t
 2026-08-02\t筋膜枪\tSKU-FG-03\t舒劲\t运动\t健身\t按摩\t抖音小店\t直播\t9100\t6700\t1.36\t80\t520\t7.76%\t480\t560\t111720\t232.75\t820\t12.24%\t700
 2026-08-03\t蓝牙耳机\tSKU-BE-01\t声学\t数码\t影音\t耳机\t天猫旗舰店\t平台\t4800\t3500\t1.37\t94\t300\t8.57%\t285\t340\t101660\t356.70\t500\t14.29%\t380
 2026-08-03\t智能手表\tSKU-SW-02\t腕造\t数码\t穿戴\t手表\t抖音小店\t直播\t5600\t4100\t1.37\t108\t280\t6.83%\t265\t300\t158700\t598.87\t590\t14.39%\t620`;}
+
+// 麦维他自营销售模板（商品维度明细，京东商智/生意参谋导出格式）
+function sampleSalesMcv(){return `时间	商品ID	商品名称	二级类目	三级类目	货号	访客数	浏览量	商品关注数	加购商品件数	加购人数	成交客户数	成交单量	成交商品件数	成交金额	成交转化率	UV价值	最近上架时间	详情页跳出率	搜索曝光量	搜索点击次数	搜索点击率	系统预测未来7天销量	下单客户数	下单商品件数	下单金额	下单成交转化率	下单转化率	PV现货率	客单价	件单价	商品综合得分
+2026-08-01	B07XMCV001	麦维他消化饼干400g	饼干蛋糕	饼干	MCV-HG-001	3200	8600	210	430	380	156	162	198	12860	4.88%	4.02	2026-05-12	38.5%	12000	560	4.67%	320	180	210	14200	5.63%	6.56%	0.98	82.10	64.95	86.3
+2026-08-01	B07XMcv002	麦维他巧克力威化200g	饼干蛋糕	威化	MCV-WF-002	2800	7400	180	360	320	132	138	165	10890	4.71%	3.89	2026-06-01	41.2%	9800	430	4.39%	280	150	175	11900	5.36%	6.25%	0.97	79.35	66.00	84.7
+2026-08-02	B07XMCV001	麦维他消化饼干400g	饼干蛋糕	饼干	MCV-HG-001	3350	8900	225	450	395	164	170	205	13330	4.90%	3.98	2026-05-12	37.9%	12500	585	4.68%	335	188	218	14700	5.66%	6.61%	0.98	79.46	65.40	87.1
+2026-08-02	B07XMCV002	麦维他巧克力威化200g	饼干蛋糕	威化	MCV-WF-002	2950	7700	190	372	330	138	144	172	11360	4.68%	3.85	2026-06-01	40.8%	10100	445	4.41%	290	156	182	12350	5.39%	6.29%	0.97	78.47	67.85	85.2`;}
 
 function sampleInv(){return `日期\t全国库存（件数）\t库存金额\t库存周转（天）\t近7天销售（件数）\t近7天销售（金额）\t近14天销售（件数）\t近14天销售（金额）\t日均销售（件数）\t日均销售（金额）\t60+长库龄金额\t60+长库龄金额（基调）\t60+长库龄金额（复调）\t滞销金额\t滞销金额（基调）\t滞销金额（复调）\tPV现货率\t实库现货率\t巢湖库存\t全链路周转
 2026-08-01\t12500\t2860000\t32.5\t2100\t485000\t4200\t968000\t300\t69200\t180000\t120000\t60000\t95000\t60000\t35000\t0.96\t0.94\t3200\t38.2
@@ -2272,8 +2281,13 @@ $('#ppInput').addEventListener('input',()=>{ clearTimeout(deb); deb=setTimeout(r
 
 $$('[data-fill]').forEach(b=>{ b.addEventListener('click',()=>{
   const map={sales:'#salesInput',inventory:'#invInput',jzt:'#jztInput',targets:'#tgtInput',gantt:'#ganttInput',purchase:'#ppInput'};
-  const src={sales:sampleSales,inventory:sampleInv,jzt:sampleJzt,targets:sampleTargets,gantt:sampleGantt,purchase:samplePurchase};
-  $(map[b.dataset.fill]).value=src[b.dataset.fill]();
+  // 销售模板按品牌区分（麦维他自营用商品维度明细模板，李锦记/其他沿用原模板）
+  const salesSrc={ '麦维他自营':sampleSalesMcv, '麦维他POP':sampleSalesMcv };
+  const sec=b.dataset.fill;
+  let val;
+  if(sec==='sales'){ const sel=document.getElementById('brand_sales'); val=(salesSrc[(sel&&sel.value)]||sampleSales)(); }
+  else { const src={inventory:sampleInv,jzt:sampleJzt,targets:sampleTargets,gantt:sampleGantt,purchase:samplePurchase}; val=src[sec](); }
+  $(map[sec]).value=val;
   readInputs();
 }); });
 
