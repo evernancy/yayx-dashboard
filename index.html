@@ -617,10 +617,13 @@ const ALIAS = {
   // —— 供应链「库存周转」每日聚合模板（20 列）——
   invQtyTotal:['全国库存（件数）','全国库存','库存件数','total_inv','inv_qty_total'],
   invAmount:['库存金额','inv_amount','stock_amount','库存总值'],
-  // —— 库存明细（模板1·逐SKU）专用：库存金额派生 = Σ(现货库存×全国采购价) + 采购单采购金额 ——
+  // —— 库存明细（模板1·逐SKU）专用：库存金额/周转/销售金额派生 ——
   spotQty:['现货库存','现货','现货数量','on_hand','available_spot','spot_qty'],
   purPrice:['全国采购价','采购价','单品采购价','unit_cost','purchase_price'],
   poAmt:['采购金额','purchase_amount','po_amount','采购总金额','采购额'],
+  outBO:['月至今出库商品件数','月至今出库','月至今出库件数','mtd_out','out_mtd','bo'],
+  outBI:['近7日出库商品件数','近7日出库','近7日出库件数','7d_out','out_7d','bi'],
+  outBJ:['近14日出库商品件数','近14日出库','近14日出库件数','14d_out','out_14d','bj'],
   turnDays:['库存周转（天）','库存周转天','turnover_days','库存周转'],
   s7qty:['近7天销售（件数）','近7天销售件数','s7_qty','近7天销量件数','7天销量(件)'],
   s7amt:['近7天销售（金额）','近7天销售金额','s7_amt','近7天销量金额','7天销量(额)'],
@@ -1101,6 +1104,7 @@ function invRow(r){
     date: r.date||'',
     invQtyTotal: g('invQtyTotal'), invAmount: g('invAmount'), turnDays: g('turnDays'),
     spotQty: g('spotQty'), purPrice: g('purPrice'),
+    outBO: g('outBO'), outBI: g('outBI'), outBJ: g('outBJ'),
     s7qty: g('s7qty'), s7amt: g('s7amt'), s14qty: g('s14qty'), s14amt: g('s14amt'),
     dqty: g('dqty'), damt: g('damt'),
     age60: g('age60'), age60_j: g('age60_j'), age60_f: g('age60_f'),
@@ -1118,19 +1122,28 @@ function computeInv(asOf){
   // 采购单：按「订购时间」归到对应日期（列名自动识别，缺日期则跳过）
   const poByDate={};
   (B().purchase_order||[]).forEach(r=>{ const d=String(r.date||r.订购时间||'').slice(0,10); if(!d) return; poByDate[d]=(poByDate[d]||0)+num(r.poAmt!==undefined?r.poAmt:r.采购金额); });
-  // 每个日期：12 项指标取最后一条快照（读列）；库存金额=Σ(库存明细:现货库存×全国采购价) + 当日采购单采购金额（派生）
+  // 每个日期：派生 13 项指标（库存金额/周转天/各销售金额按公式计算，库龄/现货率读列）
   const all=dates.map(d=>{
     const dr=rows.filter(r=>r.date===d);
     const x=invRow(dr[dr.length-1])||{date:d};
-    let sumSpot=0; dr.forEach(r=>{ const q=num(r.spotQty), p=num(r.purPrice); if(q||p) sumSpot+=q*p; });
-    x.invAmount = sumSpot + (poByDate[d]||0);
+    // 库存金额 = Σ(现货库存×全国采购价) + 当日采购单采购金额
+    let sumSpot=0, mtdOutAmt=0, biAmt=0, bjAmt=0;
+    dr.forEach(r=>{ const p=num(r.purPrice); if(p){ sumSpot+=num(r.spotQty)*p; mtdOutAmt+=num(r.outBO)*p; biAmt+=num(r.outBI)*p; bjAmt+=num(r.outBJ)*p; } });
+    const invAmt = sumSpot + (poByDate[d]||0);
+    // 月至今 T-1 天 = 当月已过天数（不含当天）
+    const dt=new Date(d+'T00:00:00'); const T1=dt.getDate()-1;
+    x.invAmount = invAmt;
+    x.s7amt = biAmt;                                  // 近7天销售(额) = 近7日出库×采购价
+    x.s14amt = bjAmt;                                 // 近14天销售(额) = 近14日出库×采购价
+    x.damt = (T1>0 && mtdOutAmt>0)? mtdOutAmt/T1 : null;  // 日均销售(额) = 月至今出库额 / T-1天
+    x.turnDays = (T1>0 && mtdOutAmt>0)? invAmt/mtdOutAmt*T1 : null;  // 周转(天) = 库存金额 / 月至今出库额 × T-1天
     return x;
   });
   const cur=all.find(x=>x.date===target)||all[all.length-1];
   if(!cur) return null;
-  const turnArr=all.map(x=>x.turnDays).filter(v=>!isNaN(v));
-  const avgDays= turnArr.length? sum(turnArr)/turnArr.length : 0;   // 平均周转天数（跨日期均值）
-  const slow= all.filter(x=>x.turnDays>60).length;                  // 长周转(>60天)天数
+  const turnArr=all.map(x=>x.turnDays).filter(v=>v!=null&&!isNaN(v));
+  const avgDays= turnArr.length? sum(turnArr)/turnArr.length : 0;
+  const slow= all.filter(x=>x.turnDays>60).length;
   return {all, cur, dates, maxDate, target, avgDays, slow};
 }
 function posDailyMap(){
