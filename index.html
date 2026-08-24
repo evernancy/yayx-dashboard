@@ -2500,15 +2500,25 @@ function sheetToTsv(ws){
       if(!cell||cell.t==='z'||cell.v===undefined){ row.push(''); continue; }
       let val;
       /* 数字单元格：Excel 内部以「序列号」存日期（如 46265），规范转换；优先用 v 避免美式格式文本污染 */
-      if(cell.t==='n' && Math.floor(cell.v)>25000 && Math.floor(cell.v)<70000){ val=normDate(String(Math.floor(cell.v))); }
+      /* 修复：金额等数值可能落在 [25000,70000] 区间（如 ¥46144），不能仅凭数值范围判断为日期；需结合格式化文本 w 辅助判断 */
+      if(cell.t==='n' && Math.floor(cell.v)>25000 && Math.floor(cell.v)<70000){
+        const fw=cell.w!==undefined?String(cell.w):'';
+        /* 若 w 是纯数字且等于 v 的整数部分，说明该单元格实际是数值（如成交金额），不应转为日期 */
+        if(fw && /^\d+$/.test(fw) && Number(fw)===Math.floor(cell.v)) val=fw;
+        else val=normDate(String(Math.floor(cell.v)));
+      }
       /* 文本/日期单元格：优先用格式化文本 w，再用 v；w 仍非标准（如 8/31/26）时若 v 是序列号则转换 */
       else if(cell.w!==undefined && String(cell.w).trim()) val=String(cell.w).trim();
-      else if(typeof cell.v==='number' && Math.floor(cell.v)>25000 && Math.floor(cell.v)<70000){ val=normDate(String(Math.floor(cell.v))); }
+      else if(typeof cell.v==='number' && Math.floor(cell.v)>25000 && Math.floor(cell.v)<70000){
+        const fw2=cell.w!==undefined?String(cell.w):'';
+        if(fw2 && /^\d+$/.test(fw2) && Number(fw2)===Math.floor(cell.v)) val=fw2;
+        else val=normDate(String(Math.floor(cell.v)));
+      }
       else if(cell.t==='d'||cell.v instanceof Date){ val=normDate(String(cell.v)); }
       else if(cell.t==='b'){ val=cell.v?'TRUE':'FALSE'; }
       else { val=String(cell.v); }
-      /* 兜底：若结果仍非标准日期字符串（如 8/31/26），尝试再次归一 */
-      if(typeof val==='string' && !/^\d{4}-\d{2}-\d{2}$/.test(val)){ const nd=normDate(val); if(nd!==val) val=nd; }
+      /* 兜底：若结果仍非标准日期字符串（如 8/31/26），尝试再次归一；纯数字说明是金额等数值，跳过避免被误转为日期 */
+      if(typeof val==='string' && !/^\d{4}-\d{2}-\d{2}$/.test(val) && !/^\d+$/.test(val)){ const nd=normDate(val); if(nd!==val) val=nd; }
       row.push(val);
     }
     out.push(row.join('\t'));
