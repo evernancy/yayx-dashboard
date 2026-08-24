@@ -206,7 +206,7 @@
   <section data-sub="inventory">
     <div class="panel">
       <h2>库存周转数据</h2>
-      <p class="hint">支持「供应链库存周转」模板（每日一行聚合，20 列）：日期、全国库存（件数）、库存金额、库存周转（天）、近7天销售（件数/金额）、近14天销售（件数/金额）、日均销售（件数/金额）、60+长库龄金额（含基调/复调）、滞销金额（含基调/复调）、PV现货率、实库现货率、巢湖库存、全链路周转。列名自动识别；<b>若上传表格里缺某一列，则该列留空、不影响其余指标计算</b>。每天一行，按「日期」取最新快照展示，历史按日期追加不清。</p>
+      <p class="hint"><b>模板 1（库存明细，逐 SKU）</b>：每行 = 一个 SKU 在某天的库存快照，含 时间 / 商品名称 / SKU / 品牌 / 一级~三级类目 / 店铺名称 / 供应商 / 全国采购价 / 库存件数 / 现货库存 / 可用库存 / 近7~90日出库商品件数 / 月至今出库商品件数 / 预计可售天数 / 无货pv / PV现货率 等全量列（列名自动识别，缺列留空）。<b>当前计算口径仍为旧的「每日聚合(20列)」模式，逐 SKU 明细的完整计算逻辑稍后由你确认后再接入；现在上传仅做录入与存储。</b>同一「时间 + SKU」重复录入即覆盖更新。</p>
       <div class="row" style="margin:6px 0 10px">
         <span>查看日期</span>
         <select id="invDate" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px"></select>
@@ -347,7 +347,7 @@
           <button class="btn2 ghost" id="invTplBtn">下载填写模板</button>
           <button class="btn2 ghost clearBtn" data-which="inventory">清除历史</button>
         </div>
-        <textarea id="invInput" placeholder="日期&#9;全国库存（件数）&#9;库存金额&#9;库存周转（天）&#9;近7天销售（件数）&#9;近7天销售（金额）&#9;近14天销售（件数）&#9;近14天销售（金额）&#9;日均销售（件数）&#9;日均销售（金额）&#9;60+长库龄金额&#9;60+长库龄金额（基调）&#9;60+长库龄金额（复调）&#9;滞销金额&#9;滞销金额（基调）&#9;滞销金额（复调）&#9;PV现货率&#9;实库现货率&#9;巢湖库存&#9;全链路周转（供应链库存周转模板；缺列留空，列名自动识别）"></textarea>
+        <textarea id="invInput" placeholder="时间&#9;商品名称&#9;SKU&#9;品牌&#9;一级类目&#9;二级类目&#9;三级类目&#9;店铺名称&#9;供应商简码&#9;供应商名称&#9;全国采购价&#9;库存件数&#9;现货库存&#9;可用库存&#9;近7日出库商品件数&#9;近28日出库商品件数&#9;月至今出库商品件数&#9;预计可售天数&#9;无货pv&#9;PV现货率&#9;（模板1·库存明细·逐SKU全量列；缺列留空，列名自动识别；计算口径稍后接入）"></textarea>
         <div class="diag" id="diagInv"></div>
       </details>
 
@@ -372,6 +372,29 @@
         </div>
         <textarea id="ppInput" placeholder="时间&#9;SKU&#9;浮码&#9;全国昨日出库商品件数（浮码单独录入；用于计算POS；缺列留空，列名自动识别）"></textarea>
         <div class="diag" id="diagPp"></div>
+      </details>
+
+      <details>
+        <summary>3.5 · 采购单数据（模板 2，独立录入，不并入库存周转）</summary>
+        <p class="hint">采购单数据与库存周转数据相互独立，本框单独录入、单独存储。表头：采购单号 / 采购渠道 / 合同主体 / 供应商简码 / 供应商名称 / 商品编号 / 商品名称 / 订单属性 / 配送中心 / 京东仓库 / 京东库房地址 / 京东站点 / 京东站点地址 / 收货负责人 / 收货电话 / 采购价格 / 原始采购数量 / 采购数量 / 实收数量 / 贴码建议 / 京东贴码数量 / 溯源贴码 / 重码UPC / UPC码 / 采购金额 / 实收金额 / 采购单位 / 币种 / 采购员 / 建单人 / 订单状态 / 订购时间 等全量列（列名自动识别，缺列留空）。<b>当前仅做录入与存储，计算口径稍后由你确认后再接入。</b></p>
+        <div class="row">
+          <span class="muted" style="font-size:12px">品牌</span>
+          <select id="brand_purchase_order" class="secBrand" data-sec="purchase_order" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px">
+            <option value="李锦记">李锦记</option>
+            <option value="麦维他自营">麦维他自营</option>
+            <option value="麦维他POP">麦维他POP</option>
+            <option value="丝蕴">丝蕴</option>
+            <option value="和路雪">和路雪</option>
+            <option value="家乐">家乐</option>
+            <option value="联合利华">联合利华</option>
+          </select>
+          <label class="filelabel">上传文件<input type="file" id="poFile" accept=".csv,.xlsx,.xls" hidden></label>
+          <button class="btn2 ghost" data-fill="purchase_order">填入模板</button>
+          <button class="btn2 ghost" id="poTplBtn">下载填写模板</button>
+          <button class="btn2 ghost clearBtn" data-which="purchase_order">清除历史</button>
+        </div>
+        <textarea id="poInput" placeholder="采购单号&#9;采购渠道&#9;合同主体&#9;供应商简码&#9;供应商名称&#9;商品编号&#9;商品名称&#9;订单属性&#9;配送中心&#9;京东仓库&#9;采购价格&#9;原始采购数量&#9;采购数量&#9;实收数量&#9;采购金额&#9;实收金额&#9;采购员&#9;建单人&#9;订单状态&#9;订购时间&#9;（模板2·采购单·全量列；缺列留空，列名自动识别）"></textarea>
+        <div class="diag" id="diagPo"></div>
       </details>
 
       <details>
@@ -901,11 +924,17 @@ function samplePurchase(){return `时间\tSKU\t浮码\t全国昨日出库商品�
 2026-08-18\tSKU-SW-02\t235\t860
 2026-08-18\tSKU-FG-03\t58\t1420`;}
 
+// 模板2：采购单（约70列，逐行=一张采购单明细），示例仅含若干核心列示意
+function samplePurchaseOrder(){return `采购单号\t采购渠道\t合同主体\t供应商简码\t供应商名称\t商品编号\t商品名称\t订单属性\t配送中心\t京东仓库\t采购价格\t原始采购数量\t采购数量\t实收数量\t采购金额\t实收金额\t采购单位\t币种\t采购员\t建单人\t订单状态\t订购时间
+PO20260817001\t京东自营\tXX贸易有限公司\tS001\tXX食品供应商\tSKU-BE-01\t李锦记蒸鱼豉油610g\t普通\tRDC-华东\t京东上海仓\t18.50\t1000\t1000\t980\t18500.00\t18130.00\t瓶\tCNY\t张三\t李四\t已入库\t2026-08-17
+PO20260817002\t京东自营\tXX贸易有限公司\tS002\tXX调味供应商\tSKU-SW-02\t李锦记旧庄蚝油510g\t普通\tRDC-华南\t京东广州仓\t12.30\t800\t800\t800\t9840.00\t9840.00\t瓶\tCNY\t张三\t李四\t已入库\t2026-08-17
+PO20260818003\t京东POP\tXX商贸有限公司\tS003\tXX粮油供应商\tSKU-FG-03\t李锦记锦珍生抽1.6L\t普通\tRDC-华北\t京东北京仓\t22.80\t1500\t1500\t1450\t34200.00\t33060.00\t瓶\tCNY\t王五\t赵六\t部分入库\t2026-08-18`;}
+
 /* ---------- 状态与持久化 ---------- */
 const STORE_KEY='ecom_dashboard_v2';
 // 多品牌：每个品牌独立存储 销售/库存周转/浮码/京准通/目标/待办/原始输入；甘特图为三模块共享（不按品牌拆分）
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
-function freshBrand(){ return { sales:[], inventory:[], purchase:[], jzt:[], targets:[], _raw:{sales:'',inventory:'',jzt:'',targets:'',purchase:''}, todo:freshTodo() }; }
+function freshBrand(){ return { sales:[], inventory:[], purchase:[], purchase_order:[], jzt:[], targets:[], _raw:{sales:'',inventory:'',jzt:'',targets:'',purchase:'',purchase_order:''}, todo:freshTodo() }; }
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 let STATE=emptyState();
 let invAsOf=null; // 库存周转「查看日期」：null=最新一天
@@ -1858,9 +1887,9 @@ function findDateCol(header, which){
 }
 // date 是否落在 [d, ed] 内（ed 空=只看 d 当天）
 function dateInRange(date, d, ed){ if(!d) return false; if(!ed) return d===date; return date>=d && date<=ed; }
-const CLEAR_NAME={sales:'销售',inventory:'库存周转',jzt:'京准通',targets:'目标',gantt:'甘特图',purchase:'浮码'};
+const CLEAR_NAME={sales:'销售',inventory:'库存周转',jzt:'京准通',targets:'目标',gantt:'甘特图',purchase:'浮码',purchase_order:'采购单'};
 let cmWhich=null;
-const CLEAR_EL={sales:'#salesInput',inventory:'#invInput',jzt:'#jztInput',targets:'#tgtInput',gantt:'#ganttInput',purchase:'#ppInput'};
+const CLEAR_EL={sales:'#salesInput',inventory:'#invInput',jzt:'#jztInput',targets:'#tgtInput',gantt:'#ganttInput',purchase:'#ppInput',purchase_order:'#poInput'};
 // 目标「类型」列下标
 function findTypeCol(header){
   const cells=String(header||'').split(/\t|,/).map(s=>String(s||'').trim().toLowerCase());
@@ -2031,6 +2060,7 @@ function reparseBrand(brand){
   b.inventory=parseTable(stripTargets(b._raw.inventory||'', push));
   b.jzt=aggregateRows(parseTable(stripTargets(b._raw.jzt||'', push)));
   b.purchase=parseTable(b._raw.purchase||'');
+  b.purchase_order=parseTable(b._raw.purchase_order||'');
   b.targets=tgt;
 }
 // 全部品牌清除：遍历每个品牌，对其 _raw[which] 应用 filter 后重建
@@ -2162,7 +2192,7 @@ function syncBrandUI(){
     p.classList.toggle('active', currentView==='lijx' && active);
   });
   // 输入区选择器：麦维他渠道保持当前渠道（自营/POP），其余品牌选自身
-  ['sales','inventory','purchase','jzt','targets'].forEach(w=>{ const sel=document.getElementById('brand_'+w); if(sel) sel.value=STATE.currentBrand; });
+  ['sales','inventory','purchase','purchase_order','jzt','targets'].forEach(w=>{ const sel=document.getElementById('brand_'+w); if(sel) sel.value=STATE.currentBrand; });
 }
 function switchBrand(name){
   // 「麦维他」为顶层品牌 tab，实际数据按渠道存于「麦维他自营」（默认渠道）
@@ -2178,8 +2208,8 @@ function switchBrand(name){
 // 数据输入区：某个 section 切换品牌 → 仅将该 section 的文本框填充为目标品牌的原始输入（不影响其他 section）
 $$('.secBrand').forEach(sel=>sel.addEventListener('change',()=>{
   const w=sel.dataset.sec, b=STATE.brands[sel.value]; if(!b) return;
-  const TA_ID={sales:'salesInput',inventory:'invInput',purchase:'ppInput',jzt:'jztInput',targets:'tgtInput'};
-  const DIAG_KEY={sales:'Sales',inventory:'Inv',purchase:'Pp',jzt:'Jzt',targets:'Targets'};
+  const TA_ID={sales:'salesInput',inventory:'invInput',purchase:'ppInput',purchase_order:'poInput',jzt:'jztInput',targets:'tgtInput'};
+  const DIAG_KEY={sales:'Sales',inventory:'Inv',purchase:'Pp',purchase_order:'Po',jzt:'Jzt',targets:'Targets'};
   $('#'+TA_ID[w]).value=b._raw[w]||'';
   updateDiag(b._raw[w]||'', w==='targets'?parseTargets(b._raw[w]||'').length:(b[w]||[]).length, DIAG_KEY[w]);
 }));
@@ -2240,9 +2270,9 @@ function routeRawByBrand(w, cur, fallback, edited){
 
 function readInputs(mode, silent){
   mode=mode||'merge';
-  const SECTIONS=['sales','inventory','jzt','targets','purchase'];
-  const TA={sales:'salesInput',inventory:'invInput',jzt:'jztInput',targets:'tgtInput',purchase:'ppInput'};
-  const DIAG={sales:'Sales',inventory:'Inv',jzt:'Jzt',targets:'Targets',purchase:'Pp'};
+  const SECTIONS=['sales','inventory','jzt','targets','purchase','purchase_order'];
+  const TA={sales:'salesInput',inventory:'invInput',jzt:'jztInput',targets:'tgtInput',purchase:'ppInput',purchase_order:'poInput'};
+  const DIAG={sales:'Sales',inventory:'Inv',jzt:'Jzt',targets:'Targets',purchase:'Pp',purchase_order:'Po'};
   // 每个输入框所属品牌：取对应 <select id="brand_xxx"> 的当前值（无效则回退当前查看品牌）
   const brandOf={}; const edited=new Set();
   SECTIONS.forEach(w=>{ const sel=document.getElementById('brand_'+w); const v=(sel&&sel.value)||STATE.currentBrand; brandOf[w]=(STATE.brands[v]?v:STATE.currentBrand); edited.add(brandOf[w]); });
@@ -2266,21 +2296,23 @@ function readInputs(mode, silent){
     const invIn=parseTable(stripTargets(b._raw.inventory, push));
     const jztIn=aggregateRows(parseTable(stripTargets(b._raw.jzt, push)));
     const ppIn=parseTable(b._raw.purchase||'');
+    const poIn=parseTable(b._raw.purchase_order||'');
     const tgtIn=tgt;
     // 增量上传(merge)：与已有数据按业务键合并（重复自动忽略）；全量替换(replace)：以文本框为准整组重建
     if(mode==='replace'){
-      b.sales=salesIn; b.inventory=invIn; b.jzt=jztIn; b.targets=tgtIn; b.purchase=ppIn;
+      b.sales=salesIn; b.inventory=invIn; b.jzt=jztIn; b.targets=tgtIn; b.purchase=ppIn; b.purchase_order=poIn;
     } else {
-      const sb=b.sales.length, ib=b.inventory.length, jb=b.jzt.length, pb=b.purchase.length, tb=b.targets.length;
+      const sb=b.sales.length, ib=b.inventory.length, jb=b.jzt.length, pb=b.purchase.length, pob=b.purchase_order.length, tb=b.targets.length;
       b.sales=mergeRows(b.sales||[], salesIn);
       b.inventory=mergeRows(b.inventory||[], invIn);
       b.jzt=mergeRows(b.jzt||[], jztIn);
       b.targets=mergeTargetRows(b.targets||[], tgtIn);
       b.purchase=mergeRows(b.purchase||[], ppIn);
-      statAdd+=(b.sales.length-sb)+(b.inventory.length-ib)+(b.jzt.length-jb)+(b.purchase.length-pb)+(b.targets.length-tb);
+      b.purchase_order=mergeRows(b.purchase_order||[], poIn);
+      statAdd+=(b.sales.length-sb)+(b.inventory.length-ib)+(b.jzt.length-jb)+(b.purchase.length-pb)+(b.purchase_order.length-pob)+(b.targets.length-tb);
       statDup+=Math.max(0, salesIn.length-(b.sales.length-sb)) + Math.max(0, invIn.length-(b.inventory.length-ib))
              + Math.max(0, jztIn.length-(b.jzt.length-jb)) + Math.max(0, ppIn.length-(b.purchase.length-pb))
-             + Math.max(0, tgtIn.length-(b.targets.length-tb));
+             + Math.max(0, poIn.length-(b.purchase_order.length-pob)) + Math.max(0, tgtIn.length-(b.targets.length-tb));
     }
   });
   // 甘特图重建（共享）：replace 模式清空历史只用本次数据；merge 模式增量合并
@@ -2300,15 +2332,16 @@ $('#jztInput').addEventListener('input',()=>{ clearTimeout(deb); deb=setTimeout(
 $('#tgtInput').addEventListener('input',()=>{ clearTimeout(deb); deb=setTimeout(readInputs,700); });
 $('#ganttInput').addEventListener('input',()=>{ clearTimeout(deb); deb=setTimeout(readInputs,700); });
 $('#ppInput').addEventListener('input',()=>{ clearTimeout(deb); deb=setTimeout(readInputs,700); });
+$('#poInput').addEventListener('input',()=>{ clearTimeout(deb); deb=setTimeout(readInputs,700); });
 
 $$('[data-fill]').forEach(b=>{ b.addEventListener('click',()=>{
-  const map={sales:'#salesInput',inventory:'#invInput',jzt:'#jztInput',targets:'#tgtInput',gantt:'#ganttInput',purchase:'#ppInput'};
+  const map={sales:'#salesInput',inventory:'#invInput',jzt:'#jztInput',targets:'#tgtInput',gantt:'#ganttInput',purchase:'#ppInput',purchase_order:'#poInput'};
   // 销售模板按品牌区分（麦维他自营/麦维他POP 各有独立模板，李锦记/其他沿用原模板）
   const salesSrc={ '麦维他自营':sampleSalesMcv, '麦维他POP':sampleSalesPop };
   const sec=b.dataset.fill;
   let val;
   if(sec==='sales'){ const sel=document.getElementById('brand_sales'); val=(salesSrc[(sel&&sel.value)]||sampleSales)(); }
-  else { const src={inventory:sampleInv,jzt:sampleJzt,targets:sampleTargets,gantt:sampleGantt,purchase:samplePurchase}; val=src[sec](); }
+  else { const src={inventory:sampleInv,jzt:sampleJzt,targets:sampleTargets,gantt:sampleGantt,purchase:samplePurchase,purchase_order:samplePurchaseOrder}; val=src[sec](); }
   $(map[sec]).value=val;
   readInputs();
 }); });
@@ -2393,44 +2426,76 @@ const tgtTplBtn=$('#tgtTplBtn'); if(tgtTplBtn) tgtTplBtn.addEventListener('click
   toast('已下载 Excel 模板（.xlsx，含「目标数据」+「填写说明」两个 Sheet）');
 });
 
-// 下载库存周转填写模板（真实 .xlsx：20 列供应链库存周转模板，含示例行与空行，附填写说明表）
+// 下载库存周转填写模板（真实 .xlsx：模板1 库存明细·逐SKU 全量列，含示例行与空行，附填写说明表）
 const invTplBtn=$('#invTplBtn'); if(invTplBtn) invTplBtn.addEventListener('click',()=>{
   const t=new Date(); const y=t.getFullYear(), m=String(t.getMonth()+1).padStart(2,'0');
   const d=n=>`${y}-${m}-${String(n).padStart(2,'0')}`;
-  const rows=[
-    ['日期','全国库存（件数）','库存金额','库存周转（天）','近7天销售（件数）','近7天销售（金额）','近14天销售（件数）','近14天销售（金额）','日均销售（件数）','日均销售（金额）','60+长库龄金额','60+长库龄金额（基调）','60+长库龄金额（复调）','滞销金额','滞销金额（基调）','滞销金额（复调）','PV现货率','实库现货率','巢湖库存','全链路周转'],
-    [d(1),12500,2860000,32.5,2100,485000,4200,968000,300,69200,180000,120000,60000,95000,60000,35000,0.96,0.94,3200,38.2],
-    [d(2),12100,2773000,31.8,2250,520000,4300,991000,322,74200,175000,115000,60000,92000,58000,34000,0.95,0.93,3100,37.6],
-    [d(3),11850,2715000,31.2,2380,549000,4500,1037000,340,78300,168000,110000,58000,90000,56000,34000,0.95,0.92,3050,37.1],
-    ['','','','','','','','','','','','','','','','','','','',''],
-    ['','','','','','','','','','','','','','','','','','','',''],
-    ['','','','','','','','','','','','','','','','','','','','']
-  ];
+  const head='时间\t商品名称\tSKU\t品牌\t一级类目\t二级类目\t三级类目\t店铺名称\t供应商简码\t供应商名称\t是否售完即止\t是否厂直\t全国厂直可用库存\t是否影分身\t是否虚拟组套\t是否虚拟品类\t上下柜状态\t上柜时间\t是否平行库存\t是否赠品\tSPU编码\t条形码\t全国采购价\t保质期\t长度\t宽度\t高度\t重量\t采购员名称\t采控员名称\t全国7日三级销量band\t全国28日三级销量band\tRDC\t配送中心\t仓网选品打标\t上级B配送中心编码\t上级B配送中心名称\t配送方式\t库存件数\t现货库存\t内配在途库存\t内配入\t内配出\t已锁定\t可用库存\t采购未到货\t可订购库存\t订单预定\t不可售\t退供应商在途\t预定状态\t预定数量\t无货下单\tB仓(商)京东自营渠道采购在途库存\tB仓(商)京东自营渠道现货库存\tB仓(商)京东自营渠道可用库存\tB仓(商)京东自营渠道质押库存\tB仓(商)京东自营渠道质押预占库存\t数量周转\t昨日出库商品件数\t近7日出库商品件数\t近14日出库商品件数\t近28日出库商品件数\t近30日出库商品件数\t近60日出库商品件数\t近90日出库商品件数\t月至今出库商品件数\t昨日收货地商品件数\t近7日收货地商品件数\t近14日收货地商品件数\t近28日收货地商品件数\t近30日收货地商品件数\t近60日收货地商品件数\t近90日收货地商品件数\t月至今收货地商品件数\t昨日厂直出库商品件数\t近7日厂直出库商品件数\t近14日厂直出库商品件数\t近28日厂直出库商品件数\t近30日厂直出库商品件数\t近60日厂直出库商品件数\t近90日厂直出库商品件数\t月至今厂直出库商品件数\t7日有货天数\t14日有货天数\t28日有货天数\t30日有货天数\t预计可售天数\t无货pv\t月至今无货pv\tPV现货率\t月至今pv现货率\t昨日采购未到货-已回告\t昨日采购未到货-已预约\t昨日采购入库件数\t近7日采购入库件数\t近14日采购入库件数\t近28日采购入库件数\t近30日采购入库件数\t月至今采购入库件数\t昨日采购入库金额\t近7日采购入库金额\t近14日采购入库金额\t近28日采购入库金额\t近30日采购入库金额\t昨日采购下单件数\t近7日采购下单件数\t近14日采购下单件数\t近28日采购下单件数\t近30日采购下单件数\t月至今采购下单件数\t昨日退供应商件数\t近7日退供应商件数\t近14日退供应商件数\t近28日退供应商件数\t近30日退供应商件数\t月至今退供应商件数';
+  const H=head.split('\t');
+  const blank=()=>H.map(()=>'');
+  const r1=blank(); // 示例行1（仅核心列示意，其余留空）
+  r1[0]=d(1); r1[1]='李锦记蒸鱼豉油610g'; r1[2]='SKU-BE-01'; r1[3]='李锦记'; r1[4]='调味品'; r1[6]='酱油'; r1[7]='李锦记自营旗舰店'; r1[8]='S001'; r1[9]='XX食品供应商'; r1[22]=18.5; r1[35]=12500; r1[36]=12000; r1[42]=11800; r1[73]=980; r1[75]=95; r1[90]=3200; r1[91]=12; r1[92]='0.96'; r1[93]='0.95';
+  const r2=blank();
+  r2[0]=d(1); r2[1]='李锦记旧庄蚝油510g'; r2[2]='SKU-SW-02'; r2[3]='李锦记'; r2[4]='调味品'; r2[6]='蚝油'; r2[7]='李锦记自营旗舰店'; r2[8]='S002'; r2[9]='XX调味供应商'; r2[22]=12.3; r2[35]=8600; r2[36]=8200; r2[42]=8000; r2[73]=700; r2[75]=60; r2[90]=2100; r2[91]=10; r2[92]='0.97'; r2[93]='0.96';
+  const rows=[H, r1, r2, blank(), blank(), blank()];
   const ws=XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols']=[{wch:12},{wch:14},{wch:12},{wch:12},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14},{wch:16},{wch:16},{wch:12},{wch:16},{wch:16},{wch:10},{wch:10},{wch:10},{wch:12}];
+  ws['!cols']=H.map(()=>({wch:11}));
   const wsHelp=XLSX.utils.aoa_to_sheet([
     ['列','说明','示例'],
-    ['日期','库存快照日期（每日一行）','2026-08-01'],
-    ['全国库存（件数）','当日全国总库存件数','12500'],
-    ['库存金额','当日库存总金额','2860000'],
-    ['库存周转（天）','库存周转天数','32.5'],
-    ['近7天销售（件数/金额）','近7天销售件数与金额','2100 / 485000'],
-    ['近14天销售（件数/金额）','近14天销售件数与金额','4200 / 968000'],
-    ['日均销售（件数/金额）','日均销售件数与金额','300 / 69200'],
-    ['60+长库龄金额','含基调/复调两列，可分别填','180000 / 120000 / 60000'],
-    ['滞销金额','含基调/复调两列，可分别填','95000 / 60000 / 35000'],
-    ['PV现货率 / 实库现货率','0~1 小数','0.96 / 0.94'],
-    ['巢湖库存','巢湖仓库存','3200'],
-    ['全链路周转','全链路周转天数','38.2']
+    ['时间','库存快照日期（每行=某天某个SKU）','2026-08-01'],
+    ['SKU','商品编码','SKU-BE-01'],
+    ['品牌','品牌名（用于按品牌归户）','李锦记'],
+    ['全国采购价','单品采购价，用于金额计算','18.5'],
+    ['库存件数','全国库存件数','12500'],
+    ['现货库存 / 可用库存','现货 / 可用库存件数','12000 / 11800'],
+    ['近7~90日出库商品件数','各周期出库件数','980 / 4100 / ...'],
+    ['月至今出库商品件数','当月累计出库件数','3200'],
+    ['预计可售天数','预计可售天数','12'],
+    ['无货pv / PV现货率','无货pv 与 PV现货率','0.96'],
+    ['说明','全量列已按模板1表头生成；示例仅填核心列，其余留空；列名自动识别，缺列不报错。','—']
   ]);
   wsHelp['!cols']=[{wch:22},{wch:52},{wch:24}];
   const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, '库存周转');
+  XLSX.utils.book_append_sheet(wb, ws, '库存明细');
   XLSX.utils.book_append_sheet(wb, wsHelp, '填写说明');
   const wbout=XLSX.write(wb,{bookType:'xlsx',type:'array'});
   const blob=new Blob([wbout],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='库存周转填写模板.xlsx'; a.click();
-  toast('已下载 Excel 模板（.xlsx，含「库存周转」+「填写说明」两个 Sheet，每日一行）');
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='库存明细填写模板.xlsx'; a.click();
+  toast('已下载 Excel 模板（.xlsx，含「库存明细」+「填写说明」两个 Sheet，逐SKU·模板1全量列）');
+});
+
+// 下载采购单填写模板（真实 .xlsx：模板2 采购单 全量列，含示例行与空行，附填写说明表）
+const poTplBtn=$('#poTplBtn'); if(poTplBtn) poTplBtn.addEventListener('click',()=>{
+  const t=new Date(); const y=t.getFullYear(), m=String(t.getMonth()+1).padStart(2,'0');
+  const d=n=>`${y}-${m}-${String(n).padStart(2,'0')}`;
+  const head='采购单号\t采购渠道\t合同主体\t供应商简码\t供应商名称\t商品编号\t商品名称\t订单属性\t配送中心\t京东仓库\t京东库房地址\t京东站点\t京东站点地址\t收货负责人\t收货电话\t采购价格\t原始采购数量\t采购数量\t实收数量\t贴码建议\t京东贴码数量\t溯源贴码\t重码UPC\tUPC码\t采购金额\t实收金额\t采购单位\t币种\t采购员\t建单人\t订单状态\t订购时间\tTC转运\t入库时间\t预约时间\t预计关单时间\t备注\t原始来源\t波次数量\t订单来源\t是否期货\t年\t产品季\t客户订单号\t是否多次发货\t商品属性\t采购场景\t预计消化时间\t采购原因\t供应商库房\t供应商库房编码\t物权转移\t采购类型\tECLP出库单号\t送货库房\t送货地址\t配送方式\t送货库房联系人\t送货库房联系电话\t预计送达时间\t不满足原因\t需求单号\t是否预定加急\t预定期望到货日期\t型号\t货号\t销售单位\t京喜通越库\t失败原因\t验收数量\t预约单号';
+  const H=head.split('\t');
+  const blank=()=>H.map(()=>'');
+  const r1=blank();
+  r1[0]='PO20260817001'; r1[1]='京东自营'; r1[2]='XX贸易有限公司'; r1[3]='S001'; r1[4]='XX食品供应商'; r1[5]='SKU-BE-01'; r1[6]='李锦记蒸鱼豉油610g'; r1[7]='普通'; r1[8]='RDC-华东'; r1[9]='京东上海仓'; r1[15]=18.5; r1[16]=1000; r1[17]=1000; r1[18]=980; r1[24]=18500.00; r1[25]=18130.00; r1[26]='瓶'; r1[27]='CNY'; r1[28]='张三'; r1[29]='李四'; r1[30]='已入库'; r1[31]=d(17);
+  const rows=[H, r1, blank(), blank(), blank()];
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=H.map(()=>({wch:11}));
+  const wsHelp=XLSX.utils.aoa_to_sheet([
+    ['列','说明','示例'],
+    ['采购单号','采购单唯一编号','PO20260817001'],
+    ['采购渠道','京东自营 / 京东POP','京东自营'],
+    ['供应商简码 / 名称','供应商标识','S001 / XX食品供应商'],
+    ['商品编号 / 名称','SKU 与商品名','SKU-BE-01 / 李锦记蒸鱼豉油610g'],
+    ['采购价格 / 数量','采购单价与数量','18.5 / 1000'],
+    ['实收数量 / 金额','实际到货数量与金额','980 / 18130'],
+    ['订单状态','已入库 / 部分入库 / 在途','已入库'],
+    ['订购时间','下单日期','2026-08-17'],
+    ['说明','全量列已按模板2表头生成；采购单与库存周转相互独立，单独录入存储。','—']
+  ]);
+  wsHelp['!cols']=[{wch:20},{wch:46},{wch:26}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '采购单');
+  XLSX.utils.book_append_sheet(wb, wsHelp, '填写说明');
+  const wbout=XLSX.write(wb,{bookType:'xlsx',type:'array'});
+  const blob=new Blob([wbout],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='采购单填写模板.xlsx'; a.click();
+  toast('已下载 Excel 模板（.xlsx，含「采购单」+「填写说明」两个 Sheet，模板2全量列）');
 });
 
 // 下载浮码数据填写模板（真实 .xlsx：时间/SKU/浮码/全国昨日出库商品件数，含示例行与空行，附填写说明表）
@@ -2562,10 +2627,10 @@ function setupFile(id,key){ const inp=$(id); const ta=()=>{ const t=$('#'+key+'I
   }catch(err){ toast('Excel解析失败：'+(err.name||'Error')+' - '+err.message+'｜若已改过代码，请重新打开本页(Cmd+Shift+R)后再试', true); }
 }); }
 function loadScript(src){ return new Promise((res,rej)=>{ const s=document.createElement('script'); s.src=src; s.onload=res; s.onerror=()=>rej(new Error('CDN加载失败')); document.head.appendChild(s); }); }
-setupFile('#salesFile','sales'); setupFile('#invFile','inv'); setupFile('#jztFile','jzt'); setupFile('#tgtFile','tgt'); setupFile('#ganttFile','gantt'); setupFile('#ppFile','pp');
+setupFile('#salesFile','sales'); setupFile('#invFile','inv'); setupFile('#jztFile','jzt'); setupFile('#tgtFile','tgt'); setupFile('#ganttFile','gantt'); setupFile('#ppFile','pp'); setupFile('#poFile','po');
 
-$('#resetBtn').addEventListener('click',()=>{ $('#salesInput').value=sampleSales(); $('#invInput').value=sampleInv(); $('#jztInput').value=sampleJzt(); $('#tgtInput').value=sampleTargets(); $('#ganttInput').value=sampleGantt(); $('#ppInput').value=samplePurchase(); readInputs('replace'); syncBrandUI(); toast('已恢复示例数据（写入品牌「'+STATE.currentBrand+'」，历史已清空，重新计算）'); });
-$('#clearBtn').addEventListener('click',()=>{ const bn=STATE.currentBrand; if(confirm('确认清空品牌「'+bn+'」的全部数据？（甘特图与事项除外）')){ const b=B(); b.sales=[];b.inventory=[];b.jzt=[];b.targets=[];b.purchase=[]; b._raw={sales:'',inventory:'',jzt:'',targets:'',purchase:''}; b.todo=freshTodo(); $('#salesInput').value='';$('#invInput').value='';$('#jztInput').value='';$('#tgtInput').value='';$('#ppInput').value=''; syncBrandUI(); readInputs('replace', true); saveState(); renderAll(); saveToService(); setupTodoAll(); toast('已清空品牌「'+bn+'」的数据'); } });
+$('#resetBtn').addEventListener('click',()=>{ $('#salesInput').value=sampleSales(); $('#invInput').value=sampleInv(); $('#jztInput').value=sampleJzt(); $('#tgtInput').value=sampleTargets(); $('#ganttInput').value=sampleGantt(); $('#ppInput').value=samplePurchase(); $('#poInput').value=samplePurchaseOrder(); readInputs('replace'); syncBrandUI(); toast('已恢复示例数据（写入品牌「'+STATE.currentBrand+'」，历史已清空，重新计算）'); });
+$('#clearBtn').addEventListener('click',()=>{ const bn=STATE.currentBrand; if(confirm('确认清空品牌「'+bn+'」的全部数据？（甘特图与事项除外）')){ const b=B(); b.sales=[];b.inventory=[];b.jzt=[];b.targets=[];b.purchase=[];b.purchase_order=[]; b._raw={sales:'',inventory:'',jzt:'',targets:'',purchase:'',purchase_order:''}; b.todo=freshTodo(); $('#salesInput').value='';$('#invInput').value='';$('#jztInput').value='';$('#tgtInput').value='';$('#ppInput').value='';$('#poInput').value=''; syncBrandUI(); readInputs('replace', true); saveState(); renderAll(); saveToService(); setupTodoAll(); toast('已清空品牌「'+bn+'」的数据'); } });
 // 导出数据包：把完整 STATE（含解析结果与原始输入）存成 JSON 文件，刷新/换机后可「导入数据包」还原
 $('#exportBtn').addEventListener('click',()=>{
   const pkg={ version:3, exportedAt:new Date().toISOString(), state:STATE };
@@ -2681,16 +2746,16 @@ function normalizeState(st){
     if(st.brands['麦维他'] && !st.brands['麦维他自营']) st.brands['麦维他自营']=st.brands['麦维他'];
     BRANDS.forEach(b=>{ const src=st.brands[b]||{}; const dst=out.brands[b];
       dst.sales=Array.isArray(src.sales)?src.sales:[]; dst.inventory=Array.isArray(src.inventory)?src.inventory:[];
-      dst.purchase=Array.isArray(src.purchase)?src.purchase:[]; dst.jzt=Array.isArray(src.jzt)?src.jzt:[]; dst.targets=Array.isArray(src.targets)?src.targets:[];
-      dst._raw=Object.assign({sales:'',inventory:'',jzt:'',targets:'',purchase:''}, src._raw||{});
+      dst.purchase=Array.isArray(src.purchase)?src.purchase:[]; dst.purchase_order=Array.isArray(src.purchase_order)?src.purchase_order:[]; dst.jzt=Array.isArray(src.jzt)?src.jzt:[]; dst.targets=Array.isArray(src.targets)?src.targets:[];
+      dst._raw=Object.assign({sales:'',inventory:'',jzt:'',targets:'',purchase:'',purchase_order:''}, src._raw||{});
       // 反向同步：若 _raw.targets 缺失（旧数据/历史 bug 导致），用已解析的 targets 数组回填，确保清除/重建时有正确文本来源、不会丢目标
       if(!dst._raw.targets||!dst._raw.targets.trim()) dst._raw.targets=targetRowsToText(dst.targets);
       dst.todo=src.todo||freshTodo(); });
   } else {
     const lij=out.brands['李锦记']; const oraw=st._raw||{};
     lij.sales=Array.isArray(st.sales)?st.sales:[]; lij.inventory=Array.isArray(st.inventory)?st.inventory:[];
-    lij.purchase=Array.isArray(st.purchase)?st.purchase:[]; lij.jzt=Array.isArray(st.jzt)?st.jzt:[]; lij.targets=Array.isArray(st.targets)?st.targets:[];
-    lij._raw={ sales:oraw.sales||'', inventory:oraw.inventory||'', jzt:oraw.jzt||'', targets:oraw.targets||'', purchase:oraw.purchase||'' };
+    lij.purchase=Array.isArray(st.purchase)?st.purchase:[]; lij.purchase_order=Array.isArray(st.purchase_order)?st.purchase_order:[]; lij.jzt=Array.isArray(st.jzt)?st.jzt:[]; lij.targets=Array.isArray(st.targets)?st.targets:[];
+    lij._raw={ sales:oraw.sales||'', inventory:oraw.inventory||'', jzt:oraw.jzt||'', targets:oraw.targets||'', purchase:oraw.purchase||'', purchase_order:oraw.purchase_order||'' };
     lij.todo=st.todo||freshTodo(); out.ganttRaw=oraw.gantt||'';
   }
   out.gantt=Array.isArray(st.gantt)?st.gantt:[];
@@ -2892,11 +2957,11 @@ function hydrateFromState(st){
 function fillInputsForCurrentBrand(){
   const b=B();
   $('#salesInput').value=b._raw.sales||''; $('#invInput').value=b._raw.inventory||''; $('#jztInput').value=b._raw.jzt||'';
-  $('#tgtInput').value=(b._raw.targets&&b._raw.targets.trim())?b._raw.targets:targetRowsToText(b.targets||[]); $('#ppInput').value=b._raw.purchase||''; $('#ganttInput').value=STATE.ganttRaw||'';
+  $('#tgtInput').value=(b._raw.targets&&b._raw.targets.trim())?b._raw.targets:targetRowsToText(b.targets||[]); $('#ppInput').value=b._raw.purchase||''; $('#poInput').value=b._raw.purchase_order||''; $('#ganttInput').value=STATE.ganttRaw||'';
   // 同步品牌栏与各输入区品牌选择器为当前品牌
   syncBrandUI();
 }
-function clearInputs(){ $('#salesInput').value=''; $('#invInput').value=''; $('#jztInput').value=''; $('#tgtInput').value=''; $('#ganttInput').value=''; $('#ppInput').value=''; readInputs('replace', true); }
+function clearInputs(){ $('#salesInput').value=''; $('#invInput').value=''; $('#jztInput').value=''; $('#tgtInput').value=''; $('#ganttInput').value=''; $('#ppInput').value=''; $('#poInput').value=''; readInputs('replace', true); }
 
 // 自动保存：每次解析/导入/编辑后调用。云端 GitHub(共享,多人可见) + 本地 IndexedDB(离线缓存)。
 async function saveToService(){
@@ -2950,7 +3015,7 @@ async function boot(){
     else { toast('已从本地缓存恢复「'+currentBoard.name+'」（云端暂不可用，联网后将自动同步）'); }
   } else {
     // 真正的首次使用：本地与云端都无数据 → 载入示例（此分支才会写样例，不会覆盖已有数据）
-    $('#salesInput').value=sampleSales(); $('#invInput').value=sampleInv(); $('#jztInput').value=sampleJzt(); $('#tgtInput').value=sampleTargets(); $('#ganttInput').value=sampleGantt();
+    $('#salesInput').value=sampleSales(); $('#invInput').value=sampleInv(); $('#jztInput').value=sampleJzt(); $('#tgtInput').value=sampleTargets(); $('#ganttInput').value=sampleGantt(); $('#ppInput').value=samplePurchase(); $('#poInput').value=samplePurchaseOrder();
     // 防误覆盖保险丝：示例数据只供本地查看，禁止推送到云端（否则云端读取失败时会拿示例覆盖真实数据）
     window.__noCloudPushOnce=true; readInputs(); window.__noCloudPushOnce=false;
     if(cloudOk){ toast('已连接云端（GitHub）。「'+currentBoard.name+'」看板初始为示例数据，请上传你的真实数据'); }
