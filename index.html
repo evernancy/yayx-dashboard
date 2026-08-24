@@ -1172,8 +1172,16 @@ function invRow(r){
   };
 }
 function computeInv(asOf){
-  const rows=B().inventory; if(!rows.length) return null;
-  const dates=[...new Set(rows.map(r=>r.date).filter(Boolean))].sort();
+  const rows=B().inventory;
+  // 库存明细为空时，仍允许现货率/长库龄预警等独立每日快照驱动展示（这些录入区不依赖库存明细行）
+  const hasInv=!!rows.length;
+  if(!hasInv && !(B().spot_rate||[]).length && !(B().aging_warn||[]).length) return null;
+  // 日期集合：合并库存明细 + 现货率 + 长库龄预警，确保任一类有数据的日期都会出现在看板
+  const dateSet=new Set();
+  rows.forEach(r=>{ if(r.date) dateSet.add(r.date); });
+  (B().spot_rate||[]).forEach(r=>{ const d=String(r.date||'').slice(0,10); if(d) dateSet.add(d); });
+  (B().aging_warn||[]).forEach(r=>{ const d=String(r.date||'').slice(0,10); if(d) dateSet.add(d); });
+  const dates=[...dateSet].filter(Boolean).sort();
   const maxDate=dates[dates.length-1];
   const target=asOf||maxDate;                              // 选定查看日（默认最新）
   // 采购单：按「订购时间」归到对应日期（列名自动识别，缺日期则跳过）
