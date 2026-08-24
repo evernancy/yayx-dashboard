@@ -1653,11 +1653,18 @@ function renderGantt(module, elId, ym){
     // 进度条：周视图 + 整月视图 统一逻辑 —— 只在「工作日」格子画条，自动跳过周末/节假日
     const sd=r.date, ed=r.endDate||r.date;
     const si=dayIdx[sd], ei=dayIdx[ed];
+    // 判断是否为「跨月任务」（起止日期包围整个月份，如 08-01~08-31）
+    const isSpanMonth = (sd <= ms && ed >= me);
     // 收集任务范围内的「工作日」列索引（排除周末+法定假日）
     const wdi=[];
     for(let di=0;di<days.length;di++){
-      // 用 si/ei 判断该列是否在任务起止范围内（不是用像素坐标！）
-      const inRange=(si!=null&&ei!=null)?(di>=si&&di<=ei):(si!=null?di>=si:(ei!=null?di<=ei:true));
+      // 用 si/ei 判断该列是否在任务起止范围内
+      // 注意：si==null&&ei==null 时，只有跨月任务才默认全范围显示；普通不重叠任务不画
+      let inRange;
+      if(si!=null && ei!=null){ inRange = (di>=si && di<=ei); }
+      else if(si!=null){ inRange = (di>=si); }
+      else if(ei!=null){ inRange = (di<=ei); }
+      else { inRange = isSpanMonth; } // 仅跨月任务在可见周外时延展显示
       if(!inRange) continue;
       if(dayTag(days[di])==='休') continue;
       wdi.push(di);
