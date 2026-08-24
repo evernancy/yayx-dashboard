@@ -2409,8 +2409,10 @@ function readInputs(mode, silent){
     const jztIn=aggregateRows(parseTable(stripTargets(b._raw.jzt, push)));
     const ppIn=parseTable(b._raw.purchase||'');
     const poIn=parseTable(b._raw.purchase_order||'');
-    const srIn=parseTable(stripTargets(b._raw.spot_rate||'', push));
-    const awIn=parseTable(stripTargets(b._raw.aging_warn||'', push));
+    // 现货率 / 长库龄预警：首列为「日期」，若走 stripTargets 会被 isTargetRow 的「日期型 ttype」放行逻辑误判为目标行整组抽走。
+    // 这两类数据是每日快照（金额/比率），不含目标行，且目标只从专属 _raw.targets 解析，无需 strip。
+    const srIn=parseTable(b._raw.spot_rate||'');
+    const awIn=parseTable(b._raw.aging_warn||'');
     const tgtIn=tgt;
     // 增量上传(merge)：与已有数据按业务键合并（重复自动忽略）；全量替换(replace)：以文本框为准整组重建
     if(mode==='replace'){
