@@ -330,7 +330,7 @@
       </details>
 
       <details>
-        <summary>2 · 库存周转数据</summary>
+        <summary>2.1 · 库存周转数据</summary>
         <div class="row">
           <span class="muted" style="font-size:12px">品牌</span>
           <select id="brand_inventory" class="secBrand" data-sec="inventory" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px">
@@ -352,7 +352,7 @@
       </details>
 
       <details>
-        <summary>3 · 浮码数据（单独录入，不并入库存周转数据）</summary>
+        <summary>2.2 · 浮码数据</summary>
         <p class="hint">浮码数据与库存周转数据相互独立，本框单独录入、单独存储。表头：<b>时间 / SKU / 浮码</b>（无需录入出库件数）。「全国昨日出库商品件数」<b>自动取自「库存周转数据」明细中的「昨日出库商品件数」列，按时间 + SKU 匹配</b>；公式为 <b>Σ（浮码 × 昨日出库商品件数）÷ 1.129</b>，用于计算 POS 实际数据。库存明细缺该 SKU/日期的昨日出库时该项留空（不计入 POS）。同一「时间 + SKU」重复录入即覆盖更新。</p>
         <div class="row">
           <span class="muted" style="font-size:12px">品牌</span>
@@ -375,7 +375,7 @@
       </details>
 
       <details>
-        <summary>3.5 · 采购单数据（模板 2，独立录入，不并入库存周转）</summary>
+        <summary>2.3 · 采购单数据</summary>
         <p class="hint">采购单数据与库存周转数据相互独立，本框单独录入、单独存储。表头：采购单号 / 采购渠道 / 合同主体 / 供应商简码 / 供应商名称 / 商品编号 / 商品名称 / 订单属性 / 配送中心 / 京东仓库 / 京东库房地址 / 京东站点 / 京东站点地址 / 收货负责人 / 收货电话 / 采购价格 / 原始采购数量 / 采购数量 / 实收数量 / 贴码建议 / 京东贴码数量 / 溯源贴码 / 重码UPC / UPC码 / 采购金额 / 实收金额 / 采购单位 / 币种 / 采购员 / 建单人 / 订单状态 / 订购时间 等全量列（列名自动识别，缺列留空）。<b>当前仅做录入与存储，计算口径稍后由你确认后再接入。</b></p>
         <div class="row">
           <span class="muted" style="font-size:12px">品牌</span>
@@ -398,7 +398,7 @@
       </details>
 
       <details>
-        <summary>3.6 · 现货率数据（每日一行，直接录入按天展示）</summary>
+        <summary>2.4 · 现货率数据</summary>
         <p class="hint">表头：<b>PV现货率&#9;实库现货率</b>。每日一行（日期 + 两列比率，0~1 小数或百分比均可，列名自动识别，缺列留空）。<b>该数据独立录入、独立存储，前台按天展示；优先于库存明细里的同名列。</b>同一「日期」重复录入即覆盖更新。</p>
         <div class="row">
           <span class="muted" style="font-size:12px">品牌</span>
@@ -421,7 +421,7 @@
       </details>
 
       <details>
-        <summary>3.7 · 长库龄预警金额数据（每日一行，直接录入按天展示）</summary>
+        <summary>2.5 · 长库龄预警金额数据</summary>
         <p class="hint">表头：<b>60-90天长库龄预警金额&#9;90天以上长库龄金额&#9;60-90天长库龄预警金额（基调）&#9;60-90天长库龄预警金额（复调）&#9;90天以上长库龄金额（基调）&#9;90天以上长库龄金额（复调）</b>。每日一行，列名自动识别，缺列留空。<b>该数据独立录入、独立存储，前台按天展示；优先于库存明细里的同名列。</b>同一「日期」重复录入即覆盖更新。</p>
         <div class="row">
           <span class="muted" style="font-size:12px">品牌</span>
@@ -444,7 +444,7 @@
       </details>
 
       <details>
-        <summary>4 · 京东京准通推广数据</summary>
+        <summary>3 · 京东京准通推广数据</summary>
         <div class="row">
           <span class="muted" style="font-size:12px">品牌</span>
           <select id="brand_jzt" class="secBrand" data-sec="jzt" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px">
@@ -465,7 +465,7 @@
       </details>
 
       <details>
-        <summary>5 · 目标数据（品牌/采销/内部 GMV + POS）</summary>
+        <summary>4 · 目标数据（品牌/采销/内部 GMV + POS）</summary>
         <div class="row">
           <span class="muted" style="font-size:12px">品牌</span>
           <select id="brand_targets" class="secBrand" data-sec="targets" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px">
@@ -487,7 +487,7 @@
       </details>
 
       <details>
-        <summary>6 · 营销 / 设计 / 数据 甘特图（三模块共用一个输入框）</summary>
+        <summary>5 · 营销 / 设计 / 数据日历</summary>
         <p class="hint">三个模块共用此框：每行用「模块」列标明 <b>营销 / 设计 / 数据</b>，系统自动分流到对应甘特图。日期=开始日；结束日期可选（留空=当天，甘特条宽=1天）；任务、负责人必填，其余留空不报错。甘特图横轴按中国法定节假日标注「休/班」（节假日淡化、调休补班正常）。同一「模块 + 日期 + 任务」重复输入=覆盖更新；不同任务同名日期=新增一行。修改后下方点「应用并更新看板」或自动保存。</p>
         <div class="row">
           <label class="filelabel">上传文件<input type="file" id="ganttFile" accept=".csv,.xlsx,.xls,.txt" hidden></label>
@@ -1308,7 +1308,7 @@ function computeJzt(start,end){
 function renderJzt(){
   const [start,end]=resolveJztRange();
   const c=computeJzt(start,end);
-  if(!c){ $('#jztScene').innerHTML='<div class="empty">未解析到实际投放数据——请在第 4 个「京东京准通推广数据」框粘贴实际推广明细（需含 日期 / 营销场景 / 花费 / 点击 / GMV 等列，Tab 或逗号分隔）。</div>'; return; }
+  if(!c){ $('#jztScene').innerHTML='<div class="empty">未解析到实际投放数据——请在第 3 个「京东京准通推广数据」框粘贴实际推广明细（需含 日期 / 营销场景 / 花费 / 点击 / GMV 等列，Tab 或逗号分隔）。</div>'; return; }
   // 各渠道花费（MTD）：渠道=营销场景；成交占比=渠道成交金额/京准通整体成交金额
   const scenes=Object.entries(c.byScene).sort((a,b)=>b[1].spend-a[1].spend);
   const tS=c.totalSpend, tG=c.totalGmv;
