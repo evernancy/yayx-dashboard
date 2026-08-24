@@ -544,7 +544,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 const ALIAS = {
   date:['日期','时间','date','day','dt'],
   channel:['渠道','平台','来源','店铺名称','店铺','store','channel'],
-  product:['商品','产品','商品名称','sku名','名称','product','item','goods','spu'],
+  product:['商品','产品','商品名称','sku名','名称','product','item','goods','spu','sku名称'],
   sku:['sku','sku编码','编码','货号','item_code','商品id','商品id'],
   brand:['品牌','brand','brand_name'],
   cat1:['一级类目','类目1','cat1','level1','cate1'],
@@ -556,18 +556,30 @@ const ALIAS = {
   amount:['销售额','营收','收入','成交金额','营业额','amount','revenue','sales_amount','gmv_amt'],
   cost:['成本','成本额','cost','cogs'],
   refund:['退款','退款额','refund','refunds'],
-  views:['浏览量','pv','page_view','views','曝光量'],
-  visitors:['访客数','uv','访客','visitor','visitors'],
-  pvPerUv:['人均浏览量','pv_per_uv','pvpu','人均pv'],
-  stay:['平均停留时长','停留时长','stay','avg_stay','avg_dur'],
+  views:['浏览量','pv','page_view','views','曝光量','商品浏览量'],
+  visitors:['访客数','uv','访客','visitor','visitors','商品访客数'],
+  pvPerUv:['人均浏览量','pv_per_uv','pvpu','人均pv','商品人均浏览量'],
+  stay:['平均停留时长','停留时长','stay','avg_stay','avg_dur','商详平均停留时长'],
   cvr:['成交转化率','转化率','cvr','conversion_rate','conv_rate'],
-  orders:['订单数','订单','转化','订单量','成交单量','单量','orders','order','conversions','conv'],
+  orders:['订单数','订单','转化','订单量','成交单量','单量','orders','order','conversions','conv','下单单量','下单单量'],
   aov:['客单价','成交客单价','aov','avg_order_value'],
   uvValue:['uv价值','uv_value','uv_val'],
   unitPrice:['件单价','unit_price','price_per_unit'],
-  cartUsers:['加购人数','加购用户','cart_users','atc_users','加购数'],
+  cartUsers:['加购人数','加购用户','cart_users','atc_users','加购数','加购客户数'],
   cartCvr:['加购转化率','cart_cvr','atc_rate','加购率'],
   cartQty:['加购商品件数','加购件数','cart_qty','atc_qty'],
+  cartAmt:['加购金额','cart_amount','atc_amount','加购金额'],
+  searchExp:['搜索曝光量','搜索曝光','曝光','搜索曝光次数','search_exposure','search_imp'],
+  searchClicks:['搜索点击数','搜索点击次数','search_clicks','search_click'],
+  searchCvr:['搜索点击率','搜索转化率','search_cvr','search_ctr'],
+  orderAmt:['下单金额','order_amount','place_amt','下单额'],
+  orderQty:['下单商品件数','order_qty','place_qty'],
+  orderBuyers:['下单客户数','order_buyers','place_buyers'],
+  orderCvr:['下单转化率','order_cvr','place_cvr'],
+  orderPaidCvr:['下单成交转化率','order_paid_cvr','place_paid_cvr'],
+  refundAmt:['退款金额','取消及售后退款金额','refund_amount','cancel_refund_amt'],
+  refundQty:['退款商品件数','取消及售后退款商品件数','refund_qty','cancel_refund_qty'],
+  refundOrders:['退款单量','取消及售后退款单量','refund_orders','cancel_refund_orders'],
   begin:['期初库存','期初','begin','opening','begin_inv'],
   end:['期末库存','期末','end','closing','end_inv','现货库存'],
   invQty:['期间销量','销量','销售数量','出库量','出库件数','sold','inv_sales','period_sales','昨日出库商品件数'],
@@ -824,6 +836,13 @@ function sampleSalesMcv(){return `时间	商品ID	商品名称	二级类目	三�
 2026-08-01	B07XMcv002	麦维他巧克力威化200g	饼干蛋糕	威化	MCV-WF-002	2800	7400	180	360	320	132	138	165	10890	4.71%	3.89	2026-06-01	41.2%	9800	430	4.39%	280	150	175	11900	5.36%	6.25%	0.97	79.35	66.00	84.7
 2026-08-02	B07XMCV001	麦维他消化饼干400g	饼干蛋糕	饼干	MCV-HG-001	3350	8900	225	450	395	164	170	205	13330	4.90%	3.98	2026-05-12	37.9%	12500	585	4.68%	335	188	218	14700	5.66%	6.61%	0.98	79.46	65.40	87.1
 2026-08-02	B07XMCV002	麦维他巧克力威化200g	饼干蛋糕	威化	MCV-WF-002	2950	7700	190	372	330	138	144	172	11360	4.68%	3.85	2026-06-01	40.8%	10100	445	4.41%	290	156	182	12350	5.39%	6.29%	0.97	78.47	67.85	85.2`;}
+
+// 麦维他POP销售模板（POP 渠道商品维度明细，京东商智导出格式）
+function sampleSalesPop(){return `时间	SKU	SKU名称	一级类目	二级类目	三级类目	货号	成交金额	成交商品件数	成交单量	成交客户数	成交转化率	客单价	件单价	UV价值	搜索曝光次数	搜索点击次数	搜索点击率	商品浏览量	商品访客数	商品人均浏览量	商详平均停留时长	加购商品件数	加购客户数	加购商品件数（正向）	加购商品件数（负向）	加购转化率	加购金额	下单金额	下单商品件数	下单单量	下单客户数	下单转化率	下单成交转化率	取消及售后退款金额	取消及售后退款商品件数	取消及售后退款单量
+2026-08-01	B07XMCV001	麦维他消化饼干400g	食品	饼干蛋糕	饼干	MCV-HG-001	12860	198	162	156	4.88%	82.10	64.95	4.02	12000	560	4.67%	8600	3200	2.69	38.5	430	380	410	20	7.86%	15200	14200	210	180	180	6.56%	5.63%	320	15	12
+2026-08-01	B07XMCV002	麦维他巧克力威化200g	食品	饼干蛋糕	威化	MCV-WF-002	10890	165	138	132	4.71%	79.35	66.00	3.89	9800	430	4.39%	7400	2800	2.64	41.2	360	320	342	18	8.21%	12800	11900	175	150	150	6.25%	5.36%	280	12	10
+2026-08-02	B07XMCV001	麦维他消化饼干400g	食品	饼干蛋糕	饼干	MCV-HG-001	13330	205	170	164	4.90%	79.46	65.40	3.98	12500	585	4.68%	8900	3350	2.66	37.9	450	395	430	20	7.94%	15800	14700	218	188	188	6.61%	5.66%	335	16	13
+2026-08-02	B07XMCV002	麦维他巧克力威化200g	食品	饼干蛋糕	威化	MCV-WF-002	11360	172	144	138	4.68%	78.47	67.85	3.85	10100	445	4.41%	7700	2950	2.61	40.8	372	330	354	18	8.26%	13400	12350	182	156	156	6.29%	5.39%	290	13	11`;}
 
 function sampleInv(){return `日期\t全国库存（件数）\t库存金额\t库存周转（天）\t近7天销售（件数）\t近7天销售（金额）\t近14天销售（件数）\t近14天销售（金额）\t日均销售（件数）\t日均销售（金额）\t60+长库龄金额\t60+长库龄金额（基调）\t60+长库龄金额（复调）\t滞销金额\t滞销金额（基调）\t滞销金额（复调）\tPV现货率\t实库现货率\t巢湖库存\t全链路周转
 2026-08-01\t12500\t2860000\t32.5\t2100\t485000\t4200\t968000\t300\t69200\t180000\t120000\t60000\t95000\t60000\t35000\t0.96\t0.94\t3200\t38.2
@@ -2281,8 +2300,8 @@ $('#ppInput').addEventListener('input',()=>{ clearTimeout(deb); deb=setTimeout(r
 
 $$('[data-fill]').forEach(b=>{ b.addEventListener('click',()=>{
   const map={sales:'#salesInput',inventory:'#invInput',jzt:'#jztInput',targets:'#tgtInput',gantt:'#ganttInput',purchase:'#ppInput'};
-  // 销售模板按品牌区分（麦维他自营用商品维度明细模板，李锦记/其他沿用原模板）
-  const salesSrc={ '麦维他自营':sampleSalesMcv, '麦维他POP':sampleSalesMcv };
+  // 销售模板按品牌区分（麦维他自营/麦维他POP 各有独立模板，李锦记/其他沿用原模板）
+  const salesSrc={ '麦维他自营':sampleSalesMcv, '麦维他POP':sampleSalesPop };
   const sec=b.dataset.fill;
   let val;
   if(sec==='sales'){ const sel=document.getElementById('brand_sales'); val=(salesSrc[(sel&&sel.value)]||sampleSales)(); }
