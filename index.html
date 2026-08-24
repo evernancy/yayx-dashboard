@@ -518,6 +518,7 @@
         <select id="cmBrand"></select>
       </label>
     </div>
+    <p id="cmBrandAlert" style="margin:10px 0 0;padding:9px 11px;border-radius:8px;background:#fff4f4;color:#c0392b;font-size:13px;border:1px solid #f3c7c7;display:none"></p>
     <p class="hint" id="cmHint" style="margin:10px 0 0"></p>
     <div class="modal-actions">
       <span class="grow"></span>
@@ -1727,6 +1728,7 @@ function openClearModal(which){
       if(b===sb) o.selected=true;
       sel.appendChild(o);
     });
+    sel.addEventListener('change', updateClearBrandAlert);
   }
   $('#cmMode').value='day';
   const t=new Date();
@@ -1736,6 +1738,7 @@ function openClearModal(which){
   $('#cmModule').value='全部';
   if(which==='targets') populateClearTypes();
   updateClearUI();
+  updateClearBrandAlert();
   $('#clearModal').classList.add('show');
 }
 // 目标框：动态填充「类型」下拉（去重 + 常见兜底）
@@ -1763,6 +1766,20 @@ function updateClearUI(){
   $('#cm_clear').textContent=btn;
 }
 function closeClearModal(){ $('#clearModal').classList.remove('show'); cmWhich=null; }
+// 醒目标注「即将清除哪个品牌」，避免误清当前查看品牌以外的数据
+function updateClearBrandAlert(){
+  const el=$('#cmBrandAlert'); if(!el) return;
+  if($('#cmBrandWrap').style.display==='none'){ el.style.display='none'; return; }
+  const v=$('#cmBrand').value;
+  const disp=(v==='__ALL__')?'全部品牌':(v==='麦维他自营'?'麦维他自营':v==='麦维他POP'?'麦维他POP':v);
+  const cur=STATE.currentBrand;
+  let html='⚠️ 即将清除：<b>'+disp+'</b> 的「'+CLEAR_NAME[cmWhich]+'」数据';
+  if(v!=='__ALL__' && v!==cur){
+    html+='。<span style="color:#b8860b">注意：你当前正在查看的是「'+cur+'」，请确认要清的确实是「'+disp+'」。</span>';
+  }
+  el.innerHTML=html;
+  el.style.display='block';
+}
 // 某个 section 当前指向的品牌（看它的品牌选择器；无效则回退当前查看品牌）
 function sectionBrandOf(which){
   const sel=document.getElementById('brand_'+which);
@@ -1918,7 +1935,8 @@ $('#cm_clear').addEventListener('click',()=>{
     closeClearModal();
     return;
   }
-  if(!confirm('确认清除'+msg+'？此操作不可撤销。')) return;
+  const clearBrandName=(cbVal==='__ALL__')?'全部品牌':cbVal;
+  if(!confirm('确认清除'+msg+'（品牌：'+clearBrandName+'）？此操作不可撤销。')) return;
   clearRows(which, filter, suffix);
   closeClearModal();
 });
