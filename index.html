@@ -1651,36 +1651,50 @@ function renderGantt(module, elId, ym){
     const maxLab=Math.floor(labW/7);
     const disp=tName.length>maxLab?tName.slice(0,maxLab-1)+'…':tName;
     g+=`<text x="${10}" y="${y+rowH/2+4}" font-size="12" fill="#1e293b" style="pointer-events:none">${esc(disp)}</text>`;
-    // 进度条：支持跨周任务（起止日期在可见范围外时，bar 占满可见区域）
+    // 进度条：支持跨周任务 + 自动跳过周末/节假日（只在「工作日」格子画条）
     const sd=r.date, ed=r.endDate||r.date;
     const si=dayIdx[sd], ei=dayIdx[ed];
-    let barX=null, barW=0;
-    if(si!=null && ei!=null){ barX=x0+si*dayW; barW=(ei-si+1)*dayW; }
-    else if(si!=null){ barX=x0+si*dayW; barW=(days.length-si)*dayW; }
-    else if(ei!=null){ barX=x0; barW=(ei+1)*dayW; }
-    else { /* 跨周任务：起止都在可见范围外但与月份重叠（filter 已保证），bar 占满整周 */ barX=x0; barW=days.length*dayW; }
-    if(barX!=null && barW>0){
+    // 收集任务范围内所有「工作日」的列索引（排除周末+法定假日）
+    const wdi=[]; // work-day indices
+    for(let di=0;di<days.length;di++){
+      const d=days[di];
+      const inRange=(si!=null&&ei!=null)?(di>=si&&di<=ei):(si!=null?di>=si:(ei!=null?di<=ei:true));
+      if(!inRange) continue;
+      if(dayTag(d)==='休') continue; // 跳过周末和法定假日
+      wdi.push(di);
+    }
+    // 将连续的工作日合并为「段」（避免中间隔一个休息日时断成两截）
+    const segs=[]; let segS=null;
+    wdi.forEach((idx,k)=>{ if(segS===null) segS=idx; else if(idx>wdi[k-1]+1){ segs.push([segS,wdi[k-1]]); segS=idx; } });
+    if(segS!==null) segs.push([segS,wdi[wdi.length-1]]);
+    // 对每段画进度条
+    segs.forEach(([csi,cei])=>{
+      const sBarX=x0+csi*dayW, sBarW=(cei-csi+1)*dayW;
+      if(sBarW<=0) return;
       const prog=Math.max(0,Math.min(100,num(r.progress)));
       const oc=ownerColor(r.owner);
-      const bx=barX+2, by=y+5, bw=Math.max(barW-4,8), bh=rowH-10;
+      const bx=sBarX+2, by=y+5, bw=Math.max(sBarW-4,8), bh=rowH-10;
       // 底色
       g+=`<rect x="${bx}" y="${by}" width="${bw}" height="${bh}" rx="5" fill="${oc}" fill-opacity="0.15" stroke="${oc}" stroke-width="0.5" stroke-opacity="0.3"/>`;
-      // 进度填充
+      // 进度填充（仅在第一段显示交互 tip 和负责人文字，避免重复）
+      const isFirstSeg=(segs[0][0]===csi);
       const pw=bw*prog/100;
-      if(pw>2) g+=`<rect x="${bx}" y="${by}" width="${pw}" height="${bh}" rx="5" fill="${oc}" fill-opacity="${0.55+0.35*Math.min(prog,100)/100}" class="ganttTask" data-gid="${r._gid}" data-tip="${ganttTip(r,module,null)}" style="cursor:pointer"/>`;
-      // 负责人名字（整月视图用更小字号）
-      const textThreshold=isMonthView?22:30;
-      if(bw>textThreshold){
-        const oname=(r.owner||'').trim();
-        if(oname){
-          const om=Math.max(1,Math.floor(bw/(isMonthView?7:9)));
-          const od=oname.length>om?oname.slice(0,om-1)+'…':oname;
-          g+=`<text x="${bx+4}" y="${by+bh/2+4}" font-size="${isMonthView?9:11}" font-weight="500" fill="#1e293b" style="pointer-events:none">${esc(od)}</text>`;
-        } else {
-          g+=`<text x="${bx+4}" y="${by+bh/2+4}" font-size="${isMonthView?8:10}" fill="#64748b" style="pointer-events:none">${prog}%</text>`;
+      if(pw>2) g+=`<rect x="${bx}" y="${by}" width="${pw}" height="${bh}" rx="5" fill="${oc}" fill-opacity="${0.55+0.35*Math.min(prog,100)/100}" class="ganttTask" data-gid="${r._gid}" data-tip="${isFirstSeg?ganttTip(r,module,null):''}" style="cursor:pointer"/>`;
+      // 负责人名字（仅第一段显示，整月视图用更小字号）
+      if(isFirstSeg){
+        const textThreshold=isMonthView?22:30;
+        if(bw>textThreshold){
+          const oname=(r.owner||'').trim();
+          if(oname){
+            const om=Math.max(1,Math.floor(bw/(isMonthView?7:9)));
+            const od=oname.length>om?oname.slice(0,om-1)+'…':oname;
+            g+=`<text x="${bx+4}" y="${by+bh/2+4}" font-size="${isMonthView?9:11}" font-weight="500" fill="#1e293b" style="pointer-events:none">${esc(od)}</text>`;
+          } else {
+            g+=`<text x="${bx+4}" y="${by+bh/2+4}" font-size="${isMonthView?8:10}" fill="#64748b" style="pointer-events:none">${prog}%</text>`;
+          }
         }
       }
-    }
+    });
   });
 
   // 图例：负责人颜色
