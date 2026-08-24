@@ -771,7 +771,10 @@ function isTargetRow(r){
   const t=normType(r.ttype), g=normGran(r.tgran), p=String(r.tperiod||'');
   const knownT=/^(brand|procure|internal|jztspend|pos)$/.test(t);
   const pOk=/^\d{4}(-\d{2}(-\d{2})?)?$/.test(p);
-  return !!(knownT || g || pOk);
+  // 商品级 POS 实际数据以「日期」作为 ttype（如 2026-08-02），目标值仍为数字；此前被误判为非目标行，
+  // 导致「全量重建/清除」时整组丢失。此处放行日期型 ttype，使此类行在解析/重建时得以保留。
+  const tDate=/^\d{4}(-\d{2}(-\d{2})?)?$/.test(String(r.ttype||''));
+  return !!(knownT || g || pOk || tDate);
 }
 
 /* 单行解析为目标行：类型 粒度 周期 数值（4 列且第4列为数字） */
