@@ -1314,7 +1314,10 @@ function renderTargets(){
     const tT=$('#targetTableTitle'); if(tT) tT.textContent='达成明细（按日：时间 / 品牌目标(by day) / 实际GMV / GMV达成率 / POS目标(by day) / POS实际 / POS达成率）';
     // 单面板模式：标题恢复「销售目标达成」，隐藏 POP 面板，KPI 渲染到自营 KPI 容器
     const zyT=$('#zyTargetTitle'); if(zyT) zyT.textContent='销售目标达成';
-    const popP=$('#popTargetPanel'); if(popP) popP.style.display='none'; }
+    const popP=$('#popTargetPanel'); if(popP) popP.style.display='none';
+    // 提示文字恢复为通用描述（不再显示麦维他专属文案）
+    const zyHint=$('#zyTargetPanel')?.querySelector('.hint');
+    if(zyHint) zyHint.textContent=STATE.currentBrand+' GMV（销售成交金额）目标达成追踪（按月累计 MTD）。日期范围可调。'; }
   const gmv={}; B().sales.forEach(r=>{ if(r.date>=start&&r.date<=end) gmv[r.date]=(gmv[r.date]||0)+num(r.amount); });
   const pos=posDailyMap();
   const days=dateRange(start,end).filter(d=>d>=start&&d<=end);
