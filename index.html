@@ -2413,10 +2413,16 @@ function sheetToTsv(ws){
       const cell=ws[XLSX.utils.encode_cell({r,c})];
       if(!cell||cell.t==='z'||cell.v===undefined){ row.push(''); continue; }
       let val;
-      if(cell.t==='d'||cell.v instanceof Date){ val=(cell.w!==undefined)? normDate(cell.w):String(cell.v); }
-      else if(cell.t==='n'){ val=(cell.v%1===0)? String(cell.v):String(cell.v); }
+      /* 优先用格式化文本 cell.w（Excel 存储的显示值），避免日期序列号等内部格式泄露到 TSV */
+      if(cell.w!==undefined && String(cell.w).trim()) val=String(cell.w).trim();
+      else if(cell.t==='d'||cell.v instanceof Date){ val=normDate(String(cell.v)); }
+      else if(cell.t==='n'){
+        const sv=cell.v%1===0?String(parseInt(cell.v,10)):String(cell.val);
+        /* Excel 日期序列号（纯整数，范围约 25000~70000 → 1982~2064 年）：转为 YYYY-MM-DD */
+        val=(sv.match(/^\d{4,5}$/)&&+sv>25000&&+sv<70000)?normDate(sv):sv;
+      }
       else if(cell.t==='b'){ val=cell.v?'TRUE':'FALSE'; }
-      else { val=(cell.w!==undefined)? cell.w:String(cell.v); }
+      else { val=String(cell.v); }
       row.push(val);
     }
     out.push(row.join('\t'));
