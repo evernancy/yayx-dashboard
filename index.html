@@ -515,6 +515,9 @@
           <option value="数据">数据</option>
         </select>
       </label>
+      <label id="cmBrandWrap" style="display:none">选择品牌
+        <select id="cmBrand"></select>
+      </label>
     </div>
     <p class="hint" id="cmHint" style="margin:10px 0 0"></p>
     <div class="modal-actions">
@@ -1707,8 +1710,24 @@ function monthOverlaps(month, d, ed){
 function moduleOf(){ return (cmWhich==='gantt')?$('#cmModule').value:'全部'; }
 function openClearModal(which){
   cmWhich=which;
-  $('#cmTitle').textContent='清除历史数据 · '+CLEAR_NAME[which]+((which==='gantt')?'':'（品牌：'+sectionBrandOf(which)+'）');
+  const isG=(which==='gantt');
+  const sb=sectionBrandOf(which);
+  $('#cmTitle').textContent='清除历史数据 · '+CLEAR_NAME[which]+(isG?'':'（当前品牌：'+sb+'）');
   $('#cmTypeOpt').style.display=(which==='targets')?'':'none'; // 仅目标框显示「按类型清除」
+  // 品牌选择器：非甘特图时显示，默认选中该输入框对应的品牌
+  $('#cmBrandWrap').style.display=isG?'none':'';
+  if(!isG){
+    const sel=$('#cmBrand'); sel.innerHTML='';
+    BRANDS.forEach(b=>{
+      const o=document.createElement('option');
+      o.value=b; o.textContent=(b==='麦维他自营'?'麦维他自营':b==='麦维他POP'?'麦维他POP':b);
+      const raw=(STATE.brands[b]&&STATE.brands[b]._raw[which])||'';
+      const rows=raw.replace(/\r/g,'').split('\n').filter(l=>l.trim()).length;
+      o.textContent+=' ('+rows+'行)';
+      if(b===sb) o.selected=true;
+      sel.appendChild(o);
+    });
+  }
   $('#cmMode').value='day';
   const t=new Date();
   const y=t.getFullYear(), m=String(t.getMonth()+1).padStart(2,'0'), d=String(t.getDate()).padStart(2,'0');
@@ -1750,9 +1769,10 @@ function sectionBrandOf(which){
   return (sel && STATE.brands[sel.value]) ? sel.value : STATE.currentBrand;
 }
 // 通用清除：filter(cells,ctx) 返回 true 表示该行应被删除
-// 把 STATE 行（非甘特）序列化为 Tab 文本，供清空时回填文本框
-function datasetToText(which, rows){
-  const raw=(which==='gantt'?(STATE.ganttRaw||''):(STATE.brands[sectionBrandOf(which)]._raw&&STATE.brands[sectionBrandOf(which)]._raw[which]||''));
+// 把 STATE 行（非甘特）序列化为 Tab 文本，供清空时回填文本框；brand 可选，不传则用 sectionBrandOf(which)
+function datasetToText(which, rows, brand){
+  const b=brand||sectionBrandOf(which);
+  const raw=(which==='gantt'?(STATE.ganttRaw||''):(STATE.brands[b]._raw&&STATE.brands[b]._raw[which]||''));
   const firstLine=(raw.replace(/\r/g,'').split('\n').find(l=>l.trim())||'');
   let delim='\t'; if(firstLine.indexOf('\t')<0 && firstLine.indexOf(',')>=0) delim=',';
   const headers=firstLine?firstLine.split(delim).map(h=>h.trim()):[];
@@ -1769,13 +1789,15 @@ function datasetToText(which, rows){
 }
 function clearRows(which, filter, labelSuffix){
   const el=$(CLEAR_EL[which]); if(!el) return;
-  const bTarget=(which==='gantt')?null:STATE.brands[sectionBrandOf(which)];
+  // 清除时使用的品牌：甘特图无品牌；其余优先取弹窗中 cmBrand 的选择
+  const clearBrand=(which==='gantt')?null:($('#cmBrand')&&$('#cmBrand').value&&STATE.brands[$('#cmBrand').value]?$('#cmBrand').value:sectionBrandOf(which));
+  const bTarget=(which==='gantt')?null:STATE.brands[clearBrand];
   // 修复：文本框可能为空（数据从存储载入、或曾被手动清空文本框），但 STATE._raw 仍保留已应用数据。
   // 先用 STATE._raw 回填文本框，退而用 STATE 行重建，确保能命中真实数据，而不是误报“该输入框没有数据”。
   if(!(el.value||'').trim()){
     const raw=(which==='gantt'?(STATE.ganttRaw||''):(bTarget._raw&&bTarget._raw[which]||''));
     if(raw.trim()) el.value=raw;
-    else { const arr=(which==='gantt')?STATE.gantt:(bTarget[which]||[]); if(arr.length) el.value=(which==='gantt')?ganttToText():datasetToText(which, arr); }
+    else { const arr=(which==='gantt')?STATE.gantt:(bTarget[which]||[]); if(arr.length) el.value=(which==='gantt')?ganttToText():datasetToText(which, arr, clearBrand); }
   }
   const lines=(el.value||'').split(/\r?\n/);
   let dataLines=0; for(let i=1;i<lines.length;i++){ if(lines[i].trim()) dataLines++; }
@@ -1795,20 +1817,23 @@ function clearRows(which, filter, labelSuffix){
   readInputs('replace', true); // 以修改后文本框为准重建该数据集，其余数据不动
   renderAll(); // 兜底：确保看板（表格/图表/甘特）立即刷新
   const modTxt=(which==='gantt' && moduleOf()!=='全部')?(' · '+moduleOf()):'';
-  toast(`已清除【${CLEAR_NAME[which]}${modTxt}】${labelSuffix} 的 ${removed} 行，看板已刷新并自动保存`);
+  const brandTxt=(which!=='gantt' && clearBrand)?(' · 品牌：'+clearBrand):'';
+  toast(`已清除【${CLEAR_NAME[which]}${modTxt}${brandTxt}】${labelSuffix} 的 ${removed} 行，看板已刷新并自动保存`);
 }
 $('#cmMode').addEventListener('change',updateClearUI);
 $('#cm_clear').addEventListener('click',()=>{
   if(!cmWhich) return;
   const which=cmWhich, mode=$('#cmMode').value, module=moduleOf();
   const el=$(CLEAR_EL[which]);
-  const bTarget=(which==='gantt')?null:STATE.brands[sectionBrandOf(which)];
+  // 使用弹窗中选择的品牌（非甘特图时）
+  const cb=(which==='gantt')?null:($('#cmBrand')&&$('#cmBrand').value&&STATE.brands[$('#cmBrand').value]?$('#cmBrand').value:sectionBrandOf(which));
+  const bTarget=(which==='gantt')?null:STATE.brands[cb];
   // 修复：文本框可能为空（数据从存储载入、或曾被手动清空），先用 STATE._raw 回填，退而用 STATE 行重建，
   // 确保后续按日/按月/按类型判定能命中真实数据（否则会误报“该输入框暂无数据”）。
   if(!(el.value||'').trim()){
     const raw=(which==='gantt'?(STATE.ganttRaw||''):(bTarget._raw&&bTarget._raw[which]||''));
     if(raw.trim()) el.value=raw;
-    else { const arr=(which==='gantt')?STATE.gantt:(bTarget[which]||[]); if(arr.length) el.value=(which==='gantt')?ganttToText():datasetToText(which, arr); }
+    else { const arr=(which==='gantt')?STATE.gantt:(bTarget[which]||[]); if(arr.length) el.value=(which==='gantt')?ganttToText():datasetToText(which, arr, clearBrand); }
   }
   const lines=(el.value||'').split(/\r?\n/);
   const header=lines[0]||'';
@@ -2045,71 +2070,11 @@ function readInputs(mode, silent){
   if(!silent) toast(mode==='replace' ? '已按文本框内容全量重建并自动存储（刷新/重开不丢）' : ('已按增量更新并自动存储：新增 '+statAdd+' 行、重复 '+statDup+' 行已自动忽略（刷新/重开不丢，历史保留）'));
 }
 $('#applyBtn').addEventListener('click',readInputs);
-function showTransferDialog(){
-  const d=document.createElement('div'); d.id='transferDlg'; d.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:center;justify-content:center';
-  const navBrands=['李锦记','麦维他','丝蕴','和路雪','家乐','联合利华'];
-  const sections=[{k:'sales',l:'销售数据'},{k:'jzt',l:'京准通'},{k:'purchase',l:'浮码数据'}];
-  function realB(b){ return b==='麦维他'?'麦维他自营':b; }
-  function dispB(b){ return b==='麦维他自营'?'麦维他':b; }
-  d.innerHTML='<div style="background:var(--card);border-radius:12px;padding:24px;width:540px;max-width:90vw;box-shadow:0 8px 32px rgba(0,0,0,.3)">'+
-    '<h3 style="margin:0 0 16px;color:var(--text)">跨品牌数据迁移</h3>'+
-    '<p style="margin:0 0 14px;color:var(--text2);font-size:13px">将某个品牌的整块数据移动到另一个品牌。用于修复导入时选错品牌导致的数据错归（如京准通无「品牌」列，只能手动迁移）。</p>'+
-    '<div style="display:flex;gap:12px;margin-bottom:14px;align-items:flex-end">'+
-      '<label style="flex:1"><span style="font-size:13px;color:var(--text2)">数据类型</span><select id="xfSec" style="width:100%;margin-top:4px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text)">'+sections.map(s=>'<option value="'+s.k+'">'+s.l+'</option>').join('')+'</select></label>'+
-      '<label style="flex:1"><span style="font-size:13px;color:var(--text2)">从（源品牌）</span><select id="xfFrom" style="width:100%;margin-top:4px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text)"></select></label>'+
-      '<label style="flex:1"><span style="font-size:13px;color:var(--text2)">移到（目标品牌）</span><select id="xfTo" style="width:100%;margin-top:4px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text)"></select></label>'+
-    '</div>'+
-    '<div id="xfPreview" style="background:var(--bg2);border-radius:8px;padding:12px;font-size:12px;color:var(--text2);max-height:120px;overflow:auto;margin-bottom:14px;display:none"></div>'+
-    '<div style="display:flex;gap:10px;justify-content:flex-end">'+
-      '<button class="btn2 ghost" id="xfCancel" style="padding:7px 18px">取消</button>'+
-      '<button class="btn2 primary" id="xfDo" style="padding:7px 18px;background:var(--blue);color:#fff;border-color:var(--blue)" disabled>确认迁移</button>'+
-    '</div></div>';
-  document.body.appendChild(d);
-  const secSel=$('#xfSec'), fromSel=$('#xfFrom'), toSel=$('#xfTo'), prev=$('#xfPreview'), doBtn=$('#xfDo');
-  function buildFromOptions(sec){ const cur=fromSel.value;
-    fromSel.innerHTML=navBrands.map(b=>{ const rb=realB(b); const raw=(STATE.brands[rb]&&STATE.brands[rb]._raw[sec])||''; const rows=raw.replace(/\r/g,'').split('\n').filter(l=>l.trim()).length;
-      return'<option value="'+rb+'"'+(cur===rb?' selected':'')+'>'+dispB(rb)+(rows?' ('+rows+'行)':' (空)')+'</option>'; }).join(''); }
-  function buildToOptions(){ const cur=toSel.value;
-    toSel.innerHTML=navBrands.map(b=>{ const rb=realB(b); return'<option value="'+rb+'"'+(cur===rb?' selected':'')+(b==='麦维他'?' disabled':'')+'>'+dispB(rb)+'</option>'; }).join(''); }
-  buildFromOptions(secSel.value); buildToOptions();
-  function refresh(){ const sec=secSel.value, from=fromSel.value, to=toSel.value;
-    const raw=(STATE.brands[from]&&STATE.brands[from]._raw[sec])||''; const lines=raw.replace(/\r/g,'').split('\n').filter(l=>l.trim());
-    doBtn.disabled=(from===to || !lines.length);
-    if(lines.length){ prev.style.display='block'; prev.innerHTML='<b>预览（前5行）：</b><pre style="margin:4px 0 0;white-space:pre-wrap;max-height:90px;overflow:auto">'+lines.slice(0,6).join('\n')+'</pre><div style="margin-top:6px">共 <b>'+lines.length+'</b> 行数据将从「'+dispB(from)+'」→「'+dispB(to)+'」</div>'; } else { prev.style.display='none'; }
-  }
-  secSel.addEventListener('change',()=>{ buildFromOptions(secSel.value); refresh(); });
-  fromSel.addEventListener('change',refresh);
-  toSel.addEventListener('change',refresh);
-  refresh();
-  return new Promise(resolve=>{
-    $('#xfCancel').addEventListener('click',()=>{ d.remove(); resolve(null); });
-    $('#xfDo').addEventListener('click',()=>{
-      const sec=secSel.value, from=fromSel.value, to=toSel.value;
-      if(from===to){ d.remove(); resolve(0); return; }
-      const raw=(STATE.brands[from]&&STATE.brands[from]._raw[sec])||''; const lines=raw.replace(/\r/g,'').split('\n').filter(l=>l.trim());
-      if(!lines.length){ d.remove(); resolve(0); return; }
-      const toBrand=STATE.brands[to]; if(!toBrand){ d.remove(); resolve(0); return; }
-      toBrand._raw[sec]=mergeRaw(toBrand._raw[sec]||'', raw);
-      STATE.brands[from]._raw[sec]='';
-      d.remove(); resolve(lines.length);
-    });
-    d.addEventListener('click',e=>{ if(e.target===d) { d.remove(); resolve(null); } });
-  });
-}
-
-// 按数据内「品牌」列重新归户 + 无品牌列时提供手动迁移
-$('#rehomeBtn').addEventListener('click',async ()=>{
+// 按数据内「品牌」列重新归户（仅对有品牌列的数据生效）
+$('#rehomeBtn').addEventListener('click',()=>{
   const n=rehomeAllByBrand();
-  if(n>0){ saveState(); renderAll(); saveToService(); syncBrandUI();
-    toast('已按「品牌」列重新归户，移动了 '+n+' 行到对应品牌（已自动存储）'); return; }
-  // 无品牌列或无错归 → 弹出手动迁移
-  const moved=await showTransferDialog();
-  if(moved==null) return; // 取消
-  if(moved>0){ saveState(); renderAll(); saveToService(); syncBrandUI();
-    toast('已手动迁移 '+moved+' 行数据到目标品牌（已自动存储）');
-  } else {
-    toast('未执行迁移（源品牌该数据为空或源目标相同）');
-  }
+  saveState(); renderAll(); saveToService(); syncBrandUI();
+  toast(n ? ('已按「品牌」列重新归户，移动了 '+n+' 行到对应品牌（已自动存储）') : '已按「品牌」列检查，无跨品牌错归数据需调整（若数据无品牌列，请用各输入框「清除历史」按品牌单独清除后重新导入）');
 });
 let deb; $('#salesInput').addEventListener('input',()=>{ clearTimeout(deb); deb=setTimeout(readInputs,700); });
 $('#invInput').addEventListener('input',()=>{ clearTimeout(deb); deb=setTimeout(readInputs,700); });
