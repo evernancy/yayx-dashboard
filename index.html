@@ -419,7 +419,7 @@
 
       <details>
         <summary>6 · 营销 / 设计 / 数据 甘特图（三模块共用一个输入框）</summary>
-        <p class="hint">三个模块共用此框：每行用「模块」列标明 <b>营销 / 设计 / 数据</b>，系统自动分流到对应甘特图。日期=开始日；结束日期可选（留空=当天，甘特条宽=1天）。<b>开始时间 / 结束时间</b>可选，精确到小时:分钟（如 09:00、18:30，留空=不限定时段），用于详情/悬停查看时段。同一「模块 + 日期 + 任务」重复输入=覆盖更新；不同任务同名日期=新增一行。修改后下方点「应用并更新看板」或自动保存。</p>
+        <p class="hint">三个模块共用此框：每行用「模块」列标明 <b>营销 / 设计 / 数据</b>，系统自动分流到对应甘特图。日期=开始日；结束日期可选（留空=当天，甘特条宽=1天）；任务、负责人必填，其余留空不报错。甘特图横轴按中国法定节假日标注「休/班」（节假日淡化、调休补班正常）。同一「模块 + 日期 + 任务」重复输入=覆盖更新；不同任务同名日期=新增一行。修改后下方点「应用并更新看板」或自动保存。</p>
         <div class="row">
           <label class="filelabel">上传文件<input type="file" id="ganttFile" accept=".csv,.xlsx,.xls,.txt" hidden></label>
           <button class="btn2 ghost" data-fill="gantt">填入模板</button>
@@ -855,13 +855,13 @@ POS\tday\t2026-08-07\t65000`;}
 function sampleGantt(){
   const t=new Date(); const y=t.getFullYear(), m=String(t.getMonth()+1).padStart(2,'0');
   const d=n=>`${y}-${m}-${String(n).padStart(2,'0')}`;
-  return `模块\t日期\t结束日期\t开始时间\t结束时间\t任务\t负责人\t进度(%)\t状态\t备注
-营销\t${d(1)}\t${d(5)}\t09:00\t18:00\t双11预热种草\t张三\t40\t进行中\t小红书/抖音投放
-营销\t${d(3)}\t${d(8)}\t14:00\t\t达人直播排期\t李四\t20\t未开始\t待商务确认
-设计\t${d(2)}\t${d(6)}\t10:30\t17:30\t主图详情页改版\t王五\t60\t进行中\tAB测试
-设计\t${d(5)}\t\t\t\t首页Banner\t赵六\t10\t进行中\t运营提需
-数据\t${d(1)}\t${d(10)}\t08:00\t20:00\t月度经营分析看板\t钱七\t30\t进行中\tSQL+可视化
-数据\t${d(4)}\t\t09:00\t\t竞品价格监控\t孙八\t80\t进行中\t爬虫已上线`;}
+  return `模块\t日期\t结束日期\t任务\t负责人\t备注
+营销\t${d(1)}\t${d(5)}\t双11预热种草\t张三\t小红书/抖音投放
+营销\t${d(3)}\t${d(8)}\t达人直播排期\t李四\t待商务确认
+设计\t${d(2)}\t${d(6)}\t主图详情页改版\t王五\tAB测试
+设计\t${d(5)}\t\t首页Banner\t赵六\t运营提需
+数据\t${d(1)}\t${d(10)}\t月度经营分析看板\t钱七\tSQL+可视化
+数据\t${d(4)}\t\t竞品价格监控\t孙八\t爬虫已上线`;}
 
 function samplePurchase(){return `时间\tSKU\t浮码\t全国昨日出库商品件数
 2026-08-17\tSKU-BE-01\t89.5\t1200
@@ -1483,6 +1483,23 @@ const GANTT_FIELDS=[
 ];
 const GANTT_DEFAULT_ORDER=['module','date','endDate','startTime','endTime','task','owner','progress','status','note'];
 function normalizeModule(s){ s=String(s||'').trim(); if(/营销/.test(s)) return '营销'; if(/设计/.test(s)) return '设计'; if(/数据/.test(s)) return '数据'; return s; }
+
+// ── 中国法定节假日（按年维护；来源：国务院办公厅放假安排，覆盖 2026）──
+// HOLIDAYS：法定假日（含调休连休的放假日）；WORKDAY_EXTRA：原本周末但调休上班的「补班日」
+const HOLIDAYS={
+  '2026':['2026-01-01','2026-01-02','2026-01-03','2026-02-15','2026-02-16','2026-02-17','2026-02-18','2026-02-19','2026-02-20','2026-02-21','2026-02-22','2026-04-04','2026-04-05','2026-04-06','2026-05-01','2026-05-02','2026-05-03','2026-05-04','2026-05-05','2026-06-19','2026-06-20','2026-06-21','2026-10-01','2026-10-02','2026-10-03','2026-10-04','2026-10-05','2026-10-06','2026-10-07','2026-10-08'],
+};
+const WORKDAY_EXTRA={
+  '2026':['2026-02-14','2026-02-28','2026-04-26','2026-05-09','2026-09-27','2026-10-10'],
+};
+function isWeekend(d){ const dt=new Date(d.slice(0,4),d.slice(5,7)-1,d.slice(8,10)); const w=dt.getDay(); return w===0||w===6; }
+function isHoliday(d){ const y=d.slice(0,4); return (HOLIDAYS[y]||[]).includes(d); }
+function isWorkday(d){ return !isWeekend(d) || isHoliday(d)===false && (WORKDAY_EXTRA[d.slice(0,4)]||[]).includes(d); }
+function dayTag(d){ // 返回 '' | '休' | '班'
+  if(isHoliday(d)) return '休';
+  if(isWeekend(d)){ if((WORKDAY_EXTRA[d.slice(0,4)]||[]).includes(d)) return '班'; return '休'; }
+  return '';
+}
 // 时间归一化为 HH:MM（支持 9 / 9:30 / 09:30 / 9:30:00 等写法；空或非时间返回 ''）
 function normTime(s){ s=String(s||'').trim(); if(!s) return ''; const m=s.match(/(\d{1,2})(?:[:：](\d{1,2}))?/); if(!m) return ''; const h=+m[1], mi=m[2]!==undefined?+m[2]:0; if(h>23||mi>59) return ''; return String(h).padStart(2,'0')+':'+String(mi).padStart(2,'0'); }
 // 表头模糊匹配：先「去标点后精确相等」，再「双向子串」，兼容「进度(%)」「结束日期」「开始日期」等写法
@@ -1591,10 +1608,13 @@ function renderGantt(module, elId, ym){
   g+=`<text x="${12}" y="${headH-rowH/2+4}" font-size="12" font-weight="600" fill="#374151">事项</text>`;
   // 日期表头 + 网格线
   days.forEach((d,i)=>{ const x=x0+i*dayW; const dn=+d.slice(8,10); const dt=new Date(d.slice(0,4),d.slice(5,7)-1,d.slice(8,10)); const wd=dt.getDay();
+    const tag=dayTag(d); const isRest=(tag==='休');
+    const wkStr=(tag==='休')?'休':((tag==='班')?'班':WD[wd]);
+    const wkColor=(tag==='休')?'#d97706':((tag==='班')?'#2563eb':'#9ca3af');
     g+=`<line x1="${x}" y1="${headH-rowH}" x2="${x}" y2="${H-6}" stroke="#e5e7eb" stroke-width="1"/>`;
     g+=`<text x="${x+dayW/2}" y="${headH-rowH/2+4}" text-anchor="middle" font-size="11" font-weight="600" fill="#374151">${dn}</text>`;
-    g+=`<text x="${x+dayW/2}" y="${headH-rowH/2+17}" text-anchor="middle" font-size="9" fill="#9ca3af">${WD[wd]}</text>`;
-    if(wd===0||wd===6) g+=`<rect x="${x}" y="${headH}" width="${dayW}" height="${H-headH-6}" fill="#f8f9fb"/>`;
+    g+=`<text x="${x+dayW/2}" y="${headH-rowH/2+17}" text-anchor="middle" font-size="9" fill="${wkColor}" font-weight="${tag?700:400}">${wkStr}</text>`;
+    if(isRest) g+=`<rect x="${x}" y="${headH}" width="${dayW}" height="${H-headH-6}" fill="#f3f4f6"/>`;
     if(d===td) g+=`<rect x="${x}" y="${headH}" width="${dayW}" height="${H-headH-6}" fill="#fffbeb" opacity="0.6"/>`;
   });
   // 今日竖线
@@ -2207,13 +2227,13 @@ const ganttTplBtn=$('#ganttTplBtn'); if(ganttTplBtn) ganttTplBtn.addEventListene
   const t=new Date(); const y=t.getFullYear(), m=String(t.getMonth()+1).padStart(2,'0');
   const d=n=>`${y}-${m}-${String(n).padStart(2,'0')}`;
   const rows=[
-    ['模块','日期','结束日期','开始时间','结束时间','任务','负责人','进度(%)','状态','备注'],
-    ['营销',d(1),d(5),'09:00','18:00','双11预热种草','张三','40','进行中','小红书/抖音投放'],
-    ['营销',d(3),d(8),'14:00','','达人直播排期','李四','20','未开始','待商务确认'],
-    ['设计',d(2),d(6),'10:30','17:30','主图详情页改版','王五','60','进行中','AB测试'],
-    ['设计',d(5),'','','','首页Banner','赵六','10','进行中','运营提需'],
-    ['数据',d(1),d(10),'08:00','20:00','月度经营分析看板','钱七','30','进行中','SQL+可视化'],
-    ['数据',d(4),'','09:00','','竞品价格监控','孙八','80','进行中','爬虫已上线']
+    ['模块','日期','结束日期','任务','负责人','备注'],
+    ['营销',d(1),d(5),'双11预热种草','张三','小红书/抖音投放'],
+    ['营销',d(3),d(8),'达人直播排期','李四','待商务确认'],
+    ['设计',d(2),d(6),'主图详情页改版','王五','AB测试'],
+    ['设计',d(5),'','首页Banner','赵六','运营提需'],
+    ['数据',d(1),d(10),'月度经营分析看板','钱七','SQL+可视化'],
+    ['数据',d(4),'','竞品价格监控','孙八','爬虫已上线']
   ];
   const ws=XLSX.utils.aoa_to_sheet(rows);
   ws['!cols']=[{wch:8},{wch:13},{wch:13},{wch:10},{wch: 10},{wch:20},{wch:9},{wch:9},{wch:10},{wch:24}];
@@ -2226,14 +2246,12 @@ const ganttTplBtn=$('#ganttTplBtn'); if(ganttTplBtn) ganttTplBtn.addEventListene
     ['   模块','填 营销 / 设计 / 数据（精确匹配，决定分流到哪张图）'],
     ['   日期','任务开始日，格式 YYYY-MM-DD（如 '+d(1)+'）'],
     ['   结束日期','可选；留空=当天结束（甘特条=1天），填了则画成跨天横向条'],
-    ['   开始/结束时间','可选，时:分（如 09:00、18:30）；留空=全天'],
     ['   任务','事项名称，显示在甘特图左侧与进度条上'],
     ['   负责人','填姓名/工号；同一负责人在甘特图上显示同一种颜色（按名字自动着色）'],
-    ['   进度(%)','0–100，越深=完成越多；留空默认 0'],
-    ['   状态','选填：未开始/进行中/已完成/延期'],
     ['   备注','选填'],
     ['四、更新规则','同一「模块+日期+任务」重复粘贴=覆盖；同模块+日期下不同任务=新增'],
-    ['五、配色说明','甘特图颜色=负责人（每人一色），条的深浅=进度'],
+    ['五、配色说明','甘特图颜色=负责人（每人一色）；横轴周末/法定假日标「休」并淡化，调休补班日标「班」正常显示'],
+    ['六、日历','看板横轴自动按中国法定节假日标注「休/班」，节假日当天任务照常显示'],
     ['六、导入','复制本表数据粘贴到看板「数据输入区→6·甘特图」文本框，或点「上传文件」选本 xlsx']
   ];
   const ws2=XLSX.utils.aoa_to_sheet(sh);
