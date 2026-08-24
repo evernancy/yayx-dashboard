@@ -2127,12 +2127,18 @@ const invDateApplyBtn=$('#invDateApplyBtn'); if(invDateApplyBtn) invDateApplyBtn
 const jztApplyBtn=$('#jztApplyBtn'); if(jztApplyBtn) jztApplyBtn.addEventListener('click',applyJztDates);
 const jztResetBtn=$('#jztResetBtn'); if(jztResetBtn) jztResetBtn.addEventListener('click',()=>{ $('#jztStart').value=''; $('#jztEnd').value=''; applyJztDates(); });
 
-/* 输入框解析诊断：粘贴后实时提示“已解析 N 行”或“未解析出数据 + 原因” */
-function updateDiag(rawText,rowCount,key){
+/* 输入框解析诊断：粘贴后实时提示"已解析 N 行"或"未解析出数据 + 原因" */
+function updateDiag(rawText,rowCount,key,parsedCount){
   const el=$('#diag'+key); if(!el) return;
   const t=(rawText||'').trim();
   if(!t){ el.className='diag'; el.textContent=''; return; }
-  if(rowCount>0){ el.className='diag ok'; el.innerHTML='✓ 已解析 <b>'+rowCount+'</b> 行'; }
+  if(rowCount>0){
+    el.className='diag ok';
+    /* 甘特图额外显示"解析 N → 存储 M"，方便排查丢数据问题 */
+    const detail=(key==='Gantt'&&parsedCount!==undefined&&parsedCount!==rowCount)
+      ? ' <span style="color:#6b7280;font-size:12px">（解析 '+parsedCount+' 行 → 存储 '+rowCount+' 条）</span>' : '';
+    el.innerHTML='✓ 已解析 <b>'+rowCount+'</b> 行'+detail;
+  }
   else { el.className='diag err'; el.innerHTML='⚠ 未解析出数据：请确认<b>首行是表头</b>且含可识别列名（京准通需含 日期 / 花费 / 点击 / GMV 等），数据用 <b>Tab 或英文逗号</b>分隔；目标行（如「投放花费目标 月 2026-08 380000」）会自动抽走，不属于投放数据。'; }
 }
 /* ---------- 品牌列自动识别 / 归户 ---------- */
@@ -2204,11 +2210,12 @@ function readInputs(mode, silent){
     }
   });
   // 甘特图重建（共享）
-  STATE.gantt=mergeGantt(STATE.gantt||[], parseGantt(STATE.ganttRaw||''));
+  const ganttParsed=parseGantt(STATE.ganttRaw||'');
+  STATE.gantt=mergeGantt(STATE.gantt||[], ganttParsed);
   ensureGanttIds();
   // 3) 诊断：仅显示当前正在编辑（各输入框所属品牌）的解析行数
   SECTIONS.forEach(w=>{ const b=STATE.brands[brandOf[w]]; updateDiag(b._raw[w], (w==='targets'?parseTargets(b._raw[w]).length:b[w].length), DIAG[w]); });
-  updateDiag(STATE.ganttRaw, STATE.gantt.length, 'Gantt');
+  updateDiag(STATE.ganttRaw, STATE.gantt.length, 'Gantt', ganttParsed.length);
   saveState(); renderAll(); saveToService();
   if(!silent) toast(mode==='replace' ? '已按文本框内容全量重建并自动存储（刷新/重开不丢）' : ('已按增量更新并自动存储：新增 '+statAdd+' 行、重复 '+statDup+' 行已自动忽略（刷新/重开不丢，历史保留）'));
 }
@@ -2449,7 +2456,9 @@ function setupFile(id,key){ const inp=$(id); const ta=()=>{ const t=$('#'+key+'I
       trimSheet(ws);
       const text=sheetToTsv(ws);
       if(!text.trim()) throw new Error('工作表为空或无法解析，请确认首个工作表包含数据');
-      ta().value=text; readInputs();
+      ta().value=text;
+      /* 甘特图上传始终用 replace 模式（避免多次上传 merge 导致旧序列号等脏数据污染 ganttRaw） */
+      readInputs(key==='gantt' ? 'replace' : mode);
       toast('Excel 解析完成：'+(text.split('\n').length-1)+' 行已导入并存储');
     }
   }catch(err){ toast('Excel解析失败：'+(err.name||'Error')+' - '+err.message+'｜若已改过代码，请重新打开本页(Cmd+Shift+R)后再试', true); }
