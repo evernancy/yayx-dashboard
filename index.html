@@ -1631,7 +1631,9 @@ function renderGantt(module, elId, ym){
     const wkStr=(tag==='休')?'休':((tag==='班')?'班':WD[wd]);
     const wkColor=(tag==='休')?'#d97706':((tag==='班')?'#2563eb':'#9ca3af');
     g+=`<line x1="${x}" y1="${headH-rowH}" x2="${x}" y2="${H-6}" stroke="#e5e7eb" stroke-width="1"/>`;
-    g+=`<text x="${x+dayW/2}" y="${headH-rowH/2+4}" text-anchor="middle" font-size="${hdrFs}" font-weight="600" fill="#374151">${dn}</text>`;
+    // 日期格式：M月D日（如 8月24日）
+    const monthNum=+d.slice(5,7);
+    g+=`<text x="${x+dayW/2}" y="${headH-rowH/2+4}" text-anchor="middle" font-size="${hdrFs}" font-weight="600" fill="#374151">${monthNum}月${dn}日</text>`;
     g+=`<text x="${x+dayW/2}" y="${headH-rowH/2+16}" text-anchor="middle" font-size="${subFs}" fill="${wkColor}" font-weight="${tag?700:400}">${wkStr}</text>`;
     if(isRest) g+=`<rect x="${x}" y="${headH}" width="${dayW}" height="${H-headH-6}" fill="#f3f4f6"/>`;
     if(d===td) g+=`<rect x="${x}" y="${headH}" width="${dayW}" height="${H-headH-6}" fill="#fffbeb" opacity="0.6"/>`;
