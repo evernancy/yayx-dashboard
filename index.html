@@ -1979,8 +1979,10 @@ function setView(v){
   currentView=v;
   $$('.tab').forEach(t=>{
     if(t.dataset.view==='lijx' && t.dataset.brand){
-      // 品牌 tab：仅在「lijx 视图」+「该品牌为当前品牌」时高亮
-      t.classList.toggle('active', v==='lijx' && t.dataset.brand===STATE.currentBrand);
+      // 品牌 tab：仅在「lijx 视图」+「该品牌为当前品牌」时高亮（麦维他需映射到自营/POP）
+      const tb=t.dataset.brand;
+      const brandActive = tb==='麦维他' ? (STATE.currentBrand==='麦维他自营'||STATE.currentBrand==='麦维他POP') : (STATE.currentBrand===tb);
+      t.classList.toggle('active', v==='lijx' && brandActive);
     } else {
       t.classList.toggle('active', t.dataset.view===v);
     }
