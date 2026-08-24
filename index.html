@@ -2310,6 +2310,8 @@ function setupTodoAll(){ TODO_KEYS.forEach(setupTodo); }
 
 /* ---------- 自动模式：加载顺序 本地服务data.json → 浏览器IndexedDB(主存储) → localStorage ---------- */
 function isUsableState(st){ return !!st && (st.brands || Array.isArray(st.sales)||Array.isArray(st.inventory)||Array.isArray(st.jzt)||Array.isArray(st.gantt)||Array.isArray(st.purchase)|| (st._raw && (st._raw.sales||st._raw.inventory||st._raw.jzt||st._raw.targets||st._raw.gantt||st._raw.purchase))); }
+// 云端同步只比对【数据】，剔除视图状态（currentBrand），避免仅因看到的品牌不同就反复触发重新拉取导致视图跳走
+function dataOnly(st){ const c=Object.assign({}, st); delete c.currentBrand; return c; }
 // 归一化任意版本 STATE -> 多品牌结构；旧版（顶层 sales/_raw）数据整体归入「李锦记」品牌，甘特图共享
 function normalizeState(st){
   if(!st || typeof st!=='object') return emptyState();
@@ -2516,7 +2518,13 @@ async function ghCreateBoard(name){
 }
 function emptyState(){ const brands={}; BRANDS.forEach(b=>{ brands[b]=freshBrand(); }); return { brands, currentBrand:'李锦记', brandOrder:BRANDS.slice(), gantt:[], ganttRaw:'', memo:{} }; }
 async function loadBoardState(id){ const row=await ghGetBoard(id); if(row&&row.state&&isUsableState(row.state)) return {state:row.state,updated_at:row.updated_at}; return null; }
-function hydrateFromState(st){ const mode=applyState(st); if(!mode) return false; fillInputsForCurrentBrand(); renderAll(); idbSet(STATE); return true; }
+function hydrateFromState(st){
+  // 云端同步只更新【数据】，绝不改动本地视图位置（当前品牌/视图/子视图）
+  const keepBrand=STATE.currentBrand, keepView=currentView, keepSub=lijxSub;
+  const mode=applyState(st); if(!mode) return false;
+  STATE.currentBrand=keepBrand; currentView=keepView; lijxSub=keepSub;
+  fillInputsForCurrentBrand(); syncBrandUI(); renderAll(); idbSet(STATE); return true;
+}
 // 把当前品牌的原始输入回填到数据输入区文本框（供查看/编辑）；甘特图回填到共享框
 function fillInputsForCurrentBrand(){
   const b=B();
@@ -2675,7 +2683,7 @@ init();
       if(!row||!row.state||!isUsableState(row.state)){ badge.textContent='云端协作 · 已连接（'+currentBoard.name+'）'; return; }
       var srvUpd=Date.parse(row.updated_at)||0;
       if(srvUpd>window.__lastSaveAt && !isTyping() && !modalOpen()){
-        if(JSON.stringify(STATE)!==JSON.stringify(row.state)){ hydrateFromState(row.state); renderAll(); setupTodoAll(); badge.textContent='云端协作 · 已同步 '+fmtTime(new Date()); syncing=false; return; }
+        if(JSON.stringify(dataOnly(STATE))!==JSON.stringify(dataOnly(row.state))){ hydrateFromState(row.state); renderAll(); setupTodoAll(); badge.textContent='云端协作 · 已同步 '+fmtTime(new Date()); syncing=false; return; }
       }
       badge.textContent='云端协作 · 已连接 '+currentBoard.name;
     }catch(e){ var msg=errMsg(e); badge.textContent='云端协作 · 离线（'+msg.slice(0,90)+'）'; console.error('[GitHub] 连接失败:', e, '| 字符串化:', JSON.stringify(e)); diagHints(JSON.stringify(e)); }
