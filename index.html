@@ -347,13 +347,13 @@
           <button class="btn2 ghost" id="invTplBtn">下载填写模板</button>
           <button class="btn2 ghost clearBtn" data-which="inventory">清除历史</button>
         </div>
-        <textarea id="invInput" placeholder="时间&#9;商品名称&#9;SKU&#9;品牌&#9;一级类目&#9;二级类目&#9;三级类目&#9;店铺名称&#9;供应商简码&#9;供应商名称&#9;全国采购价&#9;库存件数&#9;现货库存&#9;可用库存&#9;近7日出库商品件数&#9;近28日出库商品件数&#9;月至今出库商品件数&#9;预计可售天数&#9;无货pv&#9;PV现货率&#9;（模板1·库存明细·逐SKU全量列；缺列留空，列名自动识别；计算口径稍后接入）"></textarea>
+        <textarea id="invInput" placeholder="时间&#9;商品名称&#9;SKU&#9;品牌&#9;一级类目&#9;二级类目&#9;三级类目&#9;店铺名称&#9;供应商简码&#9;供应商名称&#9;全国采购价&#9;库存件数&#9;现货库存&#9;可用库存&#9;近7日出库商品件数&#9;昨日出库商品件数&#9;近28日出库商品件数&#9;月至今出库商品件数&#9;预计可售天数&#9;无货pv&#9;PV现货率&#9;（模板1·库存明细·逐SKU全量列；缺列留空，列名自动识别；计算口径稍后接入）"></textarea>
         <div class="diag" id="diagInv"></div>
       </details>
 
       <details>
         <summary>3 · 浮码数据（单独录入，不并入库存周转数据）</summary>
-        <p class="hint">浮码数据与库存周转数据相互独立，本框单独录入、单独存储。表头：时间 / SKU / 浮码 / 全国昨日出库商品件数（列名自动识别，缺列留空）。「浮码 × 全国昨日出库商品件数 ÷ 1.129」用于计算 POS 实际数据。同一「时间 + SKU」重复录入即覆盖更新。</p>
+        <p class="hint">浮码数据与库存周转数据相互独立，本框单独录入、单独存储。表头：<b>时间 / SKU / 浮码</b>（无需录入出库件数）。「全国昨日出库商品件数」<b>自动取自「库存周转数据」明细中的「昨日出库商品件数」列，按时间 + SKU 匹配</b>；公式为 <b>Σ（浮码 × 昨日出库商品件数）÷ 1.129</b>，用于计算 POS 实际数据。库存明细缺该 SKU/日期的昨日出库时该项留空（不计入 POS）。同一「时间 + SKU」重复录入即覆盖更新。</p>
         <div class="row">
           <span class="muted" style="font-size:12px">品牌</span>
           <select id="brand_purchase" class="secBrand" data-sec="purchase" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px">
@@ -370,7 +370,7 @@
           <button class="btn2 ghost" id="ppTplBtn">下载填写模板</button>
           <button class="btn2 ghost clearBtn" data-which="purchase">清除历史</button>
         </div>
-        <textarea id="ppInput" placeholder="时间&#9;SKU&#9;浮码&#9;全国昨日出库商品件数（浮码单独录入；用于计算POS；缺列留空，列名自动识别）"></textarea>
+        <textarea id="ppInput" placeholder="时间&#9;SKU&#9;浮码（浮码单独录入；全国昨日出库件数自动取自库存明细的「昨日出库商品件数」列，按时间+SKU匹配）"></textarea>
         <div class="diag" id="diagPp"></div>
       </details>
 
@@ -510,7 +510,7 @@
           <tr><th>模块</th><th>推荐列（顺序不限，系统自动识别）</th></tr>
           <tr><td>销售</td><td>时间 / 商品名称 / SKU / 品牌 / 类目(一二三级) / 店铺名称 / 经营模式 / 浏览量 / 访客数 / 成交人数 / 成交单量 / 成交商品件数 / 成交金额 / 加购人数 …</td></tr>
           <tr><td>库存周转</td><td>日期 / 全国库存（件数） / 库存金额 / 库存周转（天） / 近7天销售（件数） / 近7天销售（金额） / 近14天销售（件数） / 近14天销售（金额） / 日均销售（件数） / 日均销售（金额） / 60+长库龄金额 / 60+长库龄金额（基调） / 60+长库龄金额（复调） / 滞销金额 / 滞销金额（基调） / 滞销金额（复调） / PV现货率 / 实库现货率 / 巢湖库存 / 全链路周转 —— 供应链库存周转模板（每日一行聚合），缺列留空不影响其余</td></tr>
-          <tr><td>浮码数据<br>(独立录入)</td><td>时间 / SKU / 浮码 / 全国昨日出库商品件数 —— <b>单独录入、单独存储</b>，不并入库存周转数据；「浮码 × 昨日出库件数 ÷ 1.129」用于计算 POS 实际；同「时间+SKU」覆盖更新，缺列留空</td></tr>
+          <tr><td>浮码数据<br>(独立录入)</td><td>时间 / SKU / 浮码 —— <b>单独录入、单独存储</b>，不并入库存周转数据；「全国昨日出库商品件数」自动取自库存明细的「昨日出库商品件数」列（按时间+SKU匹配）；「浮码 × 昨日出库件数 ÷ 1.129」用于计算 POS 实际；同「时间+SKU」覆盖更新，缺列留空</td></tr>
           <tr><td>京准通</td><td>日期 / 营销场景 / 计划ID / 推广计划 / 跟单SKU ID·名称 / 展现数 / 点击数 / 花费 / 直接·间接·总订单行与金额 / 加购数 / 转化率(%) / 平均订单成本 / 投产比 / 预售·新客·关注·成交用户 等（共 36 列）</td></tr>
           <tr><td>目标</td><td>类型(品牌GMV/采销GMV/内部GMV/POS/京准通花费即投放花费) / 粒度(day/month/year) / 周期(2026-08-01或2026-08或2026) / 目标值</td></tr>
           <tr><td>营销/设计/数据<br>(甘特图)</td><td>模块(营销/设计/数据) / 日期(开始日) / 结束日期(可选) / <b>开始时间(可选,时:分)</b> / <b>结束时间(可选,时:分)</b> / 任务 / 负责人 / 进度(%) / 状态 / 备注　—— 三模块<b>共用一个输入框</b>，按「模块」列自动分流到对应甘特图；同「模块+日期+任务」覆盖，不同任务新增</td></tr>
@@ -651,7 +651,7 @@ const ALIAS = {
   refundOrders:['退款单量','取消及售后退款单量','refund_orders','cancel_refund_orders'],
   begin:['期初库存','期初','begin','opening','begin_inv'],
   end:['期末库存','期末','end','closing','end_inv','现货库存'],
-  invQty:['期间销量','销量','销售数量','出库量','出库件数','sold','inv_sales','period_sales','昨日出库商品件数'],
+  invQty:['期间销量','销量','销售数量','出库量','出库件数','sold','inv_sales','period_sales'],
   invDays:['周转天数','天数','days','turnover_days','预计可售天数'],
   purchase:['采购价','采购成本','进价','买价','purchase','cost_price','buy_price','price','全国采购价','浮码'],
   aging:['库龄天数','库龄','长库龄','aging','age_days','库存天数'],
@@ -670,6 +670,7 @@ const ALIAS = {
   outBO:['月至今出库商品件数','月至今出库','月至今出库件数','mtd_out','out_mtd','bo'],
   outBI:['近7日出库商品件数','近7日出库','近7日出库件数','7d_out','out_7d','bi'],
   outBJ:['近14日出库商品件数','近14日出库','近14日出库件数','14d_out','out_14d','bj'],
+  outBH:['昨日出库商品件数','昨日出库','昨日全国出库','昨日出库件数','1d_out','out_yesterday','bh'],
   turnDays:['库存周转（天）','库存周转天','turnover_days','库存周转'],
   s7qty:['近7天销售（件数）','近7天销售件数','s7_qty','近7天销量件数','7天销量(件)'],
   s7amt:['近7天销售（金额）','近7天销售金额','s7_amt','近7天销量金额','7天销量(额)'],
@@ -972,13 +973,13 @@ function sampleGantt(){
 数据\t${d(1)}\t${d(10)}\t月度经营分析看板\t钱七\tSQL+可视化
 数据\t${d(4)}\t\t竞品价格监控\t孙八\t爬虫已上线`;}
 
-function samplePurchase(){return `时间\tSKU\t浮码\t全国昨日出库商品件数
-2026-08-17\tSKU-BE-01\t89.5\t1200
-2026-08-17\tSKU-SW-02\t235\t800
-2026-08-17\tSKU-FG-03\t58\t1500
-2026-08-18\tSKU-BE-01\t89.5\t1350
-2026-08-18\tSKU-SW-02\t235\t860
-2026-08-18\tSKU-FG-03\t58\t1420`;}
+function samplePurchase(){return `时间\tSKU\t浮码
+2026-08-17\tSKU-BE-01\t89.5
+2026-08-17\tSKU-SW-02\t235
+2026-08-17\tSKU-FG-03\t58
+2026-08-18\tSKU-BE-01\t89.5
+2026-08-18\tSKU-SW-02\t235
+2026-08-18\tSKU-FG-03\t58`;}
 
 // 模板2：采购单（约70列，逐行=一张采购单明细），示例仅含若干核心列示意
 function samplePurchaseOrder(){return `采购单号\t采购渠道\t合同主体\t供应商简码\t供应商名称\t商品编号\t商品名称\t订单属性\t配送中心\t京东仓库\t采购价格\t原始采购数量\t采购数量\t实收数量\t采购金额\t实收金额\t采购单位\t币种\t采购员\t建单人\t订单状态\t订购时间
@@ -1160,7 +1161,7 @@ function invRow(r){
     date: r.date||'',
     invQtyTotal: g('invQtyTotal'), invAmount: g('invAmount'), turnDays: g('turnDays'),
     spotQty: g('spotQty'), purPrice: g('purPrice'),
-    outBO: g('outBO'), outBI: g('outBI'), outBJ: g('outBJ'),
+    outBO: g('outBO'), outBI: g('outBI'), outBJ: g('outBJ'), outBH: g('outBH'),
     s7qty: g('s7qty'), s7amt: g('s7amt'), s14qty: g('s14qty'), s14amt: g('s14amt'),
     dqty: g('dqty'), damt: g('damt'),
     age60: g('age60'), age60_j: g('age60_j'), age60_f: g('age60_f'),
@@ -1217,15 +1218,23 @@ function computeInv(asOf){
   return {all, cur, dates, maxDate, target, avgDays, slow};
 }
 function posDailyMap(){
-  // POS 实际 = Σ（浮码 × 全国昨日出库商品件数）÷ 1.129，按日聚合（数据源：浮码数据输入区）
+  // POS 实际 = Σ（浮码 × 昨日出库商品件数）÷ 1.129
+  // 「昨日出库商品件数」取自库存明细（库存周转数据）的「昨日出库商品件数」列，按 时间 + SKU 匹配；
+  // 库存明细缺该 SKU/日期的昨日出库时该项留空（不计入 POS）。
   const m={};
+  // 构建库存明细「昨日出库」索引：key = 日期|SKU → 昨日出库件数
+  const invBH={};
+  B().inventory.forEach(r=>{ const d=String(r.date||'').slice(0,10); const sku=String(r.sku||'').trim(); if(!d||!sku) return; invBH[d+'|'+sku]=num(r.outBH); });
+  let used=false;
   (B().purchase||[]).forEach(r=>{
-    const d=String(r.date||'').slice(0,10); if(!d) return;
-    const price=num(r.purchase), outQ=(r.ppOutQty!==undefined&&r.ppOutQty!==''?num(r.ppOutQty):num(r.invQty));
-    const v=price*outQ/1.129; if(v) m[d]=(m[d]||0)+v;
+    const d=String(r.date||'').slice(0,10); const sku=String(r.sku||'').trim(); if(!d||!sku) return;
+    const price=num(r.purchase);
+    const outQ=invBH[d+'|'+sku];                     // 库存明细里的「昨日出库商品件数」
+    if(!price || !outQ) return;                       // 缺出库则留空，不计入
+    const v=price*outQ/1.129; m[d]=(m[d]||0)+v; used=true;
   });
-  if(Object.keys(m).length) return m;
-  // 回退：浮码数据表为空时用库存表估算（库存金额 / 1.129）
+  if(used) return m;
+  // 回退：浮码数据表为空时，用库存表估算（库存金额 / 1.129）
   B().inventory.forEach(r=>{ const d=r.date; if(!d) return;
     const amt=(r.invAmount!==undefined && num(r.invAmount)>0)? num(r.invAmount) : (num(r.invQty)*num(r.purchase));
     const v=amt/1.129; if(v) m[d]=(m[d]||0)+v; }); return m;
@@ -2672,28 +2681,28 @@ const awTplBtn=$('#awTplBtn'); if(awTplBtn) awTplBtn.addEventListener('click',()
   toast('已下载 Excel 模板（.xlsx，含「长库龄预警」+「填写说明」两个 Sheet，每日一行）');
 });
 
-// 下载浮码数据填写模板（真实 .xlsx：时间/SKU/浮码/全国昨日出库商品件数，含示例行与空行，附填写说明表）
+// 下载浮码数据填写模板（真实 .xlsx：时间/SKU/浮码，含示例行与空行，附填写说明表）
 const ppTplBtn=$('#ppTplBtn'); if(ppTplBtn) ppTplBtn.addEventListener('click',()=>{
   const t=new Date(); const y=t.getFullYear(), m=String(t.getMonth()+1).padStart(2,'0');
   const d=n=>`${y}-${m}-${String(n).padStart(2,'0')}`;
   const rows=[
-    ['时间','SKU','浮码','全国昨日出库商品件数'],
-    [d(1),'SKU-BE-01',89.5,1200],
-    [d(1),'SKU-SW-02',235,800],
-    [d(1),'SKU-FG-03',58,1500],
-    ['','','',''],
-    ['','','',''],
-    ['','','','']
+    ['时间','SKU','浮码'],
+    [d(1),'SKU-BE-01',89.5],
+    [d(1),'SKU-SW-02',235],
+    [d(1),'SKU-FG-03',58],
+    ['','',''],
+    ['','',''],
+    ['','','']
   ];
   const ws=XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols']=[{wch:12},{wch:14},{wch:10},{wch:20}];
+  ws['!cols']=[{wch:12},{wch:14},{wch:10}];
   const wsHelp=XLSX.utils.aoa_to_sheet([
     ['列','说明','示例'],
     ['时间','数据日期（每日一行×SKU）','2026-08-01'],
     ['SKU','商品编码（纯数字或字母均可）','SKU-BE-01'],
     ['浮码','商品浮码（单价）','89.5'],
-    ['全国昨日出库商品件数','昨日全国出库件数','1200'],
-    ['POS 计算','浮码 × 全国昨日出库商品件数 ÷ 1.129，按日加总 = POS 实际','89.5 × 1200 ÷ 1.129 ≈ 95129.3']
+    ['昨日出库商品件数','自动取自「库存周转数据」明细的「昨日出库商品件数」列（按时间+SKU匹配），本表无需填','—'],
+    ['POS 计算','浮码 × 昨日出库商品件数 ÷ 1.129，按日加总 = POS 实际','89.5 × 1200 ÷ 1.129 ≈ 95129.3']
   ]);
   wsHelp['!cols']=[{wch:12},{wch:52},{wch:26}];
   const wb=XLSX.utils.book_new();
