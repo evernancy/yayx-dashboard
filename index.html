@@ -653,6 +653,8 @@ function normDate(s){
   if((m=s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/))) return `${m[1]}-${String(m[2]).padStart(2,'0')}-${String(m[3]).padStart(2,'0')}`;
   if((m=s.match(/^(\d{4})年(\d{1,2})月(\d{1,2})日?$/))) return `${m[1]}-${String(m[2]).padStart(2,'0')}-${String(m[3]).padStart(2,'0')}`;
   if((m=s.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{2,4})$/))){ let y=+m[3]; if(y<100) y+=(y<70?2000:1900); return `${y}-${String(m[1]).padStart(2,'0')}-${String(m[2]).padStart(2,'0')}`; }
+  /* Excel 日期序列号（纯数字，如 46265 → 2026-08-27）。范围约 30000~60000 对应 1982~2064 年 */
+  if((m=s.match(/^(\d{4,5})$/))){ const n=+m[1]; if(n>25000&&n<70000){ const d=new Date(Math.round((n-25569)*86400000)); const y=d.getFullYear(),mo=d.getMonth()+1,dd=d.getDate(); if(y>1980&&y<2100) return `${y}-${String(mo).padStart(2,'0')}-${String(dd).padStart(2,'0')}`; } }
   return s;
 }
 function parseTable(text){
