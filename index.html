@@ -1597,7 +1597,10 @@ function renderGantt(module, elId, ym){
   // ── 新布局：左侧事项名 + 上方日期 + 水平进度条（按负责人着色）──
   const labW=170, dayW=110, x0=labW, rowH=36, headH=44;
   const gridW=days.length*dayW, W=x0+gridW+16;
-  const tasks=all.filter(r=>{ const s=r.date,e=r.endDate||r.date; return s<=me && e>=ms; })
+  /* 安全日期比较：将日期字符串转为时间戳再比较，避免非 YYYY-MM-DD 格式（如旧 Excel 序列号残留）在字符串比较时出错 */
+  const ts=d=>{ const p=String(d||'').match(/^(\d{4})-(\d{2})-(\d{2})$/); return p?new Date(+p[1],p[2]-1,+p[3]).getTime():NaN; };
+  const msTs=ts(ms), meTs=ts(me);
+  const tasks=all.filter(r=>{ const s=ts(r.date),e=ts(r.endDate||r.date); return (!isNaN(s)&&!isNaN(ms)&&!isNaN(me))?(s<=meTs&&e>=msTs):(String(r.date||'')<=me&&String(r.endDate||r.date)>=ms); })
     .sort((a,b)=>(a.date||'').localeCompare(b.date||''));
   const H=headH+Math.max(tasks.length,1)*rowH+28;
   const WD=['日','一','二','三','四','五','六'];
@@ -2433,7 +2436,10 @@ function setupFile(id,key){ const inp=$(id); const ta=()=>{ const t=$('#'+key+'I
       const ab=await f.arrayBuffer();
       const u8=new Uint8Array(ab); // 关键：浏览器 arrayBuffer 是 ArrayBuffer，必须转 Uint8Array，否则 XLSX.read 抛 Invalid array length
       const wb=XLSX.read(u8,{type:'array',cellDates:true,cellStyles:false,cellNF:false,cellHTML:false,cellFormula:false});
-      const ws=wb.Sheets[wb.SheetNames[0]];
+      /* 智能选表：优先选名称含「模板/数据/Gantt」的 Sheet；避免读到「填写说明」等辅助 Sheet 导致解析不全 */
+      let ws=wb.Sheets[wb.SheetNames[0]];
+      const dataSheet=wb.SheetNames.find(n=>/[模板数据gantt数据sheet]/i.test(n))||wb.SheetNames.find(n=>!/[说明帮助指引readme注]/i.test(n));
+      if(dataSheet&&wb.Sheets[dataSheet]) ws=wb.Sheets[dataSheet];
       trimSheet(ws);
       const text=sheetToTsv(ws);
       if(!text.trim()) throw new Error('工作表为空或无法解析，请确认首个工作表包含数据');
