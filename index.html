@@ -2248,9 +2248,9 @@ function readInputs(mode, silent){
              + Math.max(0, tgtIn.length-(b.targets.length-tb));
     }
   });
-  // 甘特图重建（共享）
+  // 甘特图重建（共享）：replace 模式清空历史只用本次数据；merge 模式增量合并
   const ganttParsed=parseGantt(STATE.ganttRaw||'');
-  STATE.gantt=mergeGantt(STATE.gantt||[], ganttParsed);
+  STATE.gantt=(mode==='replace')?ganttParsed:mergeGantt(STATE.gantt||[], ganttParsed);
   ensureGanttIds();
   // 3) 诊断：仅显示当前正在编辑（各输入框所属品牌）的解析行数
   SECTIONS.forEach(w=>{ const b=STATE.brands[brandOf[w]]; updateDiag(b._raw[w], (w==='targets'?parseTargets(b._raw[w]).length:b[w].length), DIAG[w]); });
