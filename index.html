@@ -206,7 +206,7 @@
   <section data-sub="inventory">
     <div class="panel">
       <h2>库存周转数据</h2>
-      <p class="hint"><b>模板 1（库存明细，逐 SKU）</b>：每行 = 一个 SKU 在某天的库存快照，含 时间 / 商品名称 / SKU / 品牌 / 一级~三级类目 / 店铺名称 / 供应商 / 全国采购价 / 库存件数 / 现货库存 / 可用库存 / 近7~90日出库商品件数 / 月至今出库商品件数 / 预计可售天数 / 无货pv / PV现货率 等全量列（列名自动识别，缺列留空）。<b>当前计算口径仍为旧的「每日聚合(20列)」模式，逐 SKU 明细的完整计算逻辑稍后由你确认后再接入；现在上传仅做录入与存储。</b>同一「时间 + SKU」重复录入即覆盖更新。</p>
+      <p class="hint"><b>模板 1（库存明细，逐 SKU）</b>：每行 = 一个 SKU 在某天的库存快照，含 时间 / 商品名称 / SKU / 品牌 / 一级~三级类目 / 店铺名称 / 供应商 / 全国采购价 / 库存件数 / 现货库存 / 可用库存 / 近7~90日出库商品件数 / 月至今出库商品件数 / 预计可售天数 / 无货pv / PV现货率 等全量列（列名自动识别，缺列留空）。同一「时间 + SKU」重复录入即覆盖更新。<br><b>看板已搭好以下 13 个库存周转指标（直接读列、缺列留空）：</b>库存金额、库存周转（天）、近7天销售（金额）、近14天销售（金额）、日均销售（金额）、60-90天长库龄预警金额（及基调/复调）、90天以上长库龄金额（及基调/复调）、PV现货率、实库现货率。<b>各指标的汇总/派生计算逻辑稍后由你确认后再接入。</b></p>
       <div class="row" style="margin:6px 0 10px">
         <span>查看日期</span>
         <select id="invDate" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px"></select>
@@ -624,9 +624,12 @@ const ALIAS = {
   s14amt:['近14天销售（金额）','近14天销售金额','s14_amt','近14天销量金额','14天销量(额)'],
   dqty:['日均销售（件数）','日均销售件数','daily_qty','日均销量件数','日销(件)'],
   damt:['日均销售（金额）','日均销售金额','daily_amt','日均销量金额','日销(额)'],
-  age60:['60+长库龄金额','60+长库龄','long_aging_amt','长库龄金额'],
-  age60_j:['60+长库龄金额（基调）','基调长库龄金额','age60_j','基调长库龄'],
-  age60_f:['60+长库龄金额（复调）','复调长库龄金额','age60_f','复调长库龄'],
+  age60:['60-90天长库龄预警金额','60+长库龄金额','60-90长库龄','60+长库龄','long_aging_amt','长库龄金额'],
+  age60_j:['60-90天长库龄预警金额（基调）','60+长库龄金额（基调）','基调长库龄金额','age60_j','基调长库龄'],
+  age60_f:['60-90天长库龄预警金额（复调）','60+长库龄金额（复调）','复调长库龄金额','age60_f','复调长库龄'],
+  age90:['90天以上长库龄金额','90+长库龄金额','90天以上长库龄','90天长库龄','over90_aging_amt','超长库龄金额'],
+  age90_j:['90天以上长库龄金额（基调）','90+长库龄金额（基调）','基调90天以上长库龄','age90_j','基调超长库龄'],
+  age90_f:['90天以上长库龄金额（复调）','90+长库龄金额（复调）','复调90天以上长库龄','age90_f','复调超长库龄'],
   sluggish:['滞销金额','sluggish_amt','slow_amt','滞销'],
   sluggish_j:['滞销金额（基调）','基调滞销金额','sluggish_j','基调滞销'],
   sluggish_f:['滞销金额（复调）','复调滞销金额','sluggish_f','复调滞销'],
@@ -1096,6 +1099,7 @@ function invRow(r){
     s7qty: g('s7qty'), s7amt: g('s7amt'), s14qty: g('s14qty'), s14amt: g('s14amt'),
     dqty: g('dqty'), damt: g('damt'),
     age60: g('age60'), age60_j: g('age60_j'), age60_f: g('age60_f'),
+    age90: g('age90'), age90_j: g('age90_j'), age90_f: g('age90_f'),
     sluggish: g('sluggish'), sluggish_j: g('sluggish_j'), sluggish_f: g('sluggish_f'),
     pvRate: g('pvRate'), realRate: g('realRate'),
     chaohu: g('chaohu'), fullChain: g('fullChain'),
@@ -1136,19 +1140,19 @@ function renderInv(){
   const pctShow=v=>{ if(v===undefined||isNaN(v)||v===0) return '—'; const p=v>1? v : v*100; return p.toFixed(1)+'%'; };
   const pctCls=v=>{ if(v===undefined||isNaN(v)) return ''; const p=v>1? v : v*100; return p>=90?'green':(p>=70?'amber':'red'); };
   el.innerHTML=kpiHTML([
-    {label:'全国库存',value:fmt(x.invQtyTotal,0)+' 件',cls:'blue'},
     {label:'库存金额',value:fmtMoney(x.invAmount),cls:'blue'},
     {label:'库存周转(天)',value:x.turnDays?x.turnDays.toFixed(1):'—',sub:'库存周转（天）'},
-    {label:'近7天销售(件)',value:fmt(x.s7qty,0)+' 件'},
-    {label:'近7天销售(额)',value:fmtMoney(x.s7amt)},
-    {label:'近14天销售(件)',value:fmt(x.s14qty,0)+' 件'},
-    {label:'日均销售(件)',value:fmt(x.dqty,0)+' 件/天'},
-    {label:'60+长库龄金额',value:fmtMoney(x.age60),cls:x.age60>0?'red':''},
-    {label:'滞销金额',value:fmtMoney(x.sluggish),cls:x.sluggish>0?'red':''},
+    {label:'近7天销售(金额)',value:fmtMoney(x.s7amt)},
+    {label:'近14天销售(金额)',value:fmtMoney(x.s14amt)},
+    {label:'日均销售(金额)',value:fmtMoney(x.damt)},
+    {label:'60-90天长库龄预警金额',value:fmtMoney(x.age60),cls:x.age60>0?'red':''},
+    {label:'90天以上长库龄金额',value:fmtMoney(x.age90),cls:x.age90>0?'red':''},
+    {label:'60-90天预警(基调)',value:fmtMoney(x.age60_j),cls:x.age60_j>0?'red':''},
+    {label:'60-90天预警(复调)',value:fmtMoney(x.age60_f),cls:x.age60_f>0?'red':''},
+    {label:'90天以上(基调)',value:fmtMoney(x.age90_j),cls:x.age90_j>0?'red':''},
+    {label:'90天以上(复调)',value:fmtMoney(x.age90_f),cls:x.age90_f>0?'red':''},
     {label:'PV现货率',value:pctShow(x.pvRate),cls:pctCls(x.pvRate)},
     {label:'实库现货率',value:pctShow(x.realRate),cls:pctCls(x.realRate)},
-    {label:'巢湖库存',value:fmt(x.chaohu,0)+' 件'},
-    {label:'全链路周转',value:x.fullChain?x.fullChain.toFixed(1):'—'},
   ]);
   lineChart('#invRate',{labels:c.dates, series:[
     {name:'库存周转(天)',data:c.all.map(x=>x.turnDays||null)},
@@ -1158,8 +1162,8 @@ function renderInv(){
     {name:'全国库存(件)',data:c.all.map(x=>x.invQtyTotal||null)},
     {name:'日均销售(件)',data:c.all.map(x=>x.dqty||null)},
   ], yFmt:v=>v==null?'—':fmt(v,0)});
-  let t='<table class="tpl" style="margin-top:8px"><tr><th>日期</th><th>全国库存(件)</th><th>库存金额</th><th>周转(天)</th><th>近7天销(件)</th><th>近14天销(件)</th><th>日均销(件)</th><th>60+长库龄</th><th>滞销金额</th><th>PV现货率</th><th>实库现货率</th><th>巢湖库存</th><th>全链路周转</th></tr>';
-  c.all.forEach(x=>{ t+=`<tr><td>${esc(x.date)}</td><td>${fmt(x.invQtyTotal,0)}</td><td>${fmtMoney(x.invAmount)}</td><td>${x.turnDays?x.turnDays.toFixed(1):'—'}</td><td>${fmt(x.s7qty,0)}</td><td>${fmt(x.s14qty,0)}</td><td>${fmt(x.dqty,0)}</td><td>${fmtMoney(x.age60)}</td><td>${fmtMoney(x.sluggish)}</td><td>${pctShow(x.pvRate)}</td><td>${pctShow(x.realRate)}</td><td>${fmt(x.chaohu,0)}</td><td>${x.fullChain?x.fullChain.toFixed(1):'—'}</td></tr>`; });
+  let t='<table class="tpl" style="margin-top:8px"><tr><th>日期</th><th>库存金额</th><th>周转(天)</th><th>近7天销(额)</th><th>近14天销(额)</th><th>日均销(额)</th><th>60-90天预警</th><th>90天以上</th><th>60-90(基调)</th><th>60-90(复调)</th><th>90+(基调)</th><th>90+(复调)</th><th>PV现货率</th><th>实库现货率</th></tr>';
+  c.all.forEach(x=>{ t+=`<tr><td>${esc(x.date)}</td><td>${fmtMoney(x.invAmount)}</td><td>${x.turnDays?x.turnDays.toFixed(1):'—'}</td><td>${fmtMoney(x.s7amt)}</td><td>${fmtMoney(x.s14amt)}</td><td>${fmtMoney(x.damt)}</td><td>${fmtMoney(x.age60)}</td><td>${fmtMoney(x.age90)}</td><td>${fmtMoney(x.age60_j)}</td><td>${fmtMoney(x.age60_f)}</td><td>${fmtMoney(x.age90_j)}</td><td>${fmtMoney(x.age90_f)}</td><td>${pctShow(x.pvRate)}</td><td>${pctShow(x.realRate)}</td></tr>`; });
   t+='</table>'; $('#invTable').innerHTML=t;
 }
 
