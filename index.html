@@ -2413,16 +2413,16 @@ function sheetToTsv(ws){
       const cell=ws[XLSX.utils.encode_cell({r,c})];
       if(!cell||cell.t==='z'||cell.v===undefined){ row.push(''); continue; }
       let val;
-      /* 优先用格式化文本 cell.w（Excel 存储的显示值），避免日期序列号等内部格式泄露到 TSV */
-      if(cell.w!==undefined && String(cell.w).trim()) val=String(cell.w).trim();
+      /* 数字单元格：Excel 内部以「序列号」存日期（如 46265），规范转换；优先用 v 避免美式格式文本污染 */
+      if(cell.t==='n' && Math.floor(cell.v)>25000 && Math.floor(cell.v)<70000){ val=normDate(String(Math.floor(cell.v))); }
+      /* 文本/日期单元格：优先用格式化文本 w，再用 v；w 仍非标准（如 8/31/26）时若 v 是序列号则转换 */
+      else if(cell.w!==undefined && String(cell.w).trim()) val=String(cell.w).trim();
+      else if(typeof cell.v==='number' && Math.floor(cell.v)>25000 && Math.floor(cell.v)<70000){ val=normDate(String(Math.floor(cell.v))); }
       else if(cell.t==='d'||cell.v instanceof Date){ val=normDate(String(cell.v)); }
-      else if(cell.t==='n'){
-        const sv=cell.v%1===0?String(parseInt(cell.v,10)):String(cell.val);
-        /* Excel 日期序列号（纯整数，范围约 25000~70000 → 1982~2064 年）：转为 YYYY-MM-DD */
-        val=(sv.match(/^\d{4,5}$/)&&+sv>25000&&+sv<70000)?normDate(sv):sv;
-      }
       else if(cell.t==='b'){ val=cell.v?'TRUE':'FALSE'; }
       else { val=String(cell.v); }
+      /* 兜底：若结果仍非标准日期字符串（如 8/31/26），尝试再次归一 */
+      if(typeof val==='string' && !/^\d{4}-\d{2}-\d{2}$/.test(val)){ const nd=normDate(val); if(nd!==val) val=nd; }
       row.push(val);
     }
     out.push(row.join('\t'));
