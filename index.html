@@ -432,7 +432,6 @@
 
       <div style="margin-top:14px">
         <button class="btn2 primary" id="applyBtn" style="background:var(--blue);color:#fff;border-color:var(--blue)">应用并更新看板</button>
-        <button class="btn2 ghost" id="rehomeBtn">按品牌列重新归户</button>
         <button class="btn2 ghost" id="clearBtn">清空全部</button>
       </div>
 
@@ -1987,33 +1986,6 @@ function routeRawByBrand(w, cur, fallback, edited){
     edited.add(b);
   });
 }
-// 重新归户：把所有品牌下 销售/京准通/浮码 的 _raw 逐行读取「品牌」列，重新分配到对应品牌（修复已错归的数据）
-// 返回被移动到「非原属品牌」的行数（用于提示）
-function rehomeAllByBrand(){
-  let moved=0;
-  BRAND_COL_SECTIONS.forEach(w=>{
-    const out={}; BRANDS.forEach(b=>out[b]=[]); // 各品牌收集 [header, line, ...]
-    BRANDS.forEach(origin=>{
-      const raw=STATE.brands[origin]._raw[w]||'';
-      const lines=raw.replace(/\r/g,'').split('\n').filter(l=>l.trim());
-      if(!lines.length) return;
-      const header=lines[0];
-      const delim=detectDelimOf(header);
-      const hcells=header.split(delim).map(h=>String(h).trim().toLowerCase());
-      let brandIdx=-1;
-      hcells.forEach((h,i)=>{ if(h==='品牌'||h==='brand'||h==='brand_name'||h==='品牌名称') brandIdx=i; });
-      lines.slice(1).forEach(line=>{
-        let tb=origin;
-        if(brandIdx>=0){ const cells=line.split(delim); const bv=(cells[brandIdx]||'').trim(); if(STATE.brands[bv]) tb=bv; }
-        if(!out[tb].length) out[tb].push(header);
-        out[tb].push(line);
-        if(tb!==origin) moved++;
-      });
-    });
-    BRANDS.forEach(b=>{ STATE.brands[b]._raw[w]=out[b].join('\n'); });
-  });
-  return moved;
-}
 
 function readInputs(mode, silent){
   mode=mode||'merge';
@@ -2070,12 +2042,6 @@ function readInputs(mode, silent){
   if(!silent) toast(mode==='replace' ? '已按文本框内容全量重建并自动存储（刷新/重开不丢）' : ('已按增量更新并自动存储：新增 '+statAdd+' 行、重复 '+statDup+' 行已自动忽略（刷新/重开不丢，历史保留）'));
 }
 $('#applyBtn').addEventListener('click',readInputs);
-// 按数据内「品牌」列重新归户（仅对有品牌列的数据生效）
-$('#rehomeBtn').addEventListener('click',()=>{
-  const n=rehomeAllByBrand();
-  saveState(); renderAll(); saveToService(); syncBrandUI();
-  toast(n ? ('已按「品牌」列重新归户，移动了 '+n+' 行到对应品牌（已自动存储）') : '已按「品牌」列检查，无跨品牌错归数据需调整（若数据无品牌列，请用各输入框「清除历史」按品牌单独清除后重新导入）');
-});
 let deb; $('#salesInput').addEventListener('input',()=>{ clearTimeout(deb); deb=setTimeout(readInputs,700); });
 $('#invInput').addEventListener('input',()=>{ clearTimeout(deb); deb=setTimeout(readInputs,700); });
 $('#jztInput').addEventListener('input',()=>{ clearTimeout(deb); deb=setTimeout(readInputs,700); });
