@@ -1341,7 +1341,6 @@ function renderTargets(){
   let body='';
   detailDays.forEach(d=>{ const bT=tlookup('brand','day',d), g=gmv[d]||0, pT=tlookup('pos','day',d), p=pos[d]||0; body+=`<tr><td>${d}</td><td>${fmtMoney(bT)}</td><td>${fmtMoney(g)}</td>${rateCell(g,bT)}<td>${fmtMoney(pT)}</td><td>${fmtMoney(p)}</td>${rateCell(p,pT)}</tr>`; });
   $('#targetTable').innerHTML=`<table class="tbl"><thead>${head}</thead><tbody>${body}</tbody></table>`;
-  if(!B().targets.length) $('#targetTable').insertAdjacentHTML('beforebegin','<div class="muted" style="margin-bottom:6px">未检测到目标数据，请在「数据输入区 → 目标数据」粘贴（类型/粒度/周期/目标值）。</div>');
 }
 
 // 麦维他专用：销售目标达成区分自营/POP 两渠道 —— 拆成两个面板（自营/POP），各自 KPI + 图表，合并明细表
@@ -1416,7 +1415,6 @@ function renderMaiweiTargets(start,end){
   detailDays.forEach(d=>{ const zyTd=tgtOf(zyName,'brand',d), zg=zyGmv[d]||0, popTd=tgtOf(popName,'brand',d), pg=popGmv[d]||0;
     body+=`<tr><td>${d}</td><td>${fmtMoney(zyTd)}</td><td>${fmtMoney(zg)}</td>${rateCell(zg,zyTd)}<td>${fmtMoney(popTd)}</td><td>${fmtMoney(pg)}</td>${rateCell(pg,popTd)}</tr>`; });
   $('#targetTable').innerHTML=`<table class="tbl"><thead>${head}</thead><tbody>${body}</tbody></table>`;
-  if(!(STATE.brands[zyName]||{}).targets || !(STATE.brands[zyName]||{}).targets.length) $('#targetTable').insertAdjacentHTML('beforebegin','<div class="muted" style="margin-bottom:6px">未检测到「'+zyName+'」目标数据，请在「数据输入区 → 目标数据」选择对应品牌粘贴（类型/粒度/周期/目标值）。</div>');
 }
 
 /* ---------- 总览 ---------- */
