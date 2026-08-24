@@ -432,6 +432,7 @@
 
       <div style="margin-top:14px">
         <button class="btn2 primary" id="applyBtn" style="background:var(--blue);color:#fff;border-color:var(--blue)">应用并更新看板</button>
+        <button class="btn2 ghost" id="rehomeBtn">按品牌列重新归户</button>
         <button class="btn2 ghost" id="clearBtn">清空全部</button>
       </div>
 
@@ -1939,6 +1940,56 @@ function updateDiag(rawText,rowCount,key){
   if(rowCount>0){ el.className='diag ok'; el.innerHTML='✓ 已解析 <b>'+rowCount+'</b> 行'; }
   else { el.className='diag err'; el.innerHTML='⚠ 未解析出数据：请确认<b>首行是表头</b>且含可识别列名（京准通需含 日期 / 花费 / 点击 / GMV 等），数据用 <b>Tab 或英文逗号</b>分隔；目标行（如「投放花费目标 月 2026-08 380000」）会自动抽走，不属于投放数据。'; }
 }
+/* ---------- 品牌列自动识别 / 归户 ---------- */
+// 带「品牌」列的明细数据（销售 / 京准通 / 浮码）在导入时按数据内的「品牌」列自动归户，
+// 下拉所选品牌仅作为「未识别到品牌列时的兜底」，避免同事在「李锦记」下拉下导入「丝蕴」数据却被误存到李锦记。
+const BRAND_COL_SECTIONS=new Set(['sales','jzt','purchase']);
+function rowBrandOf(row, fallback){
+  const b=row&&row.brand!==undefined?String(row.brand).trim():'';
+  return (b && STATE.brands[b]) ? b : fallback;
+}
+// 把一段原始文本按「品牌」列拆分，分别合并进对应品牌的 _raw（增量合并，组内去重保持幂等）
+function routeRawByBrand(w, cur, fallback, edited){
+  const rows=parseTable(cur);
+  if(!rows.length){ const b=STATE.brands[fallback]; b._raw[w]=mergeRaw(b._raw[w]||'', cur); edited.add(fallback); return; }
+  const headerCells=headerCellsOf(cur);
+  const groups={};
+  rows.forEach(r=>{ const b=rowBrandOf(r, fallback); (groups[b]=groups[b]||[]).push(r); });
+  Object.keys(groups).forEach(b=>{
+    const store=STATE.brands[b]||STATE.brands[fallback];
+    const text=rowsToText(groups[b], headerCells);
+    store._raw[w]=mergeRaw(store._raw[w]||'', text);
+    edited.add(b);
+  });
+}
+// 重新归户：把所有品牌下 销售/京准通/浮码 的 _raw 逐行读取「品牌」列，重新分配到对应品牌（修复已错归的数据）
+// 返回被移动到「非原属品牌」的行数（用于提示）
+function rehomeAllByBrand(){
+  let moved=0;
+  BRAND_COL_SECTIONS.forEach(w=>{
+    const out={}; BRANDS.forEach(b=>out[b]=[]); // 各品牌收集 [header, line, ...]
+    BRANDS.forEach(origin=>{
+      const raw=STATE.brands[origin]._raw[w]||'';
+      const lines=raw.replace(/\r/g,'').split('\n').filter(l=>l.trim());
+      if(!lines.length) return;
+      const header=lines[0];
+      const delim=detectDelimOf(header);
+      const hcells=header.split(delim).map(h=>String(h).trim().toLowerCase());
+      let brandIdx=-1;
+      hcells.forEach((h,i)=>{ if(h==='品牌'||h==='brand'||h==='brand_name'||h==='品牌名称') brandIdx=i; });
+      lines.slice(1).forEach(line=>{
+        let tb=origin;
+        if(brandIdx>=0){ const cells=line.split(delim); const bv=(cells[brandIdx]||'').trim(); if(STATE.brands[bv]) tb=bv; }
+        if(!out[tb].length) out[tb].push(header);
+        out[tb].push(line);
+        if(tb!==origin) moved++;
+      });
+    });
+    BRANDS.forEach(b=>{ STATE.brands[b]._raw[w]=out[b].join('\n'); });
+  });
+  return moved;
+}
+
 function readInputs(mode, silent){
   mode=mode||'merge';
   const SECTIONS=['sales','inventory','jzt','targets','purchase'];
@@ -1947,8 +1998,12 @@ function readInputs(mode, silent){
   // 每个输入框所属品牌：取对应 <select id="brand_xxx"> 的当前值（无效则回退当前查看品牌）
   const brandOf={}; const edited=new Set();
   SECTIONS.forEach(w=>{ const sel=document.getElementById('brand_'+w); const v=(sel&&sel.value)||STATE.currentBrand; brandOf[w]=(STATE.brands[v]?v:STATE.currentBrand); edited.add(brandOf[w]); });
-  // 1) 把文本框内容合并进对应品牌的 _raw（目标用 mergeTargetsText，其余用 mergeRaw）
-  SECTIONS.forEach(w=>{ const b=STATE.brands[brandOf[w]]; const cur=$('#'+TA[w]).value; b._raw[w]=(mode==='replace')?cur:((w==='targets'?mergeTargetsText(b._raw[w]||'',cur):mergeRaw(b._raw[w]||'',cur))); });
+  // 1) 把文本框内容合并进对应品牌的 _raw；销售/京准通/浮码 按数据内「品牌」列自动归户（下拉仅兜底）
+  SECTIONS.forEach(w=>{ const fb=brandOf[w]; const cur=$('#'+TA[w]).value;
+    if(w==='targets'){ const b=STATE.brands[fb]; b._raw[w]=(mode==='replace')?cur:mergeTargetsText(b._raw[w]||'',cur); edited.add(fb); }
+    else if(BRAND_COL_SECTIONS.has(w) && mode!=='replace'){ routeRawByBrand(w, cur, fb, edited); }
+    else { const b=STATE.brands[fb]; b._raw[w]=(mode==='replace')?cur:mergeRaw(b._raw[w]||'',cur); edited.add(fb); }
+  });
   // 甘特图：三模块共享，不按品牌拆分
   STATE.ganttRaw=(mode==='replace')?($('#ganttInput').value):mergeRaw(STATE.ganttRaw||'', $('#ganttInput').value);
   // 2) 仅重建被编辑品牌的明细数组（其余品牌不动，避免无谓重算）；统计 新增行 / 忽略的重复行
@@ -1990,6 +2045,12 @@ function readInputs(mode, silent){
   if(!silent) toast(mode==='replace' ? '已按文本框内容全量重建并自动存储（刷新/重开不丢）' : ('已按增量更新并自动存储：新增 '+statAdd+' 行、重复 '+statDup+' 行已自动忽略（刷新/重开不丢，历史保留）'));
 }
 $('#applyBtn').addEventListener('click',readInputs);
+// 按数据内「品牌」列重新归户：修复已错归到其他品牌的历史数据（如丝蕴京准通误存到李锦记）
+$('#rehomeBtn').addEventListener('click',()=>{
+  const n=rehomeAllByBrand();
+  saveState(); renderAll(); saveToService(); syncBrandUI();
+  toast(n? ('已按「品牌」列重新归户，移动了 '+n+' 行到对应品牌（已自动存储）') : '已按「品牌」列检查，无跨品牌错归数据需调整');
+});
 let deb; $('#salesInput').addEventListener('input',()=>{ clearTimeout(deb); deb=setTimeout(readInputs,700); });
 $('#invInput').addEventListener('input',()=>{ clearTimeout(deb); deb=setTimeout(readInputs,700); });
 $('#jztInput').addEventListener('input',()=>{ clearTimeout(deb); deb=setTimeout(readInputs,700); });
