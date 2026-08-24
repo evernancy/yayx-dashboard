@@ -1305,21 +1305,47 @@ function renderTargets(){
   const posGapRaw=posMtdTarget-posActual;
   const posGap=posGapRaw>0?posGapRaw:0;
 
-  // 丝蕴：GMV 缺口（品牌GMV 口径），不展示 POS 目标达成卡片；其他品牌（含李锦记）：原版 POS 目标达成 + POS 缺口
-  const isSiYun=STATE.currentBrand==='丝蕴';
+  // 品牌差异化 KPI：
+  // - 丝蕴：GMV 缺口（品牌GMV 口径），不展示 POS 目标达成卡片（4 卡）
+  // - 和路雪：仅 POS 目标达成 + POS 缺口（2 卡）
+  // - 其他（李锦记/家乐/联合利华）：原版 5 ,卡（品牌/采销/内部GMV + POS目标达成 + POS缺口）
+  const isSiYun=STATE.currentBrand==='丝蕴', isHeLX=STATE.currentBrand==='和路雪';
+  let kpis;
+  if(isSiYun){
+    kpis=[
+      {label:'品牌GM 目标达成',value:tBrand?fmtPct(gmvActual/tBrand):'—',cls:tBrand?(gmvActual>=tBrand?'green':'amber'):'',sub:tBrand?('达成（实际GMV）'+fmtMoney(gmvActual)+' / 品牌目标GMV'+fmtMoney(tBrand)):('达成（实际GMV）'+fmtMoney(gmvActual)+' / 未设目标')},
+      {label:'采销GMV 目标达成',value:tProc?fmtPct(gmvActual/tProc):'—',cls:tProc?(gmvActual>=tProc?'green':'amber'):'',sub:tProc?('达成（实际GMV）'+fmtMoney(gmvActual)+' / 采销目标GMV'+fmtMoney(tProc)):('达成（实际GMV）'+fmtMoney(gmvActual)+' / 未设目标')},
+      {label:'内部GMV 目标达成',value:tInt?fmtPct(gmvActual/tInt):'—',cls:tInt?(gmvActual>=tInt?'green':'amber'):'',sub:tInt?('达成（实际GMV）'+fmtMoney(gmvActual)+' / 内部目标GMV'+fmtMoney(tInt)):('达成（实际GMV）'+fmtMoney(gmvActual)+' / 未设目标')},
+      {label:'GMV 缺口(MTD目标-MTD达成)',value:fmtMoney(gmvGap),cls:gmvGap>0?'red':'green',sub:ym+' MTD（品牌GMV）'},
+    ];
+  } else if(isHeLX){
+    kpis=[
+      {label:'POS 目标达成',value:posMtdTarget?fmtPct(posActual/posMtdTarget):'—',cls:posMtdTarget?(posActual>=posMtdTarget?'green':'amber'):'',sub:posMtdTarget?('达成（实际POS）'+fmtMoney(posActual)+' / POS目标'+fmtMoney(posMtdTarget)):('达成（实际POS）'+fmtMoney(posActual)+' / 未设目标')},
+      {label:'POS 缺口(MTD目标-MTD达成)',value:fmtMoney(posGap),cls:posGap>0?'red':'green',sub:ym+' MTD（POS）'},
+    ];
+  } else {
+    kpis=[
+      {label:'品牌GM 目标达成',value:tBrand?fmtPct(gmvActual/tBrand):'—',cls:tBrand?(gmvActual>=tBrand?'green':'amber'):'',sub:tBrand?('达成（实际GMV）'+fmtMoney(gmvActual)+' / 品牌目标GMV'+fmtMoney(tBrand)):('达成（实际GMV）'+fmtMoney(gmvActual)+' / 未设目标')},
+      {label:'采销GMV 目标达成',value:tProc?fmtPct(gmvActual/tProc):'—',cls:tProc?(gmvActual>=tProc?'green':'amber'):'',sub:tProc?('达成（实际GMV）'+fmtMoney(gmvActual)+' / 采销目标GMV'+fmtMoney(tProc)):('达成（实际GMV）'+fmtMoney(gmvActual)+' / 未设目标')},
+      {label:'内部GMV 目标达成',value:tInt?fmtPct(gmvActual/tInt):'—',cls:tInt?(gmvActual>=tInt?'green':'amber'):'',sub:tInt?('达成（实际GMV）'+fmtMoney(gmvActual)+' / 内部目标GMV'+fmtMoney(tInt)):('达成（实际GMV）'+fmtMoney(gmvActual)+' / 未设目标')},
+      {label:'POS 目标达成',value:posMtdTarget?fmtPct(posActual/posMtdTarget):'—',cls:posMtdTarget?(posActual>=posMtdTarget?'green':'amber'):'',sub:posMtdTarget?('达成（实际POS）'+fmtMoney(posActual)+' / POS目标'+fmtMoney(posMtdTarget)):('达成（实际POS）'+fmtMoney(posActual)+' / 未设目标')},
+      {label:'POS 缺口(MTD目标-MTD达成)',value:fmtMoney(posGap),cls:posGap>0?'red':'green',sub:ym+' MTD（POS）'},
+    ];
+  }
+  $('#zyTargetKpis').innerHTML=kpiHTML(kpis);
 
-  $('#zyTargetKpis').innerHTML=kpiHTML(isSiYun?[
-    {label:'品牌GM 目标达成',value:tBrand?fmtPct(gmvActual/tBrand):'—',cls:tBrand?(gmvActual>=tBrand?'green':'amber'):'',sub:tBrand?('达成（实际GMV）'+fmtMoney(gmvActual)+' / 品牌目标GMV'+fmtMoney(tBrand)):('达成（实际GMV）'+fmtMoney(gmvActual)+' / 未设目标')},
-    {label:'采销GMV 目标达成',value:tProc?fmtPct(gmvActual/tProc):'—',cls:tProc?(gmvActual>=tProc?'green':'amber'):'',sub:tProc?('达成（实际GMV）'+fmtMoney(gmvActual)+' / 采销目标GMV'+fmtMoney(tProc)):('达成（实际GMV）'+fmtMoney(gmvActual)+' / 未设目标')},
-    {label:'内部GMV 目标达成',value:tInt?fmtPct(gmvActual/tInt):'—',cls:tInt?(gmvActual>=tInt?'green':'amber'):'',sub:tInt?('达成（实际GMV）'+fmtMoney(gmvActual)+' / 内部目标GMV'+fmtMoney(tInt)):('达成（实际GMV）'+fmtMoney(gmvActual)+' / 未设目标')},
-    {label:'GMV 缺口(MTD目标-MTD达成)',value:fmtMoney(gmvGap),cls:gmvGap>0?'red':'green',sub:ym+' MTD（品牌GMV）'},
-  ]:[
-    {label:'品牌GM 目标达成',value:tBrand?fmtPct(gmvActual/tBrand):'—',cls:tBrand?(gmvActual>=tBrand?'green':'amber'):'',sub:tBrand?('达成（实际GMV）'+fmtMoney(gmvActual)+' / 品牌目标GMV'+fmtMoney(tBrand)):('达成（实际GMV）'+fmtMoney(gmvActual)+' / 未设目标')},
-    {label:'采销GMV 目标达成',value:tProc?fmtPct(gmvActual/tProc):'—',cls:tProc?(gmvActual>=tProc?'green':'amber'):'',sub:tProc?('达成（实际GMV）'+fmtMoney(gmvActual)+' / 采销目标GMV'+fmtMoney(tProc)):('达成（实际GMV）'+fmtMoney(gmvActual)+' / 未设目标')},
-    {label:'内部GMV 目标达成',value:tInt?fmtPct(gmvActual/tInt):'—',cls:tInt?(gmvActual>=tInt?'green':'amber'):'',sub:tInt?('达成（实际GMV）'+fmtMoney(gmvActual)+' / 内部目标GMV'+fmtMoney(tInt)):('达成（实际GMV）'+fmtMoney(gmvActual)+' / 未设目标')},
-    {label:'POS 目标达成',value:posMtdTarget?fmtPct(posActual/posMtdTarget):'—',cls:posMtdTarget?(posActual>=posMtdTarget?'green':'amber'):'',sub:posMtdTarget?('达成（实际POS）'+fmtMoney(posActual)+' / POS目标'+fmtMoney(posMtdTarget)):('达成（实际POS）'+fmtMoney(posActual)+' / 未设目标')},
-    {label:'POS 缺口(MTD目标-MTD达成)',value:fmtMoney(posGap),cls:posGap>0?'red':'green',sub:ym+' MTD（POS）'},
-  ]);
+  // 家乐 / 联合利华：把「事项」区块移到「销售目标达成」面板上方；其余品牌保持原顺序（事项在下方）
+  const todoPanel=document.getElementById('todo_sales')?.closest('.panel');
+  const zyPanel=document.getElementById('zyTargetPanel');
+  if(todoPanel && zyPanel && zyPanel.parentElement){
+    if(STATE.currentBrand==='家乐' || STATE.currentBrand==='联合利华'){
+      if(todoPanel!==zyPanel.parentElement.firstElementChild) zyPanel.parentElement.insertBefore(todoPanel, zyPanel);
+    } else {
+      // 还原到「销售目标达成」面板之后（图表网格 todo_sales 原位置）
+      const grid2=document.querySelector('#targetGmv')?.closest('.grid2');
+      if(todoPanel!==grid2 && todoPanel.nextElementSibling!==grid2) zyPanel.parentElement.insertBefore(todoPanel, grid2);
+    }
+  }
 
   // 图表：按视图
   let labels=[], gmvAct=[], gmvTgt=[], posAct=[], posTgt=[];
