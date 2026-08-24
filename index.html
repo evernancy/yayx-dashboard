@@ -2216,12 +2216,35 @@ const ganttTplBtn=$('#ganttTplBtn'); if(ganttTplBtn) ganttTplBtn.addEventListene
     ['数据',d(4),'','09:00','','竞品价格监控','孙八','80','进行中','爬虫已上线']
   ];
   const ws=XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols']=[{wch:8},{wch:12},{wch:12},{wch:10},{wch:10},{wch:18},{wch:8},{wch:10},{wch:10},{wch:22}];
-  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, '甘特图模板');
+  ws['!cols']=[{wch:8},{wch:13},{wch:13},{wch:10},{wch: 10},{wch:20},{wch:9},{wch:9},{wch:10},{wch:24}];
+  ws['!freeze']={xSplit:0,ySplit:1};
+  const sh=[
+    ['营销 / 设计 / 数据 甘特图 · 数据填写模板'],
+    ['一、用途','本模板用于向「经营看板」的 营销日历 / 设计日历 / 数据日历 录入任务；三模块共用一张表，靠「模块」列自动分流。'],
+    ['二、必填列','模块、日期、任务；其余列按需填写，留空不报错。'],
+    ['三、字段说明',''],
+    ['   模块','填 营销 / 设计 / 数据（精确匹配，决定分流到哪张图）'],
+    ['   日期','任务开始日，格式 YYYY-MM-DD（如 '+d(1)+'）'],
+    ['   结束日期','可选；留空=当天结束（甘特条=1天），填了则画成跨天横向条'],
+    ['   开始/结束时间','可选，时:分（如 09:00、18:30）；留空=全天'],
+    ['   任务','事项名称，显示在甘特图左侧与进度条上'],
+    ['   负责人','填姓名/工号；同一负责人在甘特图上显示同一种颜色（按名字自动着色）'],
+    ['   进度(%)','0–100，越深=完成越多；留空默认 0'],
+    ['   状态','选填：未开始/进行中/已完成/延期'],
+    ['   备注','选填'],
+    ['四、更新规则','同一「模块+日期+任务」重复粘贴=覆盖；同模块+日期下不同任务=新增'],
+    ['五、配色说明','甘特图颜色=负责人（每人一色），条的深浅=进度'],
+    ['六、导入','复制本表数据粘贴到看板「数据输入区→6·甘特图」文本框，或点「上传文件」选本 xlsx']
+  ];
+  const ws2=XLSX.utils.aoa_to_sheet(sh);
+  ws2['!cols']=[{wch:16},{wch:80}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws2, '填写说明');
+  XLSX.utils.book_append_sheet(wb, ws, '模板');
   const wbout=XLSX.write(wb,{bookType:'xlsx',type:'array'});
   const blob=new Blob([wbout],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='甘特图填写模板_营销设计数据.xlsx'; a.click();
-  toast('已下载 Excel 模板（.xlsx，营销/设计/数据 共用，按「模块」列分流）');
+  toast('已下载 Excel 模板（含「填写说明」+「模板」两个 Sheet，按「模块」列分流）');
 });
 
 // 下载目标数据填写模板（真实 .xlsx：类型/粒度/周期/目标值，含示例行与空行，附填写说明表）
