@@ -890,6 +890,13 @@ function saveState(){ try{ localStorage.setItem(STORE_KEY,JSON.stringify(STATE))
 /* ---------- 图表（自绘 SVG，免 CDN） ---------- */
 const PALETTE=['#2563eb','#16a34a','#dc2626','#d97706','#7c3aed','#0891b2','#db2777','#65a30d'];
 const MODULE_COLORS={'营销':'#2563eb','设计':'#7c3aed','数据':'#d97706'};
+// 甘特图：负责人颜色（按名字哈希，保证同一人颜色一致）
+const OWNER_PALETTE=['#3b82f6','#ef4444','#22c55e','#f59e0b','#8b5cf6','#ec4899','#06b6d4','#f97316','#14b8a6','#6366f1','#84cc16','#e11d48'];
+function ownerColor(name){
+  if(!name) return '#9ca3af';
+  let h=0; for(let i=0;i<name.length;i++){ h=((h<<5)-h)+name.charCodeAt(i); h|=0; }
+  return OWNER_PALETTE[Math.abs(h)%OWNER_PALETTE.length];
+}
 const tip=$('#tooltip');
 function showTip(html,x,y){ tip.innerHTML=html; tip.style.opacity=1; tip.style.left=(x+12)+'px'; tip.style.top=(y+12)+'px'; }
 function hideTip(){ tip.style.opacity=0; }
@@ -1559,71 +1566,93 @@ function renderGantt(module, elId, ym){
   ensureGanttIds();
   const all=(STATE.gantt||[]).filter(r=>r.module===module);
   if(!all.length){ el.innerHTML='<div class="empty">暂无数据：请在「数据输入区」粘贴/上传甘特图数据（需含「模块」列，填 营销/设计/数据 自动分流到本图）</div>'; return; }
-  const color=MODULE_COLORS[module]||'#2563eb';
+  const modColor=MODULE_COLORS[module]||'#2563eb';
   const ms=ym+'-01', me=lastDayOfMonth(ym);
-  // 可见周边界（整月范围内，周一对齐）
-  const rs=mondayOf(ms);
-  const maxw=ymdAdd(me,-6);
+  const rs=mondayOf(ms), maxw=ymdAdd(me,-6);
   const td=todayStr();
-  // 默认可见周：优先本周（若在本月），否则该月首个周一
   if(!ganttWeekStart[module]){ ganttWeekStart[module] = (td>=ms && td<=me) ? mondayOf(td) : rs; }
-  // 严格只渲染可见周的 7 天（周一对齐）
   let mc=ganttWeekStart[module]; if(mc<rs) mc=rs; if(mc>maxw) mc=maxw; ganttWeekStart[module]=mc;
   const days=[]; for(let k=0;k<7;k++) days.push(ymdAdd(mc,k));
   const dayIdx={}; days.forEach((d,i)=>dayIdx[d]=i);
-  const dayW=130, labW=46, x0=labW, bandH=26, headH=52, hourH=22;
-  const gridW=days.length*dayW, W=x0+gridW+12, H=headH+bandH+24*hourH+10;
+
+  // ── 新布局：左侧事项名 + 上方日期 + 水平进度条（按负责人着色）──
+  const labW=170, dayW=110, x0=labW, rowH=36, headH=44;
+  const gridW=days.length*dayW, W=x0+gridW+16;
+  const tasks=all.filter(r=>{ const s=r.date,e=r.endDate||r.date; return s<=me && e>=ms; })
+    .sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  const H=headH+Math.max(tasks.length,1)*rowH+28;
   const WD=['日','一','二','三','四','五','六'];
+
   let g='';
-  g+=`<text x="${x0}" y="14" font-size="12" fill="#6b7280">${ym} · 周视图（纵轴=24 小时 / 横轴=天·周一开始，一屏严格 7 天，用上方「上一周 / 本周 / 下一周」切换）</text>`;
-  // 列背景：周末 / 今日
-  days.forEach((d,i)=>{ const dt=new Date(d.slice(0,4),d.slice(5,7)-1,d.slice(8,10)); const wd=dt.getDay(); const x=x0+i*dayW;
-    if(wd===0||wd===6) g+=`<rect x="${x}" y="${headH}" width="${dayW}" height="${bandH+24*hourH}" fill="#f4f6f8"/>`;
-    if(d===td) g+=`<rect x="${x}" y="${headH}" width="${dayW}" height="${bandH+24*hourH}" fill="#fff7ed"/>`;
+  g+=`<text x="${x0}" y="14" font-size="12" fill="#6b7280">${ym} · ${mc.slice(5)}月${+mc.slice(8)}日 ~ ${days[6].slice(5)}月${+days[6].slice(8)}日</text>`;
+  // 表头背景
+  g+=`<rect x="${0}" y="${headH-rowH}" width="${W}" height="${rowH}" fill="#f8fafc" stroke="#e2e8f0"/>`;
+  g+=`<line x1="${x0}" y1="${headH-rowH}" x2="${x0}" y2="${H-6}" stroke="#e2e8f0" stroke-width="1"/>`;
+  g+=`<text x="${12}" y="${headH-rowH/2+4}" font-size="12" font-weight="600" fill="#374151">事项</text>`;
+  // 日期表头 + 网格线
+  days.forEach((d,i)=>{ const x=x0+i*dayW; const dn=+d.slice(8,10); const dt=new Date(d.slice(0,4),d.slice(5,7)-1,d.slice(8,10)); const wd=dt.getDay();
+    g+=`<line x1="${x}" y1="${headH-rowH}" x2="${x}" y2="${H-6}" stroke="#e5e7eb" stroke-width="1"/>`;
+    g+=`<text x="${x+dayW/2}" y="${headH-rowH/2+4}" text-anchor="middle" font-size="11" font-weight="600" fill="#374151">${dn}</text>`;
+    g+=`<text x="${x+dayW/2}" y="${headH-rowH/2+17}" text-anchor="middle" font-size="9" fill="#9ca3af">${WD[wd]}</text>`;
+    if(wd===0||wd===6) g+=`<rect x="${x}" y="${headH}" width="${dayW}" height="${H-headH-6}" fill="#f8f9fb"/>`;
+    if(d===td) g+=`<rect x="${x}" y="${headH}" width="${dayW}" height="${H-headH-6}" fill="#fffbeb" opacity="0.6"/>`;
   });
-  // 顶部日期刻度
-  days.forEach((d,i)=>{ const x=x0+i*dayW; const dn=+d.slice(8,10); const dt=new Date(d.slice(0,4),d.slice(5,7)-1,d.slice(8,10)); const wd=dt.getDay(); const isMon=(wd===1);
-    if(isMon) g+=`<line x1="${x}" y1="${headH-bandH}" x2="${x}" y2="${H-6}" stroke="#d1d5db" stroke-width="1.5"/>`;
-    g+=`<text x="${x+dayW/2}" y="${headH-18}" text-anchor="middle" font-size="10" fill="${isMon?'#374151':'#9ca3af'}" font-weight="${isMon?'700':'400'}">${dn}</text>`;
-    g+=`<text x="${x+dayW/2}" y="${headH-6}" text-anchor="middle" font-size="8" fill="#9ca3af">${WD[wd]}</text>`;
+  // 今日竖线
+  if(dayIdx[td]!=null){ const tx=x0+dayIdx[td]*dayW+dayW/2; g+=`<line x1="${tx}" y1="${headH}" x2="${tx}" y2="${H-6}" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="4 3"/>`; }
+
+  // ── 任务行 ──
+  tasks.forEach((r,ri)=>{
+    const y=headH+ri*rowH;
+    g+=`<line x1="${0}" y1="${y+rowH}" x2="${W}" y2="${y+rowH}" stroke="#f1f3f5" stroke-width="1"/>`;
+    // 左侧任务名
+    const tName=(r.task||'任务').trim();
+    const maxLab=Math.floor(labW/7);
+    const disp=tName.length>maxLab?tName.slice(0,maxLab-1)+'…':tName;
+    g+=`<text x="${10}" y="${y+rowH/2+4}" font-size="12" fill="#1e293b" style="pointer-events:none">${esc(disp)}</text>`;
+    // 进度条
+    const sd=r.date, ed=r.endDate||r.date;
+    const si=dayIdx[sd], ei=dayIdx[ed];
+    let barX=null, barW=0;
+    if(si!=null && ei!=null){ barX=x0+si*dayW; barW=(ei-si+1)*dayW; }
+    else if(si!=null){ barX=x0+si*dayW; barW=(days.length-si)*dayW; }
+    else if(ei!=null){ barX=x0; barW=(ei+1)*dayW; }
+    if(barX!=null && barW>0){
+      const prog=Math.max(0,Math.min(100,num(r.progress)));
+      const oc=ownerColor(r.owner);
+      const bx=barX+2, by=y+5, bw=Math.max(barW-4,8), bh=rowH-10;
+      // 底色
+      g+=`<rect x="${bx}" y="${by}" width="${bw}" height="${bh}" rx="5" fill="${oc}" fill-opacity="0.15" stroke="${oc}" stroke-width="0.5" stroke-opacity="0.3"/>`;
+      // 进度填充
+      const pw=bw*prog/100;
+      if(pw>2) g+=`<rect x="${bx}" y="${by}" width="${pw}" height="${bh}" rx="5" fill="${oc}" fill-opacity="${0.55+0.35*Math.min(prog,100)/100}" class="ganttTask" data-gid="${r._gid}" data-tip="${ganttTip(r,module,null)}" style="cursor:pointer"/>`;
+      // 负责人名字
+      if(bw>30){
+        const oname=(r.owner||'').trim();
+        if(oname){
+          const om=Math.max(2,Math.floor(bw/9));
+          const od=oname.length>om?oname.slice(0,om-1)+'…':oname;
+          g+=`<text x="${bx+6}" y="${by+bh/2+4}" font-size="11" font-weight="500" fill="#1e293b" style="pointer-events:none">${esc(od)}</text>`;
+        } else {
+          g+=`<text x="${bx+6}" y="${by+bh/2+4}" font-size="10" fill="#64748b" style="pointer-events:none">${prog}%</text>`;
+        }
+      }
+    }
   });
-  // 「全天」带
-  g+=`<rect x="${x0}" y="${headH}" width="${gridW}" height="${bandH}" fill="#fbfbfc" stroke="#eef0f3"/>`;
-  g+=`<text x="${x0-6}" y="${headH+bandH/2+3}" text-anchor="end" font-size="9" fill="#9ca3af">全天</text>`;
-  // 纵轴小时刻度 + 横线
-  for(let h=0;h<24;h++){ const y=headH+bandH+h*hourH; g+=`<line x1="${x0}" y1="${y}" x2="${x0+gridW}" y2="${y}" stroke="#eef0f3" stroke-width="1"/>`;
-    const lbl=(h%3===0)?String(h).padStart(2,'0'):''; if(lbl) g+=`<text x="${x0-6}" y="${y+hourH/2+3}" text-anchor="end" font-size="9" fill="#9ca3af">${lbl}</text>`; }
-  g+=`<line x1="${x0}" y1="${headH+bandH+24*hourH}" x2="${x0+gridW}" y2="${headH+bandH+24*hourH}" stroke="#e5e7eb" stroke-width="1"/>`;
-  // 今日红色竖线
-  if(dayIdx[td]!=null){ const tx=x0+dayIdx[td]*dayW+dayW/2; g+=`<line x1="${tx}" y1="${headH}" x2="${tx}" y2="${H-6}" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="4 3"/>`; }
-  const hf=t=>{ if(!t) return null; const m=String(t).match(/(\d{1,2})[:：](\d{1,2})/); if(m){ let h=+m[1],mi=+m[2]; if(h>23||mi>59) return null; return h+mi/60; } const n=parseFloat(t); return isNaN(n)?null:Math.min(24,Math.max(0,n)); };
-  // 全天任务
-  days.forEach((d,i)=>{ const list=all.filter(r=>{ if(r.startTime||r.endTime) return false; const s=r.date,e=r.endDate||r.date; return s<=d && e>=d; });
-    if(!list.length) return; const nL=Math.max(1,list.length), lw=dayW/nL, bx=x0+i*dayW;
-    list.forEach((r,k)=>{ const x=bx+k*lw+1, w=Math.max(lw-2,6), by=headH+2, bh=bandH-4; const prog=Math.max(0,Math.min(100,num(r.progress)));
-      g+=`<rect x="${x}" y="${by}" width="${w}" height="${bh}" rx="3" fill="${color}" fill-opacity="${0.30+0.5*prog/100}" class="ganttTask" data-gid="${r._gid}" data-tip="${ganttTip(r,module,true)}" style="cursor:pointer"/>`;
-      const t=(r.task||'任务'); const mc=Math.max(2,Math.floor(lw/8)); const nm=t.length>mc?t.slice(0,mc)+'…':t;
-      g+=`<text x="${x+3}" y="${by+bh/2+3}" font-size="9" fill="#111827" style="pointer-events:none">${esc(nm)}</text>`;
+
+  // 图例：负责人颜色
+  const owners=[...new Set(tasks.map(r=>r.owner).filter(Boolean))];
+  if(owners.length){
+    let lx=x0, ly=H-18;
+    g+=`<text x="${x0-4}" y="${ly+10}" text-anchor="end" font-size="9" fill="#9ca3af">负责人：</text>`;
+    owners.slice(0,8).forEach(o=>{
+      const c=ownerColor(o);
+      g+=`<rect x="${lx}" y="${ly}" width="12" height="10" rx="2" fill="${c}" fill-opacity="0.7"/>`;
+      const ol=o.length>5?o.slice(0,4)+'…':o;
+      g+=`<text x="${lx+15}" y="${ly+9}" font-size="9" fill="#4b5563">${esc(ol)}</text>`;
+      lx+=Math.max(55, o.length*8+20);
     });
-  });
-  // 定时任务：每天独立分车道（同列同时段不重叠）
-  days.forEach((d,i)=>{ const list=all.filter(r=>{ const s=hf(r.startTime), e=hf(r.endTime); if(s==null&&e==null) return false; const sd=r.date, ed=r.endDate||r.date; return sd<=d && ed>=d; }).map(r=>({r,s:hf(r.startTime),e:hf(r.endTime)}));
-    if(!list.length) return;
-    const segs=list.map(o=>{ const startD=(o.r.date>d), endD=((o.r.endDate||o.r.date)<d); const sh=startD?0:Math.floor(o.s), eh=endD?24:Math.ceil(o.e); return {o,sh:Math.max(0,sh),eh:Math.min(24,eh)}; });
-    const laneEnd=[]; const laneOf=[]; segs.sort((a,b)=>a.sh-b.sh).forEach(sg=>{ let p=-1; for(let l=0;l<laneEnd.length;l++){ if(laneEnd[l]<=sg.sh+0.001){ p=l; break; } } if(p<0){ p=laneEnd.length; laneEnd.push(sg.eh); } else laneEnd[p]=sg.eh; laneOf.push(p); });
-    const nL=Math.max(1,laneEnd.length), lw=dayW/nL, bx=x0+i*dayW;
-    segs.forEach((sg,k)=>{ const lane=laneOf[k], r=sg.o.r, prog=Math.max(0,Math.min(100,num(r.progress)));
-      const x=bx+lane*lw+1, w=Math.max(lw-2,5); const by=headH+bandH+sg.sh*hourH+1, bh=Math.max(hourH-2,(sg.eh-sg.sh)*hourH-2);
-      const timeRange=(r.startTime||r.endTime)?(' · '+(r.startTime||'?')+'~'+(r.endTime||'?')):'';
-      g+=`<rect x="${x}" y="${by}" width="${w}" height="${bh}" rx="3" fill="${color}" fill-opacity="${0.30+0.5*prog/100}" class="ganttTask" data-gid="${r._gid}" data-tip="${ganttTip(r,module,false,timeRange)}" style="cursor:pointer"/>`;
-      const name=(r.task||'任务'); const mc=Math.max(2,Math.floor(lw/8)); const nm=name.length>mc?name.slice(0,mc)+'…':name;
-      g+=`<text x="${x+3}" y="${by+11}" font-size="9.5" fill="#111827" stroke="#fff" stroke-width="2.4" paint-order="stroke" style="pointer-events:none">${esc(nm)}</text>`;
-      if(bh>22){ const sub=(r.owner?esc(r.owner):'')+(prog>0?(' · '+prog+'%'):''); if(sub) g+=`<text x="${x+3}" y="${by+21}" font-size="8.5" fill="#111827" stroke="#fff" stroke-width="2.2" paint-order="stroke" style="pointer-events:none">${sub}</text>`; }
-    });
-  });
-  // 图例
-  g+=`<rect x="${x0}" y="${H-8}" width="10" height="8" rx="2" fill="${color}" fill-opacity="0.85"/>`;
-  g+=`<text x="${x0+14}" y="${H-1}" font-size="9" fill="#9ca3af">方块颜色=模块；越深=进度越高；顶部「全天」带=未填起止时间；同列同时段自动分车道</text>`;
+  }
+
   const svg=svgEl(W,H,g);
   el.innerHTML=`<div class="ganttScroll" style="overflow-x:auto;padding-bottom:6px">${svg}</div>`; bindTips(el);
 }
