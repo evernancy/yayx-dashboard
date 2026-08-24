@@ -1713,10 +1713,11 @@ function openClearModal(which){
   const sb=sectionBrandOf(which);
   $('#cmTitle').textContent='清除历史数据 · '+CLEAR_NAME[which]+(isG?'':'（当前品牌：'+sb+'）');
   $('#cmTypeOpt').style.display=(which==='targets')?'':'none'; // 仅目标框显示「按类型清除」
-  // 品牌选择器：非甘特图时显示，默认选中该输入框对应的品牌
+  // 品牌选择器：非甘特图时显示，默认选中该输入框对应的品牌；含「全部品牌」选项
   $('#cmBrandWrap').style.display=isG?'none':'';
   if(!isG){
     const sel=$('#cmBrand'); sel.innerHTML='';
+    const allOpt=document.createElement('option'); allOpt.value='__ALL__'; allOpt.textContent='全部品牌'; sel.appendChild(allOpt);
     BRANDS.forEach(b=>{
       const o=document.createElement('option');
       o.value=b; o.textContent=(b==='麦维他自营'?'麦维他自营':b==='麦维他POP'?'麦维他POP':b);
@@ -1786,38 +1787,83 @@ function datasetToText(which, rows, brand){
   (rows||[]).forEach(r=>{ lines.push(hdr.map(k=> r[k]!==undefined?String(r[k]):'').join('\t')); });
   return lines.join('\n');
 }
-function clearRows(which, filter, labelSuffix){
-  const el=$(CLEAR_EL[which]); if(!el) return;
-  // 清除时使用的品牌：甘特图无品牌；其余优先取弹窗中 cmBrand 的选择
-  const clearBrand=(which==='gantt')?null:($('#cmBrand')&&$('#cmBrand').value&&STATE.brands[$('#cmBrand').value]?$('#cmBrand').value:sectionBrandOf(which));
-  const bTarget=(which==='gantt')?null:STATE.brands[clearBrand];
-  // 修复：文本框可能为空（数据从存储载入、或曾被手动清空文本框），但 STATE._raw 仍保留已应用数据。
-  // 先用 STATE._raw 回填文本框，退而用 STATE 行重建，确保能命中真实数据，而不是误报“该输入框没有数据”。
-  if(!(el.value||'').trim()){
-    const raw=(which==='gantt'?(STATE.ganttRaw||''):(bTarget._raw&&bTarget._raw[which]||''));
-    if(raw.trim()) el.value=raw;
-    else { const arr=(which==='gantt')?STATE.gantt:(bTarget[which]||[]); if(arr.length) el.value=(which==='gantt')?ganttToText():datasetToText(which, arr, clearBrand); }
+function clearRows(which, filter, labelSuffix, clearBrand){
+  // 甘特图：三模块共享，不按品牌拆分，沿用文本框 + 全局重建
+  if(which==='gantt'){
+    const el=$(CLEAR_EL[which]); if(!el) return;
+    if(!(el.value||'').trim()){
+      if((STATE.ganttRaw||'').trim()) el.value=STATE.ganttRaw;
+      else if(STATE.gantt.length) el.value=ganttToText();
+    }
+    const lines=(el.value||'').split(/\r?\n/);
+    let dataLines=0; for(let i=1;i<lines.length;i++){ if(lines[i].trim()) dataLines++; }
+    if(dataLines===0){ toast('该数据集暂无数据'); return; }
+    const header=lines[0];
+    const ctx={dateCol:1, typeCol:-1, which};
+    const out=[header]; let removed=0;
+    for(let i=1;i<lines.length;i++){
+      const line=lines[i]; if(!line.trim()) continue;
+      const cells=line.split(/\t|,/);
+      if(filter(cells, ctx)) removed++; else out.push(line);
+    }
+    el.value=out.join('\n');
+    STATE.gantt=[];
+    readInputs('replace', true);
+    renderAll();
+    const modTxt=(moduleOf()!=='全部')?(' · '+moduleOf()):'';
+    toast(`已清除【${CLEAR_NAME[which]}${modTxt}】${labelSuffix} 的 ${removed} 行，看板已刷新并自动保存`);
+    return;
   }
-  const lines=(el.value||'').split(/\r?\n/);
-  let dataLines=0; for(let i=1;i<lines.length;i++){ if(lines[i].trim()) dataLines++; }
-  if(dataLines===0){ toast('该数据集暂无数据'); return; }
-  const header=lines[0];
-  const dateCol=(which==='gantt')?1:findDateCol(header, which);
+  // 非甘特图：直接对该品牌的 _raw[which] 应用过滤并重建（避免误改当前查看品牌）
+  clearBrand=clearBrand||($('#cmBrand')&&$('#cmBrand').value&&STATE.brands[$('#cmBrand').value]?$('#cmBrand').value:sectionBrandOf(which));
+  const b=STATE.brands[clearBrand];
+  const raw=(b._raw&&b._raw[which])||'';
+  const lines=raw.replace(/\r/g,'').split('\n');
+  const dataLines=lines.slice(1).filter(l=>l.trim());
+  if(!dataLines.length){ toast('品牌「'+clearBrand+'」的'+CLEAR_NAME[which]+'暂无数据'); return; }
+  const header=lines[0]||'';
+  const dateCol=findDateCol(header, which);
   const typeCol=(which==='targets')?findTypeCol(header):-1;
   const ctx={dateCol, typeCol, which};
   const out=[header]; let removed=0;
-  for(let i=1;i<lines.length;i++){
-    const line=lines[i]; if(!line.trim()) continue;
-    const cells=line.split(/\t|,/);
-    if(filter(cells, ctx)) removed++; else out.push(line);
-  }
-  el.value=out.join('\n');
-  if(which==='gantt'){ STATE.gantt=[]; } else { bTarget[which]=[]; } // 先清空，readInputs 的 merge 才会以“修改后的文本框”为准重建（否则旧行被加回）
-  readInputs('replace', true); // 以修改后文本框为准重建该数据集，其余数据不动
-  renderAll(); // 兜底：确保看板（表格/图表/甘特）立即刷新
-  const modTxt=(which==='gantt' && moduleOf()!=='全部')?(' · '+moduleOf()):'';
-  const brandTxt=(which!=='gantt' && clearBrand)?(' · 品牌：'+clearBrand):'';
-  toast(`已清除【${CLEAR_NAME[which]}${modTxt}${brandTxt}】${labelSuffix} 的 ${removed} 行，看板已刷新并自动保存`);
+  for(let i=1;i<lines.length;i++){ const line=lines[i]; if(!line.trim()) continue; const cells=line.split(/\t|,/); if(filter(cells, ctx)) removed++; else out.push(line); }
+  b._raw[which]=out.join('\n');
+  reparseBrand(clearBrand);
+  renderAll(); saveState(); saveToService(); syncBrandUI();
+  toast(`已清除【${CLEAR_NAME[which]} · 品牌：${clearBrand}】${labelSuffix} 的 ${removed} 行，看板已刷新并自动保存`);
+}
+// 由 _raw 重新解析单个品牌的全部明细（与 readInputs 的 replace 分支语义一致），用于按品牌定点清除后重建
+function reparseBrand(brand){
+  const b=STATE.brands[brand];
+  const seen={}; const tgt=[];
+  const push=r=>{ if(!isTargetRow(r)) return; const k=(r.ttype||'')+'|'+(r.tgran||'')+'|'+(r.tperiod||''); if(!seen[k]){ seen[k]=1; tgt.push(r); } };
+  parseTargets(b._raw.targets||'').forEach(push);
+  [b._raw.sales,b._raw.inventory,b._raw.jzt].forEach(t=>{ parseTargets(t||'').forEach(push); });
+  b.sales=aggregateRows(parseTable(stripTargets(b._raw.sales||'', push)));
+  b.inventory=parseTable(stripTargets(b._raw.inventory||'', push));
+  b.jzt=aggregateRows(parseTable(stripTargets(b._raw.jzt||'', push)));
+  b.purchase=parseTable(b._raw.purchase||'');
+  b.targets=tgt;
+}
+// 全部品牌清除：遍历每个品牌，对其 _raw[which] 应用 filter 后重建
+function clearRowsAllBrands(which, filter, suffix){
+  let totalRemoved=0; const touched=[];
+  BRANDS.forEach(brand=>{
+    const b=STATE.brands[brand];
+    const raw=(b._raw&&b._raw[which])||'';
+    const lines=raw.replace(/\r/g,'').split('\n');
+    const dataLines=lines.slice(1).filter(l=>l.trim());
+    if(!dataLines.length) return;
+    const header=lines[0]||'';
+    const dateCol=findDateCol(header, which);
+    const typeCol=(which==='targets')?findTypeCol(header):-1;
+    const ctx={dateCol, typeCol, which};
+    const out=[header]; let removed=0;
+    for(let i=1;i<lines.length;i++){ const line=lines[i]; if(!line.trim()) continue; const cells=line.split(/\t|,/); if(filter(cells, ctx)) removed++; else out.push(line); }
+    if(removed>0){ b._raw[which]=out.join('\n'); reparseBrand(brand); totalRemoved+=removed; touched.push(brand); }
+  });
+  renderAll(); saveState(); saveToService(); syncBrandUI();
+  toast(`已清除【${CLEAR_NAME[which]} · 全部品牌】${suffix} 的 ${totalRemoved} 行（涉及 ${touched.length} 个品牌），看板已刷新并自动保存`);
 }
 $('#cmMode').addEventListener('change',updateClearUI);
 $('#cm_clear').addEventListener('click',()=>{
@@ -1842,27 +1888,35 @@ $('#cm_clear').addEventListener('click',()=>{
   if(mode==='day'){
     const date=normDate($('#cmDate').value);
     if(!date){ toast('请选择要清除的日期'); return; }
-    filter=(c)=> which==='gantt'
+    filter=(c,ctx)=> which==='gantt'
       ? (module==='全部'||c[0].trim()===module) && dateInRange(date, normDate(c[1]||''), c[2]?normDate(c[2]):'')
-      : normDate(c[dateCol]||'')===date;
+      : normDate(c[ctx.dateCol]||'')===date;
     suffix='· '+date; msg='【'+CLEAR_NAME[which]+(module!=='全部'?(' · '+module):'')+'】中 '+date+' 的数据';
   } else if(mode==='month'){
     const month=$('#cmMonth').value;
     if(!month){ toast('请选择要清除的月份'); return; }
     if(which!=='gantt' && dateCol<0){ toast('未在该表找到“日期/周期”列，无法按月清除'); return; }
-    filter=(c)=> which==='gantt'
+    filter=(c,ctx)=> which==='gantt'
       ? (module==='全部'||c[0].trim()===module) && monthOverlaps(month, normDate(c[1]||''), c[2]?normDate(c[2]):'')
-      : normDate(c[dateCol]||'').slice(0,7)===month;
+      : normDate(c[ctx.dateCol]||'').slice(0,7)===month;
     suffix='· '+month; msg='【'+CLEAR_NAME[which]+(module!=='全部'?(' · '+module):'')+'】中 '+month+' 的数据';
   } else if(mode==='all'){
-    filter=(c)=> which==='gantt' ? (module==='全部'||c[0].trim()===module) : true;
+    filter=(c,ctx)=> which==='gantt' ? (module==='全部'||c[0].trim()===module) : true;
     suffix='· 全部'; msg='【'+CLEAR_NAME[which]+(module!=='全部'?(' · '+module):'')+'】的全部数据';
   } else if(mode==='type'){
     const type=$('#cmType').value;
     if(!type){ toast('请选择要清除的类型'); return; }
     if(typeCol<0){ toast('未在该表找到“类型”列，无法按类型清除'); return; }
-    filter=(c)=> (c[typeCol]||'').trim()===type;
+    filter=(c,ctx)=> (c[ctx.typeCol]||'').trim()===type;
     suffix='· '+type; msg='【'+CLEAR_NAME[which]+'】中类型「'+type+'」的数据';
+  }
+  // 全部品牌：遍历所有品牌清除（甘特图无品牌，走默认单路径）
+  const cbVal=(which==='gantt')?null:($('#cmBrand')?$('#cmBrand').value:null);
+  if(cbVal==='__ALL__' && which!=='gantt'){
+    if(!confirm('确认清除【'+CLEAR_NAME[which]+' · 全部品牌】'+suffix.replace(/^· /,'')+' 的数据？此操作不可撤销。')) return;
+    clearRowsAllBrands(which, filter, suffix);
+    closeClearModal();
+    return;
   }
   if(!confirm('确认清除'+msg+'？此操作不可撤销。')) return;
   clearRows(which, filter, suffix);
