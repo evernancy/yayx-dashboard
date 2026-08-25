@@ -616,7 +616,7 @@ const esc = s => String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt
 const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,''); const n=parseFloat(s); return isNaN(n)?0:n; };
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-25-fix20-deep-merge-guard';
+const APP_VERSION = '2026-08-25-fix22-anti-clobber-poll';
 /* 列名同义词映射 */
 const ALIAS = {
   date:['日期','时间','date','day','dt'],
@@ -3566,6 +3566,17 @@ init();
     return false;
   }
   function fmtTime(d){ try{ return d.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',second:'2-digit'}); }catch(e){ return ''; } }
+  // 数据量评分：跨品牌累计 目标条数 + 京准通字符数/1000 + POS 天数 + 销售条数。用于判断「哪一份 STATE 数据更全」，防止被旧版空数据回灌覆盖。
+  function dataScore(st){
+    try{ var b=(st&&st.state&&st.state.brands)||{}; var s=0;
+      for(var k in b){ var br=b[k];
+        if(br.targets) s+=br.targets.length;
+        if(br._raw&&br._raw.jzt) s+=Math.floor(br._raw.jzt.length/1000);
+        if(br.posInput) s+=Object.keys(br.posInput).length;
+        if(br.sales) s+=br.sales.length;
+      } return s;
+    }catch(e){ return 0; }
+  }
 
   // —— 看板切换栏 ——
   window.renderBoardBar=function(){
@@ -3618,7 +3629,18 @@ init();
       if(!row||!row.state||!isUsableState(row.state)){ var ut=Date.parse(row.updated_at)||0; showBadge(); badge.textContent='云端协作 · 已连接'+(ut?' · '+fmtTime(new Date(ut)):''); return; }
       var srvUpd=Date.parse(row.updated_at)||0;
       if(srvUpd>window.__lastSaveAt && !isTyping() && !modalOpen()){
-        if(JSON.stringify(dataOnly(STATE))!==JSON.stringify(dataOnly(row.state))){ hydrateFromState(row.state); renderAll(); setupTodoAll(); showBadge(); badge.textContent='云端协作 · 已同步 '+fmtTime(new Date()); syncing=false; return; }
+        if(JSON.stringify(dataOnly(STATE))!==JSON.stringify(dataOnly(row.state))){
+          var cloudScore=dataScore(row.state), localScore=dataScore(STATE);
+          if(cloudScore>=localScore){
+            // 云端数据不少于本地：安全拉取（正常协作同步）
+            hydrateFromState(row.state); renderAll(); setupTodoAll(); showBadge(); badge.textContent='云端协作 · 已同步 '+fmtTime(new Date()); syncing=false; return;
+          } else {
+            // 云端数据比本地【少】（典型：旧版页面用空 STATE 覆盖过云端）→ 不回灌空数据，反而把本地更全的数据推上去修正云端，阻断“越存越少”的死循环
+            try{ window.__lastSaveAt=Date.now(); window.__saving=(window.__saving||0)+1; await ghUpsertBoard(currentBoard.id,currentBoard.name,STATE); window.__lastSaveAt=Date.now(); }
+            catch(e){} finally{ window.__saving=Math.max(0,(window.__saving||1)-1); }
+            showBadge(); badge.textContent='云端协作 · 已用本地更全数据修正云端'; syncing=false; return;
+          }
+        }
       }
       showBadge(); badge.textContent='云端协作 · 已连接'+(srvUpd?' · '+fmtTime(new Date(srvUpd)):'');
     }catch(e){ var msg=errMsg(e); showBadge(); badge.textContent='云端协作 · 离线（'+msg.slice(0,90)+'）'; console.error('[GitHub] 连接失败:', e, '| 字符串化:', JSON.stringify(e)); diagHints(JSON.stringify(e)); }
@@ -3637,6 +3659,52 @@ init();
       finally{ window.__saving=Math.max(0,(window.__saving||1)-1); }
     };
   }
+  // —— 从云端 git 历史一键恢复：扫描提交历史，找到含「李锦记/麦维他 完整目标与京准通」的版本，合并回当前 STATE ——
+  // 用途：当旧版页面/过期 STATE 整体覆盖云端导致数据丢失时，不必找人，自己点一下就能拉回。
+  window.recoverBoardFromHistory=async function(){
+    if(typeof ghToken==='function' && !ghToken()){ toast('⚠️ 需先配置 GitHub 令牌才能读取历史（点右下角徽章设置）', true); return; }
+    toast('🔄 正在从云端历史扫描含完整数据的版本…（请稍候）');
+    try{
+      var path='dashboards/'+currentBoard.id+'.json';
+      var commits=await ghApi('GET','/repos/'+GH_OWNER+'/'+GH_REPO+'/commits?path='+encodeURIComponent(path)+'&per_page=60');
+      if(!Array.isArray(commits)||!commits.length){ toast('❌ 未能读取提交历史', true); return; }
+      var found=null;
+      for(var i=0;i<commits.length;i++){
+        var c=commits[i];
+        try{
+          var meta=await ghApi('GET','/repos/'+GH_OWNER+'/'+GH_REPO+'/contents/'+path+'?ref='+c.sha);
+          if(!meta||!meta.sha) continue;
+          var br=await fetch(GH_API+'/repos/'+GH_OWNER+'/'+GH_REPO+'/git/blobs/'+meta.sha,{headers:ghHeaders()});
+          if(!br.ok) continue;
+          var b=await br.json(); if(!b.content) continue;
+          var st=JSON.parse(b64dec(b.content));
+          var brd=(st.state&&st.state.brands)||{};
+          var lijx=brd['李锦记']||{}, mwz=brd['麦维他自营']||{};
+          var lijxOk=(lijx.targets&&lijx.targets.length>0)||(lijx._raw&&lijx._raw.jzt&&lijx._raw.jzt.length>0);
+          var mwzOk=(mwz.targets&&mwz.targets.length>0)||(mwz._raw&&mwz._raw.jzt&&mwz._raw.jzt.length>0);
+          if(lijxOk && mwzOk){ found=st; break; }
+        }catch(_){}
+      }
+      if(!found){ toast('❌ 历史中未找到含李锦记/麦维他完整数据的版本', true); return; }
+      // 合并：当前非空优先，空则从历史版本补齐（逐品牌、逐字段并集）
+      for(var bb in found.state.brands){
+        if(!STATE.brands[bb]){ STATE.brands[bb]=found.state.brands[bb]; continue; }
+        var ob=STATE.brands[bb], cb=found.state.brands[bb];
+        ['targets','sales','inventory'].forEach(function(k){ if(isEmptyVal(ob[k])&&!isEmptyVal(cb[k])) ob[k]=cb[k]; });
+        if(cb._raw){ ob._raw=ob._raw||{}; for(var k2 in cb._raw){ if(isEmptyVal(ob._raw[k2])&&!isEmptyVal(cb._raw[k2])) ob._raw[k2]=cb._raw[k2]; } }
+        if(cb.posInput){ ob.posInput=Object.assign({}, cb.posInput, ob.posInput||{}); }
+      }
+      await ghUpsertBoard(currentBoard.id,currentBoard.name,STATE); // 写入时会再与云端合并，确保不被覆盖
+      hydrateFromState(STATE); renderAll(); setupTodoAll();
+      toast('✅ 已从云端历史恢复李锦记/麦维他等数据');
+    }catch(e){ toast('❌ 恢复失败：'+errMsg(e), true); }
+  };
+  // 恢复按钮（固定于右下角，位于云端协作徽章上方）
+  var recBtn=document.createElement('button');
+  recBtn.id='recoverBtn'; recBtn.textContent='🔄 恢复备份';
+  recBtn.style.cssText='position:fixed;right:14px;bottom:52px;z-index:99999;background:#185FA5;color:#fff;font:12px/1.4 system-ui,-apple-system,sans-serif;padding:7px 12px;border:none;border-radius:20px;box-shadow:0 2px 10px rgba(0,0,0,.25);cursor:pointer;';
+  recBtn.onclick=window.recoverBoardFromHistory;
+  document.body.appendChild(recBtn);
   setInterval(poll, 30000);
   // 首次立即诊断：显示具体连接错误
   (async function diag(){
@@ -3648,6 +3716,13 @@ init();
     try{
             var list=await ghListBoards();
       badge.textContent='云端协作 · 已连接';
+      // 自动修复：若李锦记+麦维他 目标与京准通同时为空（典型被旧版页面整体覆盖的签名），从云端历史自动恢复一次
+      try{
+        var _lj=STATE.brands['李锦记']||{}, _mw=STATE.brands['麦维他自营']||{};
+        var _ljE=isEmptyVal(_lj.targets)&&isEmptyVal(_lj._raw&&_lj._raw.jzt);
+        var _mwE=isEmptyVal(_mw.targets)&&isEmptyVal(_mw._raw&&_mw._raw.jzt);
+        if(_ljE && _mwE && typeof window.recoverBoardFromHistory==='function'){ setTimeout(function(){ window.recoverBoardFromHistory(); }, 1000); }
+      }catch(_){}
     }catch(e){
       var msg=errMsg(e);
       badge.textContent='云端协作 · 离线（'+msg.slice(0,90)+'）';
