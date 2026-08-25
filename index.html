@@ -3203,7 +3203,7 @@ async function boot(){
     if(fromWhere==='云端'||fromWhere==='公开快照'){ try{ idbSet(STATE); }catch(e){} }
     const invN=(B().inventory||[]).length, salesN=(B().sales||[]).length, jztN=(B().jzt||[]).length, gN=(STATE.gantt||[]).length;
     ensureGanttIds();
-    if(fromWhere==='云端'){ toast('已从云端加载「'+currentBoard.name+'」（销售 '+salesN+' · 库存 '+invN+' · 京准通 '+jztN+' · 甘特 '+gN+' 行）'); window.__hideCollabBadge=true; }
+    if(fromWhere==='云端'){ toast('已从云端加载数据'); window.__hideCollabBadge=true; }
     else if(fromWhere==='公开快照'){ toast('已载入「'+currentBoard.name+'」最新数据（只读模式，由录入同事每日更新）'); }
     else { toast('已从本地缓存恢复「'+currentBoard.name+'」（云端暂不可用，联网后将自动同步）'); }
   } else {
