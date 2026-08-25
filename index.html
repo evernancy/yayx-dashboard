@@ -614,7 +614,7 @@ const esc = s => String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt
 const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,''); const n=parseFloat(s); return isNaN(n)?0:n; };
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-25-fix13-hide-jzt-inv-brand';
+const APP_VERSION = '2026-08-25-fix14-pos-cloud-save';
 /* 列名同义词映射 */
 const ALIAS = {
   date:['日期','时间','date','day','dt'],
@@ -1544,7 +1544,16 @@ function onPosInput(e){
   if(v===0 && inp.value.trim()==='') delete b.posInput[d]; else b.posInput[d]=v;
   refreshHeLXKpis();
   clearTimeout(__posSaveDeb);
-  __posSaveDeb=setTimeout(()=>{ saveState(); saveToService(); }, 600);
+  __posSaveDeb=setTimeout(async ()=>{
+    saveState();
+    // POS 数据必须推送到云端，否则其他同事看不到；无令牌时明确提示
+    if(!ghToken()){
+      toast('⚠️ POS数据未保存到云端：未配置GitHub令牌。请点击页面底部「云端协作」徽章输入令牌，否则只有您自己能看到填写的数据。', true);
+      return;
+    }
+    try{ await ghUpsertBoard(currentBoard.id, currentBoard.name, STATE); toast('✅ POS数据已保存到云端'); }
+    catch(e){ toast('❌ POS数据保存失败：'+e.message, true); }
+  }, 600);
 }
 function onPosBlur(e){
   const inp=e.target;
