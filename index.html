@@ -793,7 +793,7 @@ function parseTable(text){
 // 业务键：取行中“非纯数值”的字段拼接（date 必然参与；商品名/SKU/品牌/计划等维度参与；金额/点击等数值不参与，便于同日更新）
 // 商品/编码类维度即使为纯数字也必须纳入业务键（如浮码数据表的 SKU 是纯数字，否则同日多行会被错误合并成 1 行，导致 13790 行仅剩 18 行）
 // ext_ 未识别列（备注等辅助信息）不参与业务键：全量上传时表头多/少一列不会把同一行判成不同行 → 重复数据自动忽略
-const KEY_DIMS=new Set(['sku','skuname','product','itemcode','itemname','barcode','货号','编码','item_code']);
+const KEY_DIMS=new Set(['sku','skuname','product','itemcode','itemname','barcode','货号','编码','item_code','followskuid','followskuname']);
 function rowKey(o){ const parts=[]; for(const k in o){ if(k.indexOf('ext_')===0) continue; const v=o[k]; if(v===undefined||v===null||v==='') continue; const s=String(v).trim(); const lk=k.toLowerCase(); if(!KEY_DIMS.has(lk) && /^[\d.,\s]+$/.test(s)) continue; parts.push(k+'='+s); } parts.sort(); return parts.join('\u0001'); }
 function mergeRows(existing, incoming){ const m=new Map(); (existing||[]).forEach(r=>{ if(r&&Object.keys(r).length) m.set(rowKey(r), r); }); (incoming||[]).forEach(r=>{ if(r&&Object.keys(r).length) m.set(rowKey(r), r); }); return Array.from(m.values()); }
 function toNum(v){ const n=Number(String(v).replace(/,/g,'')); return isNaN(n)?0:n; }
