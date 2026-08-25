@@ -614,7 +614,7 @@ const esc = s => String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt
 const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,''); const n=parseFloat(s); return isNaN(n)?0:n; };
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-25-fix8-jzt-kpi-format';
+const APP_VERSION = '2026-08-25-fix9-jzt-brand-branch';
 /* 列名同义词映射 */
 const ALIAS = {
   date:['日期','时间','date','day','dt'],
@@ -1399,11 +1399,6 @@ function renderJztTargets(){
   const [start,end]=resolveJztRange();
   const cur=jztRangeMetrics(start,end);
   const py=jztRangeMetrics(shiftYear(start,-1),shiftYear(end,-1));
-  // 投放花费目标：直接取月度TOTAL（与销售KPI一致，不按MTD折算）
-  const jztYm=end.slice(0,7);
-  let jztTarget=0;
-  const vm2=tlookup('jztspend','month',jztYm); if(vm2) jztTarget=vm2;
-  else { const mm2=end.slice(5); const vm3=tlookup('jztspend','month',mm2); if(vm3) jztTarget=vm3; else { const y2=end.slice(0,4); const vy2=tlookup('jztspend','year',y2); if(vy2) jztTarget=vy2; } }
   const yClicks=yoyInfo(cur.clicks,py.clicks), yCpc=yoyInfo(cur.cpc,py.cpc), yRoi=yoyInfo(cur.roi,py.roi), yFee=yoyInfo(cur.feeRatio,py.feeRatio), yGmv=yoyInfo(cur.gmv,py.gmv);
   // MTD 费比目标对比（费比目标维度=月度；by day / MTD / 整月 均取当月月度目标，保持一致）
   const feeYm=end.slice(0,7);
@@ -1417,14 +1412,33 @@ function renderJztTargets(){
   } else {
     feeCard={label:'MTD 费比', value:fmtPct(cur.feeRatio), sub:yFee.sub, cls:yFee.cls};
   }
-  // KPI 格式与「销售目标达成」一致：投放目标达成(%) + MTD花费 + 费比 + 缺口
-  const jztGap=Math.max(0,jztTarget-cur.spend);
-  $('#jztTargetKpis').innerHTML=kpiHTML([
-    {label:'投放花费 目标达成',value:jztTarget?fmtPct(cur.spend/jztTarget):'—',cls:jztTarget?(cur.spend<=jztTarget?'green':'amber'):'',sub:jztTarget?('达成（实际花费）'+fmtMoney(cur.spend)+' / 投放花费目标'+fmtMoney(jztTarget)):('达成（实际花费）'+fmtMoney(cur.spend)+' / 未设目标')},
-    {label:'MTD 投放花费',value:fmtMoney(cur.spend),sub:'点击 '+fmt(cur.clicks,0)+' · CPC '+fmtMoney(cur.cpc)+' · ROI '+cur.roi.toFixed(2)},
-    feeCard,
-    {label:'投放花费 缺口(目标-实际)',value:fmtMoney(jztGap),cls:jztGap>0?'green':'red',sub:jztYm+' MTD · 李锦记京准通'},
-  ]);
+  // 仅「李锦记」使用「投放目标达成」格式（与销售目标达成一致）；其余品牌（麦维他/丝蕴等）保留原 MTD 投放花费明细
+  if(STATE.currentBrand==='李锦记'){
+    const jztYm=end.slice(0,7);
+    let jztTarget=0;
+    const vm2=tlookup('jztspend','month',jztYm); if(vm2) jztTarget=vm2;
+    else { const mm2=end.slice(5); const vm3=tlookup('jztspend','month',mm2); if(vm3) jztTarget=vm3; else { const y2=end.slice(0,4); const vy2=tlookup('jztspend','year',y2); if(vy2) jztTarget=vy2; } }
+    const jztGap=Math.max(0,jztTarget-cur.spend);
+    $('#jztTargetKpis').innerHTML=kpiHTML([
+      {label:'投放花费 目标达成',value:jztTarget?fmtPct(cur.spend/jztTarget):'—',cls:jztTarget?(cur.spend<=jztTarget?'green':'amber'):'',sub:jztTarget?('达成（实际花费）'+fmtMoney(cur.spend)+' / 投放花费目标'+fmtMoney(jztTarget)):('达成（实际花费）'+fmtMoney(cur.spend)+' / 未设目标')},
+      {label:'MTD 投放花费',value:fmtMoney(cur.spend),sub:'点击 '+fmt(cur.clicks,0)+' · CPC '+fmtMoney(cur.cpc)+' · ROI '+cur.roi.toFixed(2)},
+      feeCard,
+      {label:'投放花费 缺口(目标-实际)',value:fmtMoney(jztGap),cls:jztGap>0?'green':'red',sub:jztYm+' MTD · 李锦记京准通'},
+    ]);
+  } else {
+    let target=0; const days=dateRange(start,end); let sd=0,has=false;
+    days.forEach(d=>{ const v=tlookup('jztspend','day',d); if(v){ sd+=v; has=true; } });
+    if(has) target=sd;
+    else { const ym=end.slice(0,7); const vm=tlookup('jztspend','month',ym); if(vm) target=vm; else { const y=end.slice(0,4); const vy=tlookup('jztspend','year',y); if(vy) target=vy; } }
+    $('#jztTargetKpis').innerHTML=kpiHTML([
+      {label:'MTD 投放花费',value:fmtMoney(cur.spend),sub:'点击 '+fmt(cur.clicks,0)+' · CPC '+fmtMoney(cur.cpc)},
+      {label:'MTD 点击',value:fmt(cur.clicks,0),sub:yClicks.sub,cls:yClicks.cls},
+      {label:'MTD CPC',value:fmtMoney(cur.cpc),sub:yCpc.sub,cls:yCpc.cls},
+      {label:'MTD ROI',value:cur.roi.toFixed(2),sub:yRoi.sub,cls:yRoi.cls},
+      feeCard,
+      {label:'MTD 成交金额',value:fmtMoney(cur.gmv),sub:yGmv.sub,cls:yGmv.cls},
+    ]);
+  }
 }
 
 /* ---------- 计算：目标达成 ---------- */
