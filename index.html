@@ -616,7 +616,7 @@ const esc = s => String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt
 const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,''); const n=parseFloat(s); return isNaN(n)?0:n; };
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-25-fix22-anti-clobber-poll';
+const APP_VERSION = '2026-08-25-fix23-jzt-old-new-merge';
 /* 列名同义词映射 */
 const ALIAS = {
   date:['日期','时间','date','day','dt'],
@@ -827,6 +827,22 @@ function mergeRaw(prev, cur){
   const header=unionHeader(ph.length?ph:[], ch.length?ch:[]);
   const merged=mergeRows(parseTable(prev), parseTable(cur));
   return rowsToText(merged, header);
+}
+// 京准通专用合并：老版本(按营销场景) + 新版本(全站口径) 必须保留各自原始表头（分段判定全站口径）。
+// 不能用 mergeRaw 把两版合并成单一 union 表头，否则整段被判定为全站营销、老版本行也被误归「全站营销」。
+// 这里按原始文本逐段 append + 逐行去重，splitJztSections 会按各段表头独立判定。
+function mergeJztRaw(prev, cur){
+  if(!prev||!prev.trim()) return cur||'';
+  if(!cur||!cur.trim()) return prev;
+  const seen=new Set();
+  const out=[];
+  prev.replace(/\r/g,'').split('\n').concat(cur.replace(/\r/g,'').split('\n')).forEach(l=>{
+    const t=l.trim(); if(!t) return;
+    const k=t.replace(/\s+/g,' ');
+    if(seen.has(k)) return;
+    seen.add(k); out.push(l);
+  });
+  return out.join('\n');
 }
 /* 京准通「全站口径」识别与渠道归因：
    - 表头含 全站交易额 / 全站投产比 / 全站订单行 / 全站订单成本 / 核心位置展现量 / 核心位置点击量 任一列 → 判定为「全站口径」
@@ -2627,6 +2643,14 @@ function rowBrandOf(row, fallback){
 }
 // 把一段原始文本按「品牌」列拆分，分别合并进对应品牌的 _raw（增量合并，组内去重保持幂等）
 function routeRawByBrand(w, cur, fallback, edited){
+  // 京准通：不按品牌列拆分（数据本就按选择器归属单一品牌），且必须保留各 section 原始表头，
+  // 用 mergeJztRaw 分段 append，避免 mergeRaw 把老/新两版压成单一 union 表头导致老版本被误判为全站营销。
+  if(w==='jzt'){
+    const store=STATE.brands[fallback]||STATE.brands[STATE.currentBrand];
+    store._raw.jzt=mergeJztRaw(store._raw.jzt||'', cur);
+    edited.add(fallback);
+    return;
+  }
   const rows=parseTable(cur);
   if(!rows.length){ const b=STATE.brands[fallback]; b._raw[w]=mergeRaw(b._raw[w]||'', cur); edited.add(fallback); return; }
   const headerCells=headerCellsOf(cur);
