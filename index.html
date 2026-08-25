@@ -616,7 +616,7 @@ const esc = s => String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt
 const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,''); const n=parseFloat(s); return isNaN(n)?0:n; };
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-25-fix26-brand-default-sales';
+const APP_VERSION = '2026-08-25-fix27-brand-split-storage';
 /* 列名同义词映射 */
 const ALIAS = {
   date:['日期','时间','date','day','dt'],
@@ -1635,6 +1635,7 @@ async function savePosToCloud(){
   }
   btn.disabled=true; btn.textContent='⏳ 保存中...';
   try{
+    if(typeof markDirty==='function') markDirty(STATE.currentBrand); // fix27：POS 仅当前品牌脏
     await ghUpsertBoard(currentBoard.id, currentBoard.name, STATE);
     toast('✅ POS数据已保存到云端');
     btn.textContent='✅ 已保存';
@@ -2729,6 +2730,8 @@ function readInputs(mode, silent){
   // 3) 诊断：仅显示当前正在编辑（各输入框所属品牌）的解析行数
   SECTIONS.forEach(w=>{ const b=STATE.brands[brandOf[w]]; updateDiag(b._raw[w], (w==='targets'?parseTargets(b._raw[w]).length:b[w].length), DIAG[w]); });
   updateDiag(STATE.ganttRaw, STATE.gantt.length, 'Gantt', ganttParsed.length);
+  // fix27：标记本次被编辑的品牌为脏，保存时只上传这些品牌（和路雪等小品牌延迟消失）
+  if(typeof markDirty==='function') edited.forEach(markDirty);
   saveState(); renderAll(); saveToService();
   if(!silent) toast(mode==='replace' ? '已按文本框内容全量重建并自动存储（刷新/重开不丢）' : ('已按增量更新并自动存储：新增 '+statAdd+' 行、重复 '+statDup+' 行已自动忽略（刷新/重开不丢，历史保留）'));
 }
@@ -3123,6 +3126,7 @@ $('#importBtn').addEventListener('change',async e=>{
     const st=pkg&&pkg.state?pkg.state:pkg;
     if(!st || typeof st!=='object' || !isUsableState(st)){ toast('数据包格式不正确，无法导入'); e.target.value=''; return; }
     STATE=normalizeState(st);
+    if(typeof markAllDirty==='function') markAllDirty(); // fix27：导入恢复全部品牌
     fillInputsForCurrentBrand(); saveState(); renderAll(); saveToService(); setupTodoAll(); toast('已导入数据包，看板已还原（已自动存储）'); e.target.value='';
   }catch(err){ toast('导入失败：'+err.message); e.target.value=''; }
 });
@@ -3166,7 +3170,7 @@ function updateTodoCnt(which){
   ['last','this'].forEach(col=>{ const el=$('#cnt_'+which+'_'+col); if(el){ const a=B().todo[which][col]; el.textContent=a.filter(x=>x.done).length+'/'+a.length; } });
 }
 let todoDeb;
-function saveTodoDeb(){ clearTimeout(todoDeb); todoDeb=setTimeout(()=>{ saveState(); saveToService(); }, 400); }
+function saveTodoDeb(){ clearTimeout(todoDeb); todoDeb=setTimeout(()=>{ if(typeof markDirty==='function') markDirty(STATE.currentBrand); saveState(); saveToService(); }, 400); }
 function focusTodoLine(which,col,sel){ const grid=$('#todo_'+which); if(!grid) return; const box=grid.querySelector('.todo-box[data-col="'+col+'"]'); const el=box?box.querySelector(sel):null; if(el) el.focus(); }
 function setupTodo(which){
   const grid=$('#todo_'+which); if(!grid) return;
@@ -3344,23 +3348,52 @@ async function ghPutFile(path, content, sha, _depth){
   }
 }
 // 拉取公开快照（无需令牌；同源 github.io 或任何静态托管均可）。返回 {id,name,state,updated_at} 或 null
+const SNAPSHOT_BASE_URL=SNAPSHOT_URL.replace(SNAPSHOT_PATH,''); // https://evernancy.github.io/yayx-dashboard/
 async function fetchPublicSnapshot(){
   try{
-    var r=await fetch(SNAPSHOT_URL,{cache:'no-cache'}); // no-cache=带 ETag 校验，快照未变时 304 秒回，避免每 30s 重拉全量
+    var r=await fetch(SNAPSHOT_URL,{cache:'no-cache'}); // no-cache=带 ETag 校验，快照未变时 304 秒回
     if(!r.ok) return null;
     var snap=await r.json();
-    return (snap && snap.state && isUsableState(snap.state)) ? snap : null;
+    if(snap && snap.format===SPLIT_FORMAT){
+      // 拆分快照：读各品牌文件组装
+      var brands={};
+      for(var i=0;i<snap.brands.length;i++){
+        var b=snap.brands[i];
+        try{ var br=await fetch(SNAPSHOT_BASE_URL+'data__'+encodeURIComponent(b)+'.json',{cache:'no-cache'}); if(br.ok){ var bj=await br.json(); brands[b]=bj.data||{}; } }catch(_){}
+        if(!brands[b]) brands[b]={};
+      }
+      var state={ brands:brands, currentBrand:snap.currentBrand||'李锦记', brandOrder:snap.brandOrder||BRANDS.slice(), gantt:snap.gantt||[], ganttRaw:snap.ganttRaw||'', memo:snap.memo||{} };
+      return isUsableState(state)? {id:snap.id,name:snap.name,state:state,updated_at:snap.updated_at} : null;
+    }
+    if(snap && snap.state && isUsableState(snap.state)) return snap; // 旧版整份格式（向后兼容）
+    return null;
   }catch(e){ return null; }
 }
-// 推送公开快照（需令牌；录入者保存时自动同步，查看者随即可见）
+// 推送公开快照（按品牌拆分，仅上传脏品牌 + 小清单；需令牌；查看者免令牌只读）
 async function ghPutPublicSnapshot(_depth){
   _depth=_depth||0;
-  var payload={id:currentBoard.id,name:currentBoard.name,state:STATE,updated_at:new Date().toISOString()};
-  var sha=null;
-  try{ var g=await fetch(GH_PUB_BASE+'/'+SNAPSHOT_PATH+'?ref=main',{headers:ghHeaders()}); if(g.ok){ var gd=await g.json(); sha=gd.sha||null; } }catch(e){}
-  var body={message:'snapshot: update '+SNAPSHOT_PATH, content:b64enc(JSON.stringify(payload)), branch:'main'};
-  if(sha) body.sha=sha;
-  var res=await fetch(GH_PUB_BASE+'/'+SNAPSHOT_PATH,{method:'PUT',headers:ghHeaders(),body:JSON.stringify(body)});
+  var id=currentBoard.id, name=currentBoard.name;
+  var dirty = __dirtyBrands.size ? Array.from(__dirtyBrands) : Object.keys(STATE.brands);
+  try{
+    var g=await fetch(GH_PUB_BASE+'/'+SNAPSHOT_PATH+'?ref=main',{headers:ghHeaders()});
+    var prev=null, prevSha=null;
+    if(g.ok){ var gd=await g.json(); prev=gd; prevSha=gd.sha||null; }
+  }catch(e){}
+  // 1) 写脏品牌快照文件
+  for(var i=0;i<dirty.length;i++){
+    var b=dirty[i];
+    var data=extractBrandData(STATE.brands[b]);
+    var bpath='data__'+encodeURIComponent(b)+'.json';
+    var bsha=null; try{ var bf=await fetch(GH_PUB_BASE+'/'+bpath+'?ref=main',{headers:ghHeaders()}); if(bf.ok){ var bj=await bf.json(); bsha=bj.sha||null; } }catch(_){}
+    var body={message:'snapshot brand '+b, content:b64enc(JSON.stringify({brand:b,data:data,updated_at:new Date().toISOString()})), branch:'main'};
+    if(bsha) body.sha=bsha;
+    try{ await fetch(GH_PUB_BASE+'/'+bpath,{method:'PUT',headers:ghHeaders(),body:JSON.stringify(body)}); }catch(_){}
+  }
+  // 2) 写清单
+  var manifest=buildManifest(id,name,STATE, (prev&&prev.format===SPLIT_FORMAT)?prev:null);
+  var mbody={message:'snapshot: update '+SNAPSHOT_PATH, content:b64enc(JSON.stringify(manifest)), branch:'main'};
+  if(prevSha) mbody.sha=prevSha;
+  var res=await fetch(GH_PUB_BASE+'/'+SNAPSHOT_PATH,{method:'PUT',headers:ghHeaders(),body:JSON.stringify(mbody)});
   if(!res.ok){
     if(_depth<3 && (res.status===409||res.status===422)) return ghPutPublicSnapshot(_depth+1);
     throw new Error('snapshot push HTTP '+res.status);
@@ -3395,22 +3428,93 @@ async function ghEnsureSeed(){
   try{ return await _ghSeed; }catch(e){ _ghSeed=null; throw e; } // 失败则下次可重试
 }
 async function ghListBoards(){ return ghEnsureSeed(); }
+/* ---------- 按品牌拆分存储（fix27）：每个品牌独立小文件 + 清单文件，保存只传被编辑品牌，延迟从 19MB 降到数 KB~数 MB ---------- */
+const SPLIT_FORMAT='split-v1';
+function brandFilePath(id, b){ return 'dashboards/'+id+'__'+encodeURIComponent(b)+'.json'; }
+// 单品牌深并集（防覆盖）：incoming 非空优先，空则保留云端 cloud 对应字段（杜绝空 STATE 覆盖抹掉已录入数据）
+function mergeBrandData(inc, cloud){
+  if(!inc) return cloud||{}; if(!cloud) return inc;
+  var out=JSON.parse(JSON.stringify(inc));
+  ['sales','inventory','purchase','purchase_order','spot_rate','aging_warn','jzt','targets'].forEach(function(k){ if(isEmptyVal(out[k]) && !isEmptyVal(cloud[k])) out[k]=JSON.parse(JSON.stringify(cloud[k])); });
+  out._raw=out._raw||{};
+  ['sales','inventory','jzt','targets','purchase','purchase_order','spot_rate','aging_warn'].forEach(function(k){ if(isEmptyVal(out._raw[k]) && !isEmptyVal(cloud._raw&&cloud._raw[k])) out._raw[k]=cloud._raw[k]; });
+  if(cloud.posInput) out.posInput=Object.assign({}, cloud.posInput, out.posInput||{});
+  return out;
+}
+function extractBrandData(b){
+  if(!b) return freshBrand();
+  return {
+    sales:Array.isArray(b.sales)?b.sales:[], inventory:Array.isArray(b.inventory)?b.inventory:[],
+    purchase:Array.isArray(b.purchase)?b.purchase:[], purchase_order:Array.isArray(b.purchase_order)?b.purchase_order:[],
+    spot_rate:Array.isArray(b.spot_rate)?b.spot_rate:[], aging_warn:Array.isArray(b.aging_warn)?b.aging_warn:[],
+    jzt:Array.isArray(b.jzt)?b.jzt:[], targets:Array.isArray(b.targets)?b.targets:[],
+    _raw:Object.assign({sales:'',inventory:'',jzt:'',targets:'',purchase:'',purchase_order:'',spot_rate:'',aging_warn:''}, b._raw||{}),
+    posInput:Object.assign({}, b.posInput||{}),
+    todo:b.todo||freshBrand().todo
+  };
+}
+// 脏品牌集合：标记被编辑过的品牌，保存时只上传这些（和路雪等小品牌延迟消失）
+var __dirtyBrands=new Set();
+function markDirty(b){ if(b) __dirtyBrands.add(b); }
+function markAllDirty(){ BRANDS.forEach(function(b){ __dirtyBrands.add(b); }); }
+// 从清单 + 各品牌文件组装完整 STATE（向后兼容：旧版整份格式原样返回）
+async function assembleSplitState(manifest, id){
+  var brands={};
+  for(var i=0;i<manifest.brands.length;i++){
+    var b=manifest.brands[i];
+    var bf=await ghGetFile(brandFilePath(id,b));
+    if(bf){ try{ var bo=JSON.parse(bf.content); brands[b]=bo.data||{}; }catch(_){ brands[b]={}; } }
+    if(!brands[b]) brands[b]={};
+  }
+  return { brands:brands, currentBrand:manifest.currentBrand||'李锦记', brandOrder:manifest.brandOrder||BRANDS.slice(), gantt:Array.isArray(manifest.gantt)?manifest.gantt:[], ganttRaw:manifest.ganttRaw||'', memo:manifest.memo||{} };
+}
+function buildManifest(id, name, state, prev){
+  var m={ id:id, name:name, format:SPLIT_FORMAT,
+    brands: Object.keys(state.brands),
+    currentBrand: state.currentBrand||'李锦记',
+    brandOrder: state.brandOrder||BRANDS.slice(),
+    gantt: Array.isArray(state.gantt)?state.gantt:[],
+    ganttRaw: state.ganttRaw||'', memo: state.memo||{},
+    updated_at: new Date().toISOString() };
+  // 合并共享字段（gantt/brandOrder/memo/ganttRaw）：incoming 优先，空则保留云端
+  if(prev){ if(isEmptyVal(m.gantt) && !isEmptyVal(prev.gantt)) m.gantt=prev.gantt; if(isEmptyVal(m.brandOrder) && !isEmptyVal(prev.brandOrder)) m.brandOrder=prev.brandOrder; if(isEmptyVal(m.memo) && !isEmptyVal(prev.memo)) m.memo=prev.memo; if(isEmptyVal(m.ganttRaw) && !isEmptyVal(prev.ganttRaw)) m.ganttRaw=prev.ganttRaw; if(prev._backup) m._backup=prev._backup; }
+  return m;
+}
 async function ghGetBoard(id){
   var f=await ghGetFile('dashboards/'+id+'.json'); if(!f) return null;
-  try{ var o=JSON.parse(f.content); return {id:o.id,name:o.name,state:o.state,updated_at:o.updated_at||''}; }catch(_){ return null; }
+  try{
+    var o=JSON.parse(f.content);
+    if(o && o.format===SPLIT_FORMAT){ var st=await assembleSplitState(o,id); return {id:o.id,name:o.name,state:st,updated_at:o.updated_at||''}; }
+    if(o && o.state) return {id:o.id,name:o.name,state:o.state,updated_at:o.updated_at||''}; // 旧版整份格式（向后兼容）
+    return null;
+  }catch(_){ return null; }
 }
 async function ghUpsertBoard(id,name,state){
   var path='dashboards/'+id+'.json';
+  // 脏集合非空 → 只传脏品牌；为空（如仅改甘特图/初始种子）→ 兜底传全部品牌，绝不丢数据
+  var dirty = __dirtyBrands.size ? Array.from(__dirtyBrands) : Object.keys(state.brands);
   for(var attempt=0; attempt<4; attempt++){
     var f=await ghGetFile(path);
-    var payload={id:id,name:name,state:state,updated_at:new Date().toISOString()};
-    // 防御性合并：多设备/多会话协作时，本机会话的 STATE 可能落后于云端（缺某些品牌/字段）。直接整体覆盖会把云端已录入数据抹掉（李锦记/麦维他 targets、京准通 jzt 曾因此丢失）。
-    // mergeBoardState 对【所有数据字段】做深并集：incoming 非空优先，空则保留云端非空；posInput 按天并集。彻底杜绝覆盖式数据丢失。
-    if(f){ try{ var cloud=JSON.parse(f.content); if(cloud&&cloud.state) payload.state=mergeBoardState(state, cloud.state); }catch(e){} }
-    try{ await ghPutFile(path, JSON.stringify(payload), f?f.sha:null); return; }
+    var prev=null; if(f){ try{ prev=JSON.parse(f.content); }catch(_){} }
+    var isSplit = prev && prev.format===SPLIT_FORMAT;
+    // 1) 逐个写脏品牌文件（每品牌与云端做深并集，防覆盖）
+    for(var i=0;i<dirty.length;i++){
+      var b=dirty[i];
+      var bpath=brandFilePath(id,b);
+      var data=extractBrandData(state.brands[b]);
+      var bf=await ghGetFile(bpath);
+      if(bf){ try{ var cloudB=JSON.parse(bf.content).data; data=mergeBrandData(data, cloudB); }catch(_){} }
+      var bbody=JSON.stringify({brand:b, data:data, updated_at:new Date().toISOString()});
+      await ghPutFile(bpath, bbody, bf?bf.sha:null);
+    }
+    // 2) 写/合并清单（含共享字段 gantt/brandOrder/memo，防覆盖）
+    var manifest=buildManifest(id,name,state, isSplit?prev:null);
+    try{ await ghPutFile(path, JSON.stringify(manifest), f?f.sha:null); __dirtyBrands.clear(); return; }
     catch(e){ if(e.status===409 && attempt<3){ continue; } throw e; }
   }
 }
+// 旧版整份格式自动迁移为拆分（首次加载旧格式时后台执行一次）
+async function migrateBoardToSplit(id,name,state){ markAllDirty(); try{ await ghUpsertBoard(id,name,state); }catch(e){ console.warn('[migrate] 拆分迁移失败', e.message); } }
 // 判断值是否为“空”（用于合并时判定某字段是否有数据可保留）。
 function isEmptyVal(v){
   if(v===null||v===undefined) return true;
@@ -3517,7 +3621,13 @@ async function boot(){
   // 关键修复：之前不读 IndexedDB，且离线时灌示例会把真实数据覆盖成样例 → 刷新即丢失。
   let loaded=null, fromWhere='';
   if(cloudOk){
-    try{ const row=await loadBoardState(currentBoard.id); if(row&&row.state&&isUsableState(row.state)){ loaded=row.state; fromWhere='云端'; } }catch(e){ loaded=null; }
+    try{
+      const raw=await ghGetFile('dashboards/'+currentBoard.id+'.json');
+      const row=await loadBoardState(currentBoard.id);
+      if(row&&row.state&&isUsableState(row.state)){ loaded=row.state; fromWhere='云端'; }
+      // 旧版整份格式 → 后台迁移为拆分（仅当已成功解析出旧数据，避免误覆盖空 STATE）
+      if(loaded && raw){ try{ const o=JSON.parse(raw.content); if(!o.format||o.format!==SPLIT_FORMAT) migrateBoardToSplit(currentBoard.id, currentBoard.name, loaded); }catch(_){} }
+    }catch(e){ loaded=null; }
   }
   // 云端读不到时（无令牌，或 GitHub API 被本机网络拦截）：先试公开快照（github.io 域名，团队共享口径，始终为最新真源），再退回本地缓存
   if(!loaded){
@@ -3690,35 +3800,14 @@ init();
   // 用途：当旧版页面/过期 STATE 整体覆盖云端导致数据丢失时，不必找人，自己点一下就能拉回。
   window.recoverBoardFromHistory=async function(){
     if(typeof ghToken==='function' && !ghToken()){ toast('⚠️ 需先配置 GitHub 令牌才能读取历史（点右下角徽章设置）', true); return; }
-    toast('🔄 正在从云端历史扫描含完整数据的版本…（请稍候）');
+    toast('🔄 正在从云端备份恢复数据…（请稍候）');
     try{
-      var path='dashboards/'+currentBoard.id+'.json';
-      // 注意：commits / contents?ref= 用 GH_API（绝对路径），不能用 ghApi（它内部拼 GH_BASE=/contents 前缀会导致路径重复→404）
-      var cr=await fetch(GH_API+'/repos/'+GH_OWNER+'/'+GH_REPO+'/commits?path='+encodeURIComponent(path)+'&per_page=60',{headers:ghHeaders()});
-      if(!cr.ok) throw new Error('HTTP '+cr.status+' 列取提交历史');
-      var commits=await cr.json();
-      if(!Array.isArray(commits)||!commits.length){ toast('❌ 未能读取提交历史', true); return; }
+      // 拆分后主文件是清单(不含品牌数据)，整份数据备份在迁移时生成的 backup_full 文件；
+      // 优先读该备份，逐品牌并集回当前 STATE（当前非空优先，永不覆盖已有数据）。
       var found=null;
-      for(var i=0;i<commits.length;i++){
-        var c=commits[i];
-        try{
-          var mr=await fetch(GH_API+'/repos/'+GH_OWNER+'/'+GH_REPO+'/contents/'+path+'?ref='+c.sha,{headers:ghHeaders()});
-          if(!mr.ok) continue;
-          var meta=await mr.json();
-          if(!meta||!meta.sha) continue;
-          var br=await fetch(GH_API+'/repos/'+GH_OWNER+'/'+GH_REPO+'/git/blobs/'+meta.sha,{headers:ghHeaders()});
-          if(!br.ok) continue;
-          var b=await br.json(); if(!b.content) continue;
-          var st=JSON.parse(b64dec(b.content));
-          var brd=(st.state&&st.state.brands)||{};
-          var lijx=brd['李锦记']||{}, mwz=brd['麦维他自营']||{};
-          var lijxOk=(lijx.targets&&lijx.targets.length>0)||(lijx._raw&&lijx._raw.jzt&&lijx._raw.jzt.length>0);
-          var mwzOk=(mwz.targets&&mwz.targets.length>0)||(mwz._raw&&mwz._raw.jzt&&mwz._raw.jzt.length>0);
-          if(lijxOk && mwzOk){ found=st; break; }
-        }catch(_){}
-      }
-      if(!found){ toast('❌ 历史中未找到含李锦记/麦维他完整数据的版本', true); return; }
-      // 合并：当前非空优先，空则从历史版本补齐（逐品牌、逐字段并集）
+      var backupPath='dashboards/backup_full_20260825.json';
+      try{ var bf=await ghGetFile(backupPath); if(bf){ var bj=JSON.parse(bf.content); if(bj&&bj.state&&bj.state.brands) found=bj; } }catch(_){}
+      if(!found){ toast('❌ 未找到可用的云端备份('+backupPath+')', true); return; }
       for(var bb in found.state.brands){
         if(!STATE.brands[bb]){ STATE.brands[bb]=found.state.brands[bb]; continue; }
         var ob=STATE.brands[bb], cb=found.state.brands[bb];
@@ -3726,9 +3815,10 @@ init();
         if(cb._raw){ ob._raw=ob._raw||{}; for(var k2 in cb._raw){ if(isEmptyVal(ob._raw[k2])&&!isEmptyVal(cb._raw[k2])) ob._raw[k2]=cb._raw[k2]; } }
         if(cb.posInput){ ob.posInput=Object.assign({}, cb.posInput, ob.posInput||{}); }
       }
-      await ghUpsertBoard(currentBoard.id,currentBoard.name,STATE); // 写入时会再与云端合并，确保不被覆盖
+      if(typeof markAllDirty==='function') markAllDirty();
+      await ghUpsertBoard(currentBoard.id,currentBoard.name,STATE); // 写入时再与云端合并，确保不被覆盖
       hydrateFromState(STATE); renderAll(); setupTodoAll();
-      toast('✅ 已从云端历史恢复李锦记/麦维他等数据');
+      toast('✅ 已从云端备份恢复李锦记/麦维他等数据');
     }catch(e){ toast('❌ 恢复失败：'+errMsg(e), true); }
   };
   // 恢复按钮（固定于右下角，位于云端协作徽章上方）
