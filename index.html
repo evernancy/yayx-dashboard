@@ -1642,7 +1642,7 @@ function renderTargets(){
     detailDays.forEach(d=>{ const pT=tlookup('pos','day',d);
       const raw=(B().posInput&&B().posInput[d]!=null)?Math.round(num(B().posInput[d])):0;
       const disp=raw?raw.toLocaleString('en-US'):'';
-      body+=`<tr><td>${d}</td><td>${fmtMoney(pT)}</td><td><input class="pos-input" type="text" inputmode="numeric" data-date="${d}" value="${escAttr(disp)}" placeholder="0"></td><td class="rate-pos">${rateCellHtml(raw,pT)}</td></tr>`; });
+      body+=`<tr><td>${d}</td><td>${fmtMoney(pT)}</td><td><input class="pos-input" type="text" inputmode="numeric" data-date="${d}" value="${escAttr(disp)}" placeholder="0"></td>${rateCellHtml(raw,pT)}</tr>`; });
   } else {
     head='<tr><th>时间</th><th>品牌目标(by day)</th><th>实际GMV</th><th>GMV达成率</th><th>POS目标(by day)</th><th>POS实际</th><th>POS达成率</th></tr>';
     detailDays.forEach(d=>{ const bT=tlookup('brand','day',d), g=gmv[d]||0, pT=tlookup('pos','day',d), p=pos[d]||0; body+=`<tr><td>${d}</td><td>${fmtMoney(bT)}</td><td>${fmtMoney(g)}</td>${rateCell(g,bT)}<td>${fmtMoney(pT)}</td><td>${fmtMoney(p)}</td>${rateCell(p,pT)}</tr>`; });
