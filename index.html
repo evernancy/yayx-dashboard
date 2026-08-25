@@ -614,7 +614,7 @@ const esc = s => String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt
 const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,''); const n=parseFloat(s); return isNaN(n)?0:n; };
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-25-fix12-ljj-no-feeratio';
+const APP_VERSION = '2026-08-25-fix13-hide-jzt-inv-brand';
 /* 列名同义词映射 */
 const ALIAS = {
   date:['日期','时间','date','day','dt'],
@@ -1769,7 +1769,8 @@ function renderMaiweiTargets(start,end){
 /* ---------- 总览 ---------- */
 function renderOverview(){
   const ov=$('#ovKpis');
-  const s=computeSales(), inv=computeInv(invAsOf), j=computeJzt();
+  const hideJztInv=JZT_INV_HIDDEN_BRANDS.includes(STATE.currentBrand); // 家乐/联合利华/和路雪：总览也隐藏京准通与库存周转
+  const s=computeSales(), inv=hideJztInv?null:computeInv(invAsOf), j=hideJztInv?null:computeJzt();
   const items=[];
   if(s){ items.push({label:'销售总额',value:fmtMoney(s.totalAmt),cls:'blue'}); items.push({label:'成交人数',value:fmt(s.totalBuyers,0)+' 人'}); }
   if(j){ items.push({label:'京准通花费',value:fmtMoney(j.totalSpend),cls:'red'}); items.push({label:'京准通GMV',value:fmtMoney(j.totalGmv),cls:'green'}); items.push({label:'推广ROI',value:j.roi.toFixed(2),cls:j.roi>=1?'green':'red'}); }
@@ -2432,9 +2433,10 @@ function renderAll(){
 let lijxSub='sales';
 let currentView='overview';
 function setSubview(name){ lijxSub=name; $$('.subtab').forEach(t=>t.classList.toggle('active',t.dataset.view===name)); const root=document.querySelector('[data-section="lijx"]'); if(root) root.querySelectorAll('[data-sub]').forEach(s=>{ s.style.display=(s.dataset.sub===name)?'block':'none'; }); }
-// 和路雪：临时隐藏「京准通推广」「库存周转」两个子视图（表格/代码保留，仅控制显隐，后续改此处条件即可放出）
+// 临时隐藏「京准通推广」「库存周转」两个子视图的品牌（表格/代码保留，仅控制显隐，后续改此处数组即可放出）
+const JZT_INV_HIDDEN_BRANDS=['和路雪','家乐','联合利华'];
 function applyBrandSubtabs(){
-  const hide=STATE.currentBrand==='和路雪';
+  const hide=JZT_INV_HIDDEN_BRANDS.includes(STATE.currentBrand);
   ['jzt','inventory'].forEach(v=>{
     const tab=document.querySelector('.subtab[data-view="'+v+'"]');
     if(tab) tab.classList.toggle('hidden-subtab',hide);
@@ -3401,7 +3403,7 @@ async function boot(){
   renderAll();
   todoInit(); migrateMemoToTodo(); setupTodoAll();
   syncBrandUI(); // 确保品牌栏与输入区选择器高亮当前品牌
-  applyBrandSubtabs(); // 和路雪：临时隐藏京准通推广/库存周转子视图（保留代码，后续可放出）
+  applyBrandSubtabs(); // 家乐/联合利华/和路雪：临时隐藏京准通推广/库存周转子视图（保留代码，后续改 JZT_INV_HIDDEN_BRANDS 即可放出）
 }
 init();
 </script>
