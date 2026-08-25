@@ -614,7 +614,7 @@ const esc = s => String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt
 const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,''); const n=parseFloat(s); return isNaN(n)?0:n; };
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-25-fix5-target48w';
+const APP_VERSION = '2026-08-25-fix6-daytarget-null';
 /* 列名同义词映射 */
 const ALIAS = {
   date:['日期','时间','date','day','dt'],
@@ -1662,12 +1662,9 @@ function renderMaiweiTargets(start,end){
   // 目标查询（指定品牌，按 品牌GMV/采销GMV/内部GMV 类型）：by day 优先、回退月/年
   const tgtOf=(name,type,d)=>{ const b=STATE.brands[name]||{targets:[]}; const ry=targetRefYear(); const tgt={};
     (b.targets||[]).forEach(r=>{ const t=normType(r.ttype), p=normPeriod(r.tperiod,ry); let g=normGran(r.tgran); if(!g) g=p.length===10?'day':(p.length===7?'month':'year'); const v=num(r.tvalue); if(t&&g&&p) tgt[t+'|'+g+'|'+p]=v; });
+    // 仅当存在显式「by day」目标时返回；否则返回 null，等待用户上传按日目标（不再用「月度目标÷当月天数」推算单日目标）
     if(tgt[type+'|day|'+d]) return tgt[type+'|day|'+d];
-    // 仅设月度/年度目标时，按天查询回退为「月目标÷当月天数」「年目标÷365」，使单日目标与月度目标自洽
-    const ym=d.slice(0,7); if(tgt[type+'|month|'+ym]) return tgt[type+'|month|'+ym]/daysInMonth(ym);
-    const mm=d.slice(5); if(tgt[type+'|month|'+mm]) return tgt[type+'|month|'+mm]/daysInMonth('2026-'+mm);
-    const yy=d.slice(0,4); if(tgt[type+'|year|'+yy]) return tgt[type+'|year|'+yy]/365;
-    return 0; };
+    return null; };
   // 区间目标：优先日目标求和；否则覆盖到的每个月目标各计一次（MTD/整月/跨月均正确，不会把月目标按天重复累加）；否则年目标
   const rangeTargetOf=(name,type,s,e)=>{
     const b=STATE.brands[name]||{targets:[]}; const ry=targetRefYear(); const tgt={};
@@ -1730,7 +1727,8 @@ function renderMaiweiTargets(start,end){
   let head='<tr><th>时间</th><th>自营目标(by day)</th><th>自营实际GMV</th><th>自营GMV达成率</th><th>POP目标(by day)</th><th>POP实际GMV</th><th>POPGMV达成率</th></tr>';
   let body='';
   detailDays.forEach(d=>{ const zyTd=tgtOf(zyName,'brand',d), zg=zyGmv[d]||0, popTd=tgtOf(popName,'brand',d), pg=popGmv[d]||0;
-    body+=`<tr><td>${d}</td><td>${fmtMoney(zyTd)}</td><td>${fmtMoney(zg)}</td>${rateCell(zg,zyTd)}<td>${fmtMoney(popTd)}</td><td>${fmtMoney(pg)}</td>${rateCell(pg,popTd)}</tr>`; });
+    const zyTdCell=zyTd!=null?fmtMoney(zyTd):'—', popTdCell=popTd!=null?fmtMoney(popTd):'—';
+    body+=`<tr><td>${d}</td><td>${zyTdCell}</td><td>${fmtMoney(zg)}</td>${rateCell(zg,zyTd)}<td>${popTdCell}</td><td>${fmtMoney(pg)}</td>${rateCell(pg,popTd)}</tr>`; });
   $('#targetTable').innerHTML=`<table class="tbl"><thead>${head}</thead><tbody>${body}</tbody></table>`;
 }
 
