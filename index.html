@@ -614,7 +614,7 @@ const esc = s => String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt
 const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,''); const n=parseFloat(s); return isNaN(n)?0:n; };
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-25-fix11-feeratio-salesgmv';
+const APP_VERSION = '2026-08-25-fix12-ljj-no-feeratio';
 /* 列名同义词映射 */
 const ALIAS = {
   date:['日期','时间','date','day','dt'],
@@ -1434,7 +1434,6 @@ function renderJztTargets(){
       {label:'MTD 点击',value:fmt(cur.clicks,0),sub:yClicks.sub,cls:yClicks.cls},
       {label:'MTD CPC',value:fmtMoney(cur.cpc),sub:yCpc.sub,cls:yCpc.cls},
       {label:'MTD ROI',value:cur.roi.toFixed(2),sub:yRoi.sub,cls:yRoi.cls},
-      {label:'MTD 费比',value:fmtPct(cur.feeRatio),sub:yFee.sub,cls:yFee.cls},
       {label:'MTD 成交金额',value:fmtMoney(cur.gmv),sub:yGmv.sub,cls:yGmv.cls},
     ]);
   } else {
