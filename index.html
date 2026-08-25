@@ -774,10 +774,12 @@ function parseTable(text){
       const v=cells[ci]!==undefined?cells[ci].trim():'';
       if(key) o[key]=v;
     }
-    if(o.date!==undefined && o.date!=='') o.date=normDate(o.date);
     // 过滤日期范围行（如 2026-08-01~2026-08-23、8月1日-8月23日）和汇总行（合计/总计/小计）
-    const rawDate=String(o.date||'');
-    if(/[\~\-\—\–至到]\s*\d{4}|[\~\-\—\–至到]\s*\d{1,2}月|^\d{4}[^\d]*[\~\-\—\–至到]/.test(rawDate)) continue;
+    // 必须在 normDate 之前用原始日期串判断，否则 2026-08-01~2026-08-23 会被截成 2026-08-01 而漏判；
+    // 范围分隔符仅限 ~ — – 至 到（不含普通日期连字符 -），否则 2026-08-02 等逐日行会被误删
+    const rawDate=String(cells[0]||'').trim();
+    if(/[~\—\–至到]\s*\d{4}|[~\—\–至到]\s*\d{1,2}月|^\d{4}[^\d]*[~\—\–至到]|(^|\D)\d{1,2}月\d{1,2}日\s*[-~—–至到]\s*\d{1,2}月/.test(rawDate)) continue;
+    if(o.date!==undefined && o.date!=='') o.date=normDate(o.date);
     const skuVal=String(o.sku||o.product||o.itemcode||o.货号||'').trim();
     if(/^(合计|总计|小计|汇总|grand\s*total|subtotal|sum)$/i.test(skuVal)) continue;
     rows.push(o);
