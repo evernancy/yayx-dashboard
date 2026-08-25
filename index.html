@@ -616,7 +616,7 @@ const esc = s => String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt
 const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,''); const n=parseFloat(s); return isNaN(n)?0:n; };
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-25-fix17-pos-manual-save-btn';
+const APP_VERSION = '2026-08-25-fix18-jzt-per-section-channel';
 /* 列名同义词映射 */
 const ALIAS = {
   date:['日期','时间','date','day','dt'],
@@ -837,11 +837,44 @@ function isJztFullSite(text){
   const hc=headerCellsOf(text).map(h=>String(h||'').trim().toLowerCase());
   return JZT_FULLSITE_MARKERS.some(m=>hc.includes(m.toLowerCase()));
 }
+// 把整段文本按「表头行」切成多个 section，每个 section 用各自表头解析、各自判定全站口径。
+// 这样老版本数据即使与全站口径数据混在同一输入框，也只给「全站口径 section」的行打 channel='全站营销'，
+// 老版本行保持原营销场景（channel 留空、按 scene 展示），实现「两版并存、各自识别」。
+function splitJztSections(text){
+  if(!text||!text.trim()) return [];
+  const lines=text.replace(/\r/g,'').split('\n').map(l=>l.trim()).filter(Boolean);
+  if(!lines.length) return [];
+  const knownKw=['日期','date','花费','展现','点击','交易额','订单','投产','计划','场景','渠道','商品','campaign','scene','id'];
+  const isHeaderLine=(line)=>{
+    const delim=detectDelimOf(line);
+    const cells=line.split(delim).map(c=>c.trim());
+    const first=String(cells[0]||'').trim();
+    const firstIsDate=/^\d{4}[-/]\d{1,2}[-/]\d{1,2}$/.test(first)||/^\d{1,2}[-/]\d{1,2}$/.test(first);
+    if(firstIsDate) return false; // 首格是日期 → 数据行，非表头
+    return cells.some(c=>knownKw.some(k=>String(c).toLowerCase().includes(k.toLowerCase())));
+  };
+  const out=[]; let cur=null;
+  lines.forEach(line=>{
+    if(isHeaderLine(line)){ cur={header:line, rows:[]}; out.push(cur); }
+    else { if(!cur){ cur={header:null, rows:[]}; out.push(cur); } cur.rows.push(line); }
+  });
+  return out.filter(s=>s.rows.length||s.header);
+}
 function parseJztRaw(text){
   if(!text||!text.trim()) return [];
-  const fs=isJztFullSite(text);
-  const rows=parseTable(text);
-  if(fs) rows.forEach(r=>{ r.channel='全站营销'; });
+  const sections=splitJztSections(text);
+  let rows=[];
+  sections.forEach(sec=>{
+    const secText=sec.header ? (sec.header+'\n'+sec.rows.join('\n')) : sec.rows.join('\n');
+    if(!secText.trim()) return;
+    const secRows=parseTable(secText);
+    if(!secRows.length) return;
+    // 仅当该 section 自身表头含全站口径标记时，才打全站营销 channel；无表头（纯数据）默认按老版本识别
+    let isFs=false;
+    if(sec.header){ const hc=sec.header.split(detectDelimOf(sec.header)).map(h=>String(h||'').trim().toLowerCase()); isFs=JZT_FULLSITE_MARKERS.some(m=>hc.includes(m.toLowerCase())); }
+    if(isFs) secRows.forEach(r=>{ r.channel='全站营销'; });
+    rows=rows.concat(secRows);
+  });
   return rows;
 }
 // 目标行合并：键 = 类型|粒度|周期，新值覆盖旧值
