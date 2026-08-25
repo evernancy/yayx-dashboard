@@ -2193,11 +2193,13 @@ function reparseBrand(brand){
   const b=STATE.brands[brand];
   const seen={}; const tgt=[];
   const push=r=>{ if(!isTargetRow(r)) return; const k=(r.ttype||'')+'|'+(r.tgran||'')+'|'+(r.tperiod||''); if(!seen[k]){ seen[k]=1; tgt.push(r); } };
+  // 目标数据只从专属「目标数据」框(_raw.targets)解析；销售/库存/京准通是明细数据，不走 stripTargets，
+  // 否则京准通等「首列=日期、第4列=数字(计划ID/跟单SKU ID/数值列)」的行会被 isTargetRow 的「日期型 ttype」
+  // 误判为目标行整组抽走（麦维他「常规推广-关键词」全部丢失的根因）。
   parseTargets(b._raw.targets||'').forEach(push);
-  [b._raw.sales,b._raw.inventory,b._raw.jzt].forEach(t=>{ parseTargets(t||'').forEach(push); });
-  b.sales=aggregateRows(parseTable(stripTargets(b._raw.sales||'', push)));
-  b.inventory=parseTable(stripTargets(b._raw.inventory||'', push));
-  b.jzt=aggregateRows(parseTable(stripTargets(b._raw.jzt||'', push)));
+  b.sales=aggregateRows(parseTable(b._raw.sales||''));
+  b.inventory=parseTable(b._raw.inventory||'');
+  b.jzt=aggregateRows(parseTable(b._raw.jzt||''));
   b.purchase=parseTable(b._raw.purchase||'');
   b.purchase_order=parseTable(b._raw.purchase_order||'');
   b.spot_rate=parseTable(b._raw.spot_rate||'');
@@ -2396,7 +2398,7 @@ function updateDiag(rawText,rowCount,key,parsedCount){
       ? ' <span style="color:#6b7280;font-size:12px">（解析 '+parsedCount+' 行 → 存储 '+rowCount+' 条）</span>' : '';
     el.innerHTML='✓ 已解析 <b>'+rowCount+'</b> 行'+detail;
   }
-  else { el.className='diag err'; el.innerHTML='⚠ 未解析出数据：请确认<b>首行是表头</b>且含可识别列名（京准通需含 日期 / 花费 / 点击 / GMV 等），数据用 <b>Tab 或英文逗号</b>分隔；目标行（如「投放花费目标 月 2026-08 380000」）会自动抽走，不属于投放数据。'; }
+  else { el.className='diag err'; el.innerHTML='⚠ 未解析出数据：请确认<b>首行是表头</b>且含可识别列名（京准通需含 日期 / 营销场景 / 花费 / 点击 / GMV 等），数据用 <b>Tab 或英文逗号</b>分隔；目标行（如「投放花费目标 月 2026-08 380000」）请填在<b>「目标数据」框</b>，京准通框只放推广明细，不要混填。'; }
 }
 /* ---------- 品牌列自动识别 / 归户 ---------- */
 // 带「品牌」列的明细数据（销售 / 京准通 / 浮码）在导入时按数据内的「品牌」列自动归户，
@@ -2443,11 +2445,12 @@ function readInputs(mode, silent){
     const b=STATE.brands[brand];
     const seen={}; const tgt=[];
     const push=r=>{ if(!isTargetRow(r)) return; const k=(r.ttype||'')+'|'+(r.tgran||'')+'|'+(r.tperiod||''); if(!seen[k]){ seen[k]=1; tgt.push(r); } };
-    // 目标数据只从专属的「目标数据」输入框(_raw.targets)解析，禁止从销售/库存/京准通里乱抽目标行（那是导致目标数据被销售明细污染、清除时丢失的根因）
-    parseTargets(b._raw.targets).forEach(push);
-    const salesIn=aggregateRows(parseTable(stripTargets(b._raw.sales, push)));
-    const invIn=parseTable(stripTargets(b._raw.inventory, push));
-    const jztIn=aggregateRows(parseTable(stripTargets(b._raw.jzt, push)));
+    // 目标数据只从专属「目标数据」框(_raw.targets)解析；销售/库存/京准通走纯明细解析(parseTable)，不再 stripTargets：
+    // 京准通等「首列=日期、第4列=数字」的数据行会被 isTargetRow 的「日期型 ttype」误判为目标行整组抽走（麦维他「常规推广-关键词」丢失根因）。
+    parseTargets(b._raw.targets||'').forEach(push);
+    const salesIn=aggregateRows(parseTable(b._raw.sales||''));
+    const invIn=parseTable(b._raw.inventory||'');
+    const jztIn=aggregateRows(parseTable(b._raw.jzt||''));
     const ppIn=parseTable(b._raw.purchase||'');
     const poIn=parseTable(b._raw.purchase_order||'');
     // 现货率 / 长库龄预警：首列为「日期」，若走 stripTargets 会被 isTargetRow 的「日期型 ttype」放行逻辑误判为目标行整组抽走。
