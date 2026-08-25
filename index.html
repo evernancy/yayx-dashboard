@@ -616,7 +616,7 @@ const esc = s => String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt
 const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,''); const n=parseFloat(s); return isNaN(n)?0:n; };
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-25-fix15-jzt-fullsite-template';
+const APP_VERSION = '2026-08-25-fix16-jzt-fullsite-channel';
 /* 列名同义词映射 */
 const ALIAS = {
   date:['日期','时间','date','day','dt'],
@@ -827,6 +827,22 @@ function mergeRaw(prev, cur){
   const header=unionHeader(ph.length?ph:[], ch.length?ch:[]);
   const merged=mergeRows(parseTable(prev), parseTable(cur));
   return rowsToText(merged, header);
+}
+/* 京准通「全站口径」识别与渠道归因：
+   - 表头含 全站交易额 / 全站投产比 / 全站订单行 / 全站订单成本 / 核心位置展现量 / 核心位置点击量 任一列 → 判定为「全站口径」
+   - 全站口径上传时，渠道(channel)统一归为「全站营销」，与「原京准通」表头（展现数/点击数/总订单金额/总订单行…）并存、自动识别、合并计算全部数据
+   - 字段映射由 ALIAS 完成（花费→spend、全站交易额→gmv、全站订单行→orders、核心位置展现量→impressions、核心位置点击量→clicks、全站投产比→roiCol、全站订单成本→cpaCol），新旧两版表头上传后落到同一套内部字段，自动合并展示 */
+const JZT_FULLSITE_MARKERS=['全站交易额','全站投产比','全站订单行','全站订单成本','核心位置展现量','核心位置点击量'];
+function isJztFullSite(text){
+  const hc=headerCellsOf(text).map(h=>String(h||'').trim().toLowerCase());
+  return JZT_FULLSITE_MARKERS.some(m=>hc.includes(m.toLowerCase()));
+}
+function parseJztRaw(text){
+  if(!text||!text.trim()) return [];
+  const fs=isJztFullSite(text);
+  const rows=parseTable(text);
+  if(fs) rows.forEach(r=>{ r.channel='全站营销'; });
+  return rows;
 }
 // 目标行合并：键 = 类型|粒度|周期，新值覆盖旧值
 function mergeTargetRows(a,b){ const m=new Map(); const key=r=>(r.ttype||'')+'|'+(r.tgran||'')+'|'+(r.tperiod||''); (a||[]).forEach(r=>{ if(r&&r.ttype) m.set(key(r), r); }); (b||[]).forEach(r=>{ if(r&&r.ttype) m.set(key(r), r); }); return Array.from(m.values()); }
@@ -1350,14 +1366,14 @@ function computeJzt(start,end){
   const feeDenom=salesGmvSum(start,end);
   const byDate={}; rows.forEach(r=>{ const k=r.date||'未知'; byDate[k]=byDate[k]||{spend:0,gmv:0}; byDate[k].spend+=num(r.spend); byDate[k].gmv+=num(r.gmv); });
   const byPlan={}; rows.forEach(r=>{ const k=r.campaign||'未知'; byPlan[k]=byPlan[k]||{spend:0,gmv:0}; byPlan[k].spend+=num(r.spend); byPlan[k].gmv+=num(r.gmv); });
-  // 按营销场景（渠道）分组：花费 / 点击 / 成交金额
-  const byScene={}; rows.forEach(r=>{ const k=(r.scene||'').trim()||'未知'; const s=byScene[k]=byScene[k]||{spend:0,clicks:0,gmv:0}; s.spend+=num(r.spend); s.clicks+=num(r.clicks); s.gmv+=num(r.gmv); });
+  // 按渠道分组：全站口径数据归「全站营销」，原京准通数据按营销场景（无渠道列时回退 scene）；花费 / 点击 / 成交金额
+  const byScene={}; rows.forEach(r=>{ const k=((r.channel||'').trim()||(r.scene||'').trim()||'未知'); const s=byScene[k]=byScene[k]||{spend:0,clicks:0,gmv:0}; s.spend+=num(r.spend); s.clicks+=num(r.clicks); s.gmv+=num(r.gmv); });
   return {totalSpend,totalImp,totalClk,totalOrd,totalGmv,dirAmt,indirAmt,preAmt,totalCart,newCustOrders,newCustAmt,favItem,favShop,dealUsers,ctr,cpc,cpm,cvr,cpa,roi,feeRatio:feeDenom>0?totalSpend/feeDenom:0,byDate,byPlan,byScene};
 }
 function renderJzt(){
   const [start,end]=resolveJztRange();
   const c=computeJzt(start,end);
-  if(!c){ $('#jztScene').innerHTML='<div class="empty">未解析到实际投放数据——请在第 3 个「京东京准通推广数据」框粘贴实际推广明细（需含 日期 / 营销场景 / 花费 / 点击 / GMV 等列，Tab 或逗号分隔）。</div>'; return; }
+  if(!c){ $('#jztScene').innerHTML='<div class="empty">未解析到实际投放数据——请在第 3 个「京东京准通推广数据」框粘贴实际推广明细（支持「原京准通」与「全站口径」两种表头，系统自动识别；全站口径渠道自动归为「全站营销」。需含 日期 / 花费 / 点击 / GMV 等列，Tab 或逗号分隔）。</div>'; return; }
   // 各渠道花费（MTD）：渠道=营销场景；成交占比=渠道成交金额/京准通整体成交金额
   const scenes=Object.entries(c.byScene).sort((a,b)=>b[1].spend-a[1].spend);
   const tS=c.totalSpend, tG=c.totalGmv;
@@ -1414,8 +1430,8 @@ function renderJztTargets(){
       const hasJztTarget=(B().targets||[]).some(r=>normType(r.ttype)==='jztspend');
       hintEl.style.display='block';
       hintEl.innerHTML=hasJztTarget
-        ? '已识别「投放花费目标」（见上方 KPI），但「京准通推广数据」框为空或无法解析——请在该框粘贴实际推广数据（需含 日期 / 花费 / 点击 / GMV 等列），才能查看 MTD 花费、点击、ROI 与图表。'
-        : '「京准通推广数据」框为空或无法解析——请粘贴实际推广数据（需含 日期 / 花费 / 点击 / GMV 等列）以查看投放实际表现与图表。';
+        ? '已识别「投放花费目标」（见上方 KPI），但「京准通推广数据」框为空或无法解析——请在该框粘贴实际推广数据（支持「原京准通」与「全站口径」两种表头，自动识别；全站口径渠道自动归为「全站营销」。需含 日期 / 花费 / 点击 / GMV 等列），才能查看 MTD 花费、点击、ROI 与图表。'
+        : '「京准通推广数据」框为空或无法解析——请粘贴实际推广数据（支持「原京准通」与「全站口径」两种表头，自动识别；全站口径渠道自动归为「全站营销」。需含 日期 / 花费 / 点击 / GMV 等列）以查看投放实际表现与图表。';
     } else hintEl.style.display='none';
   }
   const [start,end]=resolveJztRange();
@@ -2334,7 +2350,7 @@ function reparseBrand(brand){
   parseTargets(b._raw.targets||'').forEach(push);
   b.sales=aggregateRows(parseTable(b._raw.sales||''));
   b.inventory=parseTable(b._raw.inventory||'');
-  b.jzt=aggregateRows(parseTable(b._raw.jzt||''));
+  b.jzt=aggregateRows(parseJztRaw(b._raw.jzt||''));
   b.purchase=parseTable(b._raw.purchase||'');
   b.purchase_order=parseTable(b._raw.purchase_order||'');
   b.spot_rate=parseTable(b._raw.spot_rate||'');
@@ -2352,7 +2368,7 @@ function reparseObj(b){
   parseTargets(b._raw.targets||'').forEach(push);
   b.sales=aggregateRows(parseTable(b._raw.sales||''));
   b.inventory=parseTable(b._raw.inventory||'');
-  b.jzt=aggregateRows(parseTable(b._raw.jzt||''));
+  b.jzt=aggregateRows(parseJztRaw(b._raw.jzt||''));
   b.purchase=parseTable(b._raw.purchase||'');
   b.purchase_order=parseTable(b._raw.purchase_order||'');
   b.spot_rate=parseTable(b._raw.spot_rate||'');
@@ -2604,7 +2620,7 @@ function readInputs(mode, silent){
     parseTargets(b._raw.targets||'').forEach(push);
     const salesIn=aggregateRows(parseTable(b._raw.sales||''));
     const invIn=parseTable(b._raw.inventory||'');
-    const jztIn=aggregateRows(parseTable(b._raw.jzt||''));
+    const jztIn=aggregateRows(parseJztRaw(b._raw.jzt||''));
     const ppIn=parseTable(b._raw.purchase||'');
     const poIn=parseTable(b._raw.purchase_order||'');
     // 现货率 / 长库龄预警：首列为「日期」，若走 stripTargets 会被 isTargetRow 的「日期型 ttype」放行逻辑误判为目标行整组抽走。
