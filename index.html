@@ -462,6 +462,7 @@
           </select>
           <label class="filelabel">上传文件<input type="file" id="jztFile" accept=".csv,.xlsx,.xls" hidden></label>
           <button class="btn2 ghost" data-fill="jzt">填入模板</button>
+          <button class="btn2 ghost" data-fill="jzt2">填入模板(全站口径)</button>
           <button class="btn2 ghost clearBtn" data-which="jzt">清除历史</button>
         </div>
         <textarea id="jztInput" placeholder=""></textarea>
@@ -515,7 +516,8 @@
           <tr><td>销售</td><td>时间 / 商品名称 / SKU / 品牌 / 类目(一二三级) / 店铺名称 / 经营模式 / 浏览量 / 访客数 / 成交人数 / 成交单量 / 成交商品件数 / 成交金额 / 加购人数 …</td></tr>
           <tr><td>库存周转</td><td>日期 / 全国库存（件数） / 库存金额 / 库存周转（天） / 近7天销售（件数） / 近7天销售（金额） / 近14天销售（件数） / 近14天销售（金额） / 日均销售（件数） / 日均销售（金额） / 60+长库龄金额 / 60+长库龄金额（基调） / 60+长库龄金额（复调） / 滞销金额 / 滞销金额（基调） / 滞销金额（复调） / PV现货率 / 实库现货率 / 巢湖库存 / 全链路周转 —— 供应链库存周转模板（每日一行聚合），缺列留空不影响其余</td></tr>
           <tr><td>浮码数据<br>(独立录入)</td><td>时间 / SKU / 浮码 —— <b>单独录入、单独存储</b>，不并入库存周转数据；「全国昨日出库商品件数」自动取自库存明细的「昨日出库商品件数」列（按时间+SKU匹配）；「浮码 × 昨日出库件数 ÷ 1.129」用于计算 POS 实际；同「时间+SKU」覆盖更新，缺列留空</td></tr>
-          <tr><td>京准通</td><td>日期 / 营销场景 / 计划ID / 推广计划 / 跟单SKU ID·名称 / 展现数 / 点击数 / 花费 / 直接·间接·总订单行与金额 / 加购数 / 转化率(%) / 平均订单成本 / 投产比 / 预售·新客·关注·成交用户 等（共 36 列）</td></tr>
+          <tr><td>京准通<br>(点击「填入模板」)</td><td>日期 / 营销场景 / 计划ID / 推广计划 / 跟单SKU ID·名称 / 展现数 / 点击数 / 花费 / 直接·间接·总订单行与金额 / 加购数 / 转化率(%) / 平均订单成本 / 投产比 / 预售·新客·关注·成交用户 等（共 36 列）</td></tr>
+          <tr><td>京准通<br>(点击「填入模板(全站口径)」)</td><td>日期 / 商品计划名称 / ID / 投放类型 / 花费 / 全站投产比 / 全站交易额 / 全站订单行 / 全站订单成本 / 核心位置展现量 / 核心位置点击量 / 180天未购新客数 / 带券展现 / 带券点击 / 智能补贴券金额 / 智能补贴券助力订单行（京东商智·京准通全站视角导出列，核心指标自动识别，后5列作辅助信息记录）</td></tr>
           <tr><td>目标</td><td>类型(品牌GMV/采销GMV/内部GMV/POS/京准通花费即投放花费) / 粒度(day/month/year) / 周期(2026-08-01或2026-08或2026) / 目标值</td></tr>
           <tr><td>营销/设计/数据<br>(甘特图)</td><td>模块(营销/设计/数据) / 日期(开始日) / 结束日期(可选) / <b>开始时间(可选,时:分)</b> / <b>结束时间(可选,时:分)</b> / 任务 / 负责人 / 进度(%) / 状态 / 备注　—— 三模块<b>共用一个输入框</b>，按「模块」列自动分流到对应甘特图；同「模块+日期+任务」覆盖，不同任务新增</td></tr>
         </table>
@@ -614,7 +616,7 @@ const esc = s => String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt
 const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,''); const n=parseFloat(s); return isNaN(n)?0:n; };
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-25-fix14-pos-cloud-save';
+const APP_VERSION = '2026-08-25-fix15-jzt-fullsite-template';
 /* 列名同义词映射 */
 const ALIAS = {
   date:['日期','时间','date','day','dt'],
@@ -698,13 +700,13 @@ const ALIAS = {
   chaohu:['巢湖库存','chaohu','chaohu_inv','巢湖'],
   fullChain:['全链路周转','full_chain','全链路'],
   // —— 京准通推广专用 ——
-  scene:['营销场景','场景','营销','scene','marketing_scene'],
-  planId:['计划id','计划编号','plan_id','planid'],
-  campaign:['推广计划','计划名称','计划','活动','campaign','plan','ad_name','单元'],
+  scene:['营销场景','场景','营销','投放类型','scene','marketing_scene'],
+  planId:['计划id','计划编号','id','plan_id','planid'],
+  campaign:['推广计划','计划名称','商品计划名称','计划','活动','campaign','plan','ad_name','单元'],
   followSkuId:['跟单sku id','跟单sku','follow_sku','跟单skuid'],
   followSkuName:['跟单sku名称','跟单sku名','follow_sku_name'],
-  impressions:['展现数','展现','曝光','展现量','impressions','impression','show'],
-  clicks:['点击数','点击','点击量','clicks','click'],
+  impressions:['展现数','展现','曝光','展现量','核心位置展现量','impressions','impression','show'],
+  clicks:['点击数','点击','点击量','核心位置点击量','clicks','click'],
   ctrCol:['点击率(%)','点击率','ctr(%)'],
   spend:['花费','消费','支出','spend','cost','cost_fee','fee'],
   cpmCol:['千次展现成本','cpm','cpm成本'],
@@ -713,14 +715,14 @@ const ALIAS = {
   dirAmt:['直接订单金额','direct_amount'],
   indirOrders:['间接订单行','indirect_orders'],
   indirAmt:['间接订单金额','indirect_amount'],
-  orders:['总订单行','订单行','订单数','订单','成交单量','单量','orders','order','conversions','conv'],
-  gmv:['总订单金额','订单金额','成交额','gmv','成交额gmv'],
+  orders:['总订单行','全站订单行','订单行','订单数','订单','成交单量','单量','orders','order','conversions','conv'],
+  gmv:['总订单金额','订单金额','全站交易额','成交额','gmv','成交额gmv'],
   dirCart:['直接加购数'],
   indirCart:['间接加购数'],
   totalCart:['总加购数','加购数'],
   cvrCol:['转化率(%)','转化率'],
-  cpaCol:['平均订单成本'],
-  roiCol:['投产比','roi'],
+  cpaCol:['平均订单成本','全站订单成本'],
+  roiCol:['投产比','全站投产比','roi'],
   preOrders:['预售订单行'],
   preAmt:['预售订单金额'],
   newCustOrders:['下单新客数'],
@@ -953,6 +955,15 @@ function sampleJzt(){return `日期	营销场景	计划ID	推广计划	跟单SKU
 2026-08-02	海投	P001	海投-蓝牙耳机	SKU-A01	蓝牙耳机A	122000	5500	4.51	3300	27.05	0.6	62	24800	28	10200	90	35000	125	55	180	1.64	36.67	10.61	5	1800	50	47	22	33	16	9	42	16800	82	40.24
 2026-08-02	快车	P002	快车-智能手表	SKU-B02	智能手表B	96000	4200	4.38	4600	47.92	1.1	42	50400	14	12400	56	62800	95	38	133	1.33	82.14	13.65	2	2500	32	30	13	19	11	6	27	33600	52	88.46
 2026-08-02	品牌聚效	P003	品牌聚效-筋膜枪	SKU-C03	筋膜枪C	90000	4000	4.44	2900	32.22	0.73	48	31200	16	10200	64	41400	85	32	117	1.6	45.31	14.28	3	1600	37	35	16	24	13	7	30	20800	62	46.77`;}
+
+// 京准通推广数据「全站口径」模板（京东商智·京准通全站视角导出列）：与 sampleJzt 并存，用户按导出格式任选其一
+function sampleJzt2(){return `日期	商品计划名称	ID	投放类型	花费	全站投产比	全站交易额	全站订单行	全站订单成本	核心位置展现量	核心位置点击量	180天未购新客数	带券展现	带券点击	智能补贴券金额	智能补贴券助力订单行
+2026-08-01	海投-蓝牙耳机	PID-A01	通投	3200	10.56	33800	86	37.21	32000	5400	800	12000	900	1500	30
+2026-08-01	快车-智能手表	PID-B02	搜索	4500	13.29	59800	52	86.54	41000	4100	520	9000	700	2400	20
+2026-08-01	品牌聚效-筋膜枪	PID-C03	合约	2800	14.21	39800	60	46.67	39000	3900	410	8000	600	1600	25
+2026-08-02	海投-蓝牙耳机	PID-A01	通投	3300	10.61	35000	90	36.67	33000	5500	830	12500	950	1800	35
+2026-08-02	快车-智能手表	PID-B02	搜索	4600	13.65	62800	56	82.14	42000	4200	540	9200	720	2500	22
+2026-08-02	品牌聚效-筋膜枪	PID-C03	合约	2900	14.28	41400	64	45.31	40000	4000	430	8200	620	1700	28`;}
 
 function sampleTargets(){return `类型\t粒度\t周期\t目标值
 品牌GMV\tmonth\t2026-08\t600000
@@ -2643,13 +2654,13 @@ $('#srInput').addEventListener('input',()=>{ clearTimeout(deb); deb=setTimeout(r
 $('#awInput').addEventListener('input',()=>{ clearTimeout(deb); deb=setTimeout(readInputs,700); });
 
 $$('[data-fill]').forEach(b=>{ b.addEventListener('click',()=>{
-  const map={sales:'#salesInput',inventory:'#invInput',jzt:'#jztInput',targets:'#tgtInput',gantt:'#ganttInput',purchase:'#ppInput',purchase_order:'#poInput',spot_rate:'#srInput',aging_warn:'#awInput'};
+  const map={sales:'#salesInput',inventory:'#invInput',jzt:'#jztInput',jzt2:'#jztInput',targets:'#tgtInput',gantt:'#ganttInput',purchase:'#ppInput',purchase_order:'#poInput',spot_rate:'#srInput',aging_warn:'#awInput'};
   // 销售模板按品牌区分（麦维他自营/麦维他POP 各有独立模板，李锦记/其他沿用原模板）
   const salesSrc={ '麦维他自营':sampleSalesMcv, '麦维他POP':sampleSalesPop };
   const sec=b.dataset.fill;
   let val;
   if(sec==='sales'){ const sel=document.getElementById('brand_sales'); val=(salesSrc[(sel&&sel.value)]||sampleSales)(); }
-  else { const src={inventory:sampleInv,jzt:sampleJzt,targets:sampleTargets,gantt:sampleGantt,purchase:samplePurchase,purchase_order:samplePurchaseOrder,spot_rate:sampleSpotRate,aging_warn:sampleAgingWarn}; val=src[sec](); }
+  else { const src={inventory:sampleInv,jzt:sampleJzt,jzt2:sampleJzt2,targets:sampleTargets,gantt:sampleGantt,purchase:samplePurchase,purchase_order:samplePurchaseOrder,spot_rate:sampleSpotRate,aging_warn:sampleAgingWarn}; val=src[sec](); }
   $(map[sec]).value=val;
   readInputs();
 }); });
