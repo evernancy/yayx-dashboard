@@ -610,6 +610,8 @@ const uniq = a => Array.from(new Set(a));
 const esc = s => String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,''); const n=parseFloat(s); return isNaN(n)?0:n; };
 
+/* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
+const APP_VERSION = '2026-08-25-fix3';
 /* 列名同义词映射 */
 const ALIAS = {
   date:['日期','时间','date','day','dt'],
@@ -3259,7 +3261,16 @@ async function boot(){
     if(fromWhere==='云端'||fromWhere==='公开快照'){ try{ idbSet(STATE); }catch(e){} }
     const invN=(B().inventory||[]).length, salesN=(B().sales||[]).length, jztN=(B().jzt||[]).length, gN=(STATE.gantt||[]).length;
     ensureGanttIds();
-    if(fromWhere==='云端'){ toast('已从云端加载数据'); window.__hideCollabBadge=true; }
+    // 诊断：显示版本号 + 麦维他关键词花费（确认 reparseObj 自愈生效）
+    const kwSpend=(function(){
+      try {
+        const mw=STATE.brands['麦维他']; if(!mw) return '-';
+        const rows=(mw.jzt||[]).filter(r=>/(关键词)/.test(r.scene||''));
+        return rows.reduce((s,r)=>s+(Number(r.spend)||0),0).toFixed(2);
+      }catch(e){ return 'err'; }
+    })();
+    console.log('[dashboard] v2026-08-25-fix3 reparseObj='+!!window.reparseObj+' 麦维他关键词花费='+kwSpend+' jzt总行数='+jztN);
+    if(fromWhere==='云端'){ toast('已从云端加载数据 · v2026-08-25'); window.__hideCollabBadge=true; }
     else if(fromWhere==='公开快照'){ toast('已载入「'+currentBoard.name+'」最新数据（只读模式，由录入同事每日更新）'); }
     else { toast('已从本地缓存恢复「'+currentBoard.name+'」（云端暂不可用，联网后将自动同步）'); }
   } else {
