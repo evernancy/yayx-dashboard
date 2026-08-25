@@ -2206,6 +2206,24 @@ function reparseBrand(brand){
   b.aging_warn=parseTable(b._raw.aging_warn||'');
   b.targets=tgt;
 }
+// 从 _raw 重新派生已解析数组（销售/库存/京准通/采购单/现货率/长库龄/目标）。
+// 关键修复：normalizeState 历史会把「保存时序列化的已解析数组」原样恢复（见 dst.jzt=... 那行），
+// 导致旧版代码解析出的错误数据（如被 stripTargets 截掉的京准通关键词行）在重新加载后继续存活、无法自愈。
+// 这里在加载后强制用【当前】解析逻辑从 _raw 重建，任何解析 bug 修复后旧存档都会自动修正，无需手动重传。
+function reparseObj(b){
+  if(!b||!b._raw) return;
+  const seen={}; const tgt=[];
+  const push=r=>{ if(!isTargetRow(r)) return; const k=(r.ttype||'')+'|'+(r.tgran||'')+'|'+(r.tperiod||''); if(!seen[k]){ seen[k]=1; tgt.push(r); } };
+  parseTargets(b._raw.targets||'').forEach(push);
+  b.sales=aggregateRows(parseTable(b._raw.sales||''));
+  b.inventory=parseTable(b._raw.inventory||'');
+  b.jzt=aggregateRows(parseTable(b._raw.jzt||''));
+  b.purchase=parseTable(b._raw.purchase||'');
+  b.purchase_order=parseTable(b._raw.purchase_order||'');
+  b.spot_rate=parseTable(b._raw.spot_rate||'');
+  b.aging_warn=parseTable(b._raw.aging_warn||'');
+  b.targets=tgt;
+}
 // 全部品牌清除：遍历每个品牌，对其 _raw[which] 应用 filter 后重建
 function clearRowsAllBrands(which, filter, suffix){
   let totalRemoved=0; const touched=[];
@@ -2992,6 +3010,8 @@ function normalizeState(st){
   out.currentBrand=(st.currentBrand && out.brands[st.currentBrand])? st.currentBrand : '李锦记';
   out.brandOrder=Array.isArray(st.brandOrder)? st.brandOrder.filter(b=>out.brands[b]) : BRANDS.slice();
   out.memo=st.memo||{};
+  // 加载后统一从 _raw 重新解析所有品牌的派生数组，确保应用【当前】解析逻辑（旧存档自愈，无需手动重传）
+  BRANDS.forEach(b=>{ if(out.brands[b]&&out.brands[b]._raw) reparseObj(out.brands[b]); });
   return out;
 }
 function applyState(st){ const s=normalizeState(st); if(!s) return null; STATE=s; return 'parsed'; }
