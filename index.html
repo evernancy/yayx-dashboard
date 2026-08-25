@@ -614,7 +614,7 @@ const esc = s => String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt
 const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,''); const n=parseFloat(s); return isNaN(n)?0:n; };
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-25-fix10-ljj-jzt-cards';
+const APP_VERSION = '2026-08-25-fix11-feeratio-salesgmv';
 /* 列名同义词映射 */
 const ALIAS = {
   date:['日期','时间','date','day','dt'],
@@ -1303,6 +1303,15 @@ function renderInv(){
 }
 
 /* ---------- 计算：京准通 ---------- */
+// 销售数据GMV合计（按所选日期区间加总）：取 B().sales 的 r.amount，与费比分母口径一致
+function salesGmvSum(start,end){
+  const rows=(B().sales||[]).filter(r=>{
+    if(!start||!end) return true;
+    const d=String(r.date||'').slice(0,10);
+    return d>=start && d<=end;
+  });
+  return sum(rows.map(r=>num(r.amount)));
+}
 function computeJzt(start,end){
   let rows=B().jzt;
   if(start&&end) rows=rows.filter(r=>{ const d=String(r.date||'').slice(0,10); return d>=start && d<=end; });
@@ -1327,11 +1336,12 @@ function computeJzt(start,end){
   const cvr=totalClk>0?totalOrd/totalClk:0;
   const cpa=totalOrd>0?totalSpend/totalOrd:0;
   const roi=totalSpend>0?totalGmv/totalSpend:0;
+  const feeDenom=salesGmvSum(start,end);
   const byDate={}; rows.forEach(r=>{ const k=r.date||'未知'; byDate[k]=byDate[k]||{spend:0,gmv:0}; byDate[k].spend+=num(r.spend); byDate[k].gmv+=num(r.gmv); });
   const byPlan={}; rows.forEach(r=>{ const k=r.campaign||'未知'; byPlan[k]=byPlan[k]||{spend:0,gmv:0}; byPlan[k].spend+=num(r.spend); byPlan[k].gmv+=num(r.gmv); });
   // 按营销场景（渠道）分组：花费 / 点击 / 成交金额
   const byScene={}; rows.forEach(r=>{ const k=(r.scene||'').trim()||'未知'; const s=byScene[k]=byScene[k]||{spend:0,clicks:0,gmv:0}; s.spend+=num(r.spend); s.clicks+=num(r.clicks); s.gmv+=num(r.gmv); });
-  return {totalSpend,totalImp,totalClk,totalOrd,totalGmv,dirAmt,indirAmt,preAmt,totalCart,newCustOrders,newCustAmt,favItem,favShop,dealUsers,ctr,cpc,cpm,cvr,cpa,roi,feeRatio:totalGmv>0?totalSpend/totalGmv:0,byDate,byPlan,byScene};
+  return {totalSpend,totalImp,totalClk,totalOrd,totalGmv,dirAmt,indirAmt,preAmt,totalCart,newCustOrders,newCustAmt,favItem,favShop,dealUsers,ctr,cpc,cpm,cvr,cpa,roi,feeRatio:feeDenom>0?totalSpend/feeDenom:0,byDate,byPlan,byScene};
 }
 function renderJzt(){
   const [start,end]=resolveJztRange();
@@ -1359,10 +1369,11 @@ function jztRangeMetrics(start,end){
   const clicks=sum(rows.map(r=>num(r.clicks)));
   const gmv=sum(rows.map(r=>num(r.gmv)));
   const imp=sum(rows.map(r=>num(r.impressions)));
+  const salesGmv=salesGmvSum(start,end);  // 费比分母：销售数据GMV合计（按所选日期加总）
   return {spend,clicks,gmv,imp,
     cpc: clicks>0?spend/clicks:0,
     roi: spend>0?gmv/spend:0,
-    feeRatio: gmv>0?spend/gmv:0,
+    feeRatio: salesGmv>0?spend/salesGmv:0,
     ctr: imp>0?clicks/imp:0
   };
 }
