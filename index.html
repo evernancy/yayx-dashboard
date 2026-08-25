@@ -616,7 +616,7 @@ const esc = s => String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt
 const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,''); const n=parseFloat(s); return isNaN(n)?0:n; };
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-25-fix18-jzt-per-section-channel';
+const APP_VERSION = '2026-08-25-fix19-posinput-merge-guard';
 /* 列名同义词映射 */
 const ALIAS = {
   date:['日期','时间','date','day','dt'],
@@ -3374,12 +3374,27 @@ async function ghGetBoard(id){
 }
 async function ghUpsertBoard(id,name,state){
   var path='dashboards/'+id+'.json';
-  var payload={id:id,name:name,state:state,updated_at:new Date().toISOString()};
-  for(var attempt=0; attempt<3; attempt++){
+  for(var attempt=0; attempt<4; attempt++){
     var f=await ghGetFile(path);
+    var payload={id:id,name:name,state:state,updated_at:new Date().toISOString()};
+    // 防御性合并：多设备/多会话协作时，若本机会话的 STATE 缺少某些已录入的 POS 天数，整体覆盖会把云端已填数据抹掉。
+    // 按「天数」对 posInput 做并集——云端已有的天数保留、本机新录入/修改的天数覆盖，避免某次保存把数据截短/丢失。
+    if(f){ try{ var cloud=JSON.parse(f.content); if(cloud&&cloud.state) payload.state=mergeBoardState(state, cloud.state); }catch(e){} }
     try{ await ghPutFile(path, JSON.stringify(payload), f?f.sha:null); return; }
-    catch(e){ if(e.status===409 && attempt<2){ continue; } throw e; }
+    catch(e){ if(e.status===409 && attempt<3){ continue; } throw e; }
   }
+}
+// 合并两份看板 STATE：仅对 posInput 按天数并集（云端已有的天数保留，incoming 的天数覆盖），其余字段以 incoming 为准。
+// 目的：防止任一会话因本机 STATE 落后于云端而整体覆盖，导致已录入的 POS 天数丢失（和路雪 POS 8/13-8/16 丢失即此因）。
+function mergeBoardState(incoming, cloud){
+  if(!incoming||!incoming.brands||!cloud||!cloud.brands) return incoming;
+  for(var b in incoming.brands){
+    var ob=incoming.brands[b], cb=cloud.brands[b];
+    if(ob && cb && cb.posInput){
+      ob.posInput=Object.assign({}, cb.posInput, ob.posInput||{});
+    }
+  }
+  return incoming;
 }
 async function ghRenameBoard(id,name){
   var idx=await ghGetIndex(); var sha=null;
