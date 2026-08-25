@@ -1549,7 +1549,9 @@ function renderTargets(){
 
   // 图表：和路雪仅展示 POS 图（取消 GMV 实际 vs GMV 目标），隐藏 GMV 图；其余品牌同时展示 GMV/POS 两图
   const gmvPanel=document.querySelector('#targetGmv')?.closest('.panel');
+  const posPanel=document.querySelector('#targetPos')?.closest('.panel');
   if(gmvPanel) gmvPanel.style.display = isHeLX ? 'none' : '';
+  if(posPanel) posPanel.style.gridColumn = isHeLX ? '1 / -1' : '';
   if(!isHeLX){
     barChart('#targetGmv',{categories:days,series:[{name:'实际GMV',data:days.map(d=>gmv[d]||0)},{name:'品牌目标',data:days.map(d=>tlookup('brand','day',d))}],yFmt:fmtMoney});
   } else {
