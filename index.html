@@ -616,7 +616,7 @@ const esc = s => String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt
 const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,''); const n=parseFloat(s); return isNaN(n)?0:n; };
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-25-fix24-recover-url-fix';
+const APP_VERSION = '2026-08-25-fix25-axis-date-format';
 /* 列名同义词映射 */
 const ALIAS = {
   date:['日期','时间','date','day','dt'],
@@ -1153,9 +1153,11 @@ function barChart(elId,{categories,series,yFmt=fmt,height=300}){
   let g='';
   const ticks=4;
   for(let t=0;t<=ticks;t++){ const v=maxV*t/ticks; const y=yAt(v); g+=`<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="#eef0f4"/>`; g+=`<text x="${padL-8}" y="${y+4}" text-anchor="end" font-size="11" fill="#9ca3af">${yFmt(v)}</text>`; }
+  // X轴日期格式化：YYYY-MM-DD → M/D（如 8/01），tooltip仍保留完整日期
+  const fmtAxisLabel=(s)=>{ const m=String(s).match(/^(\d{4})-(\d{1,2})-(\d{1,2})/); return m?Number(m[2])+'/'+m[3].padStart(2,'0'):String(s); };
   categories.forEach((c,i)=>{
     const cx=padL+groupW*i+groupW/2;
-    g+=`<text x="${cx}" y="${H-padB+18}" text-anchor="middle" font-size="10" fill="#9ca3af">${esc(String(c).length>8?String(c).slice(0,8)+'…':c)}</text>`;
+    g+=`<text x="${cx}" y="${H-padB+18}" text-anchor="middle" font-size="10" fill="#9ca3af">${esc(fmtAxisLabel(c))}</text>`;
     const totalBars=series.length; const startX=cx-(barW*totalBars+gap*(totalBars-1))/2;
     series.forEach((s,si)=>{
       const v=s.data[i]||0; const h=(Math.abs(v)/maxV)*ih; const x=startX+si*(barW+gap); const y=padT+ih-h;
