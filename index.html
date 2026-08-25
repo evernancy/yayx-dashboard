@@ -616,7 +616,7 @@ const esc = s => String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt
 const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,''); const n=parseFloat(s); return isNaN(n)?0:n; };
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-25-fix16-jzt-fullsite-channel';
+const APP_VERSION = '2026-08-25-fix17-pos-manual-save-btn';
 /* 列名同义词映射 */
 const ALIAS = {
   date:['日期','时间','date','day','dt'],
@@ -1570,17 +1570,28 @@ function onPosInput(e){
   const b=STATE.brands['和路雪']; if(!b.posInput) b.posInput={};
   if(v===0 && inp.value.trim()==='') delete b.posInput[d]; else b.posInput[d]=v;
   refreshHeLXKpis();
-  clearTimeout(__posSaveDeb);
-  __posSaveDeb=setTimeout(async ()=>{
-    saveState();
-    // POS 数据必须推送到云端，否则其他同事看不到；无令牌时明确提示
-    if(!ghToken()){
-      toast('⚠️ POS数据未保存到云端：未配置GitHub令牌。请点击页面底部「云端协作」徽章输入令牌，否则只有您自己能看到填写的数据。', true);
-      return;
-    }
-    try{ await ghUpsertBoard(currentBoard.id, currentBoard.name, STATE); toast('✅ POS数据已保存到云端'); }
-    catch(e){ toast('❌ POS数据保存失败：'+e.message, true); }
-  }, 600);
+  // 不再自动保存到云端——用户填完后点击「保存POS数据」按钮手动触发
+}
+/** 手动保存 POS 数据到云端（由按钮点击触发） */
+async function savePosToCloud(){
+  const btn=$('#posSaveBtn');
+  if(!btn) return;
+  if(btn.disabled) return; // 防重复提交
+  saveState(); // 先持久化到 localStorage
+  if(!ghToken()){
+    toast('⚠️ 未配置GitHub令牌，无法保存到云端。请点击页面底部「云端协作」徽章输入令牌。', true);
+    return;
+  }
+  btn.disabled=true; btn.textContent='⏳ 保存中...';
+  try{
+    await ghUpsertBoard(currentBoard.id, currentBoard.name, STATE);
+    toast('✅ POS数据已保存到云端');
+    btn.textContent='✅ 已保存';
+    setTimeout(()=>{ btn.disabled=false; btn.textContent='💾 保存POS数据'; }, 2000);
+  } catch(e){
+    toast('❌ POS数据保存失败：'+e.message, true);
+    btn.disabled=false; btn.textContent='❌ 保存失败，重试';
+  }
 }
 function onPosBlur(e){
   const inp=e.target;
@@ -1707,11 +1718,14 @@ function renderTargets(){
       const raw=(B().posInput&&B().posInput[d]!=null)?Math.round(num(B().posInput[d])):0;
       const disp=raw?raw.toLocaleString('en-US'):'';
       body+=`<tr><td>${d}</td><td>${fmtMoney(pT)}</td><td><input class="pos-input" type="text" inputmode="numeric" data-date="${d}" value="${escAttr(disp)}" placeholder="0"></td>${rateCellHtml(raw,pT)}</tr>`; });
+    // 和路雪专属：保存按钮工具栏
+    const toolbar=isHeLX?'<div style="margin:6px 0;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button id="posSaveBtn" onclick="savePosToCloud()" style="padding:6px 16px;font-size:13px;border-radius:6px;border:1px solid #007bff;background:#007bff;color:#fff;cursor:pointer">💾 保存POS数据到云端</button><span style="font-size:12px;color:#888">填写完毕后点击保存，数据将同步给所有协作者</span></div>':'';
+    $('#targetTable').innerHTML=toolbar+`<table class="tbl"><thead>${head}</thead><tbody>${body}</tbody></table>`;
   } else {
     head='<tr><th>时间</th><th>品牌目标(by day)</th><th>实际GMV</th><th>GMV达成率</th><th>POS目标(by day)</th><th>POS实际</th><th>POS达成率</th></tr>';
     detailDays.forEach(d=>{ const bT=tlookup('brand','day',d), g=gmv[d]||0, pT=tlookup('pos','day',d), p=pos[d]||0; body+=`<tr><td>${d}</td><td>${fmtMoney(bT)}</td><td>${fmtMoney(g)}</td>${rateCell(g,bT)}<td>${fmtMoney(pT)}</td><td>${fmtMoney(p)}</td>${rateCell(p,pT)}</tr>`; });
+    $('#targetTable').innerHTML=`<table class="tbl"><thead>${head}</thead><tbody>${body}</tbody></table>`;
   }
-  $('#targetTable').innerHTML=`<table class="tbl"><thead>${head}</thead><tbody>${body}</tbody></table>`;
 }
 
 // 麦维他专用：销售目标达成区分自营/POP 两渠道 —— 拆成两个面板（自营/POP），各自 KPI + 图表，合并明细表
