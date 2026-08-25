@@ -2295,6 +2295,17 @@ function renderAll(){
 let lijxSub='sales';
 let currentView='overview';
 function setSubview(name){ lijxSub=name; $$('.subtab').forEach(t=>t.classList.toggle('active',t.dataset.view===name)); const root=document.querySelector('[data-section="lijx"]'); if(root) root.querySelectorAll('[data-sub]').forEach(s=>{ s.style.display=(s.dataset.sub===name)?'block':'none'; }); }
+// 和路雪：临时隐藏「京准通推广」「库存周转」两个子视图（表格/代码保留，仅控制显隐，后续改此处条件即可放出）
+function applyBrandSubtabs(){
+  const hide=STATE.currentBrand==='和路雪';
+  ['jzt','inventory'].forEach(v=>{
+    const tab=document.querySelector('.subtab[data-view="'+v+'"]');
+    if(tab) tab.style.display=hide?'none':'';
+    const sec=document.querySelector('[data-section="lijx"] [data-sub="'+v+'"]');
+    if(sec) sec.style.display=(hide||lijxSub!==v)?'none':'block';
+  });
+  if(hide && (lijxSub==='jzt'||lijxSub==='inventory')) lijxSub='sales';
+}
 function setView(v){
   currentView=v;
   $$('.tab').forEach(t=>{
@@ -2308,7 +2319,7 @@ function setView(v){
     }
   });
   $$('section[data-section]').forEach(s=>s.style.display=s.dataset.section===v?'block':'none');
-  if(v==='lijx'){ setSubview(lijxSub); }
+  if(v==='lijx'){ setSubview(lijxSub); applyBrandSubtabs(); }
   renderAll();
 }
 $$('.tab').forEach(t=>t.addEventListener('click',()=>{
@@ -2339,6 +2350,7 @@ function switchBrand(name){
   if(!STATE.brands[name]) return;
   STATE.currentBrand=name;
   syncBrandUI();
+  applyBrandSubtabs();
   fillInputsForCurrentBrand();
   renderAll(); setupTodoAll(); saveState();
   toast('已切换到品牌「'+displayName+'」');
@@ -3235,6 +3247,7 @@ async function boot(){
   renderAll();
   todoInit(); migrateMemoToTodo(); setupTodoAll();
   syncBrandUI(); // 确保品牌栏与输入区选择器高亮当前品牌
+  applyBrandSubtabs(); // 和路雪：临时隐藏京准通推广/库存周转子视图（保留代码，后续可放出）
 }
 init();
 </script>
