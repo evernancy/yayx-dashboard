@@ -1547,18 +1547,29 @@ function renderTargets(){
   else if(view==='year'){ const ys=uniq(days.map(d=>d.slice(0,4))).sort(); labels=ys; ys.forEach(y=>{ const ds=days.filter(d=>d.startsWith(y)); gmvAct.push(sum(ds.map(d=>gmv[d]||0))); gmvTgt.push(tlookup('brand','year',y)); posAct.push(sum(ds.map(d=>pos[d]||0))); posTgt.push(sum(ds.map(d=>tlookup('pos','day',d)))); }); }
   else if(view==='mtd'){ const ds=dateRange(ms,end).filter(d=>d>=start&&d<=end); labels=ds; let cg=0,cp=0; ds.forEach(d=>{ cg+=(gmv[d]||0); cp+=(pos[d]||0); gmvAct.push(cg); posAct.push(cp); const mt=tlookup('brand','month',ym); gmvTgt.push(mt); posTgt.push(tlookup('pos','day',d)); }); }
 
-  // GMV 图：按日（by day）实际 vs 按日(by day)品牌目标，与 POS 图同格式（柱状图）
-  barChart('#targetGmv',{categories:days,series:[{name:'实际GMV',data:days.map(d=>gmv[d]||0)},{name:'品牌目标',data:days.map(d=>tlookup('brand','day',d))}],yFmt:fmtMoney});
+  // 图表：和路雪仅展示 POS 图（取消 GMV 实际 vs GMV 目标），隐藏 GMV 图；其余品牌同时展示 GMV/POS 两图
+  const gmvPanel=document.querySelector('#targetGmv')?.closest('.panel');
+  if(gmvPanel) gmvPanel.style.display = isHeLX ? 'none' : '';
+  if(!isHeLX){
+    barChart('#targetGmv',{categories:days,series:[{name:'实际GMV',data:days.map(d=>gmv[d]||0)},{name:'品牌目标',data:days.map(d=>tlookup('brand','day',d))}],yFmt:fmtMoney});
+  } else {
+    const tT=$('#targetTableTitle'); if(tT) tT.textContent='达成明细（按日：时间 / POS目标(by day) / POS实际 / POS达成率）';
+  }
   // POS 图：按日（by day）实际POS vs 按日(by day)POS目标
   barChart('#targetPos',{categories:days,series:[{name:'实际POS',data:days.map(d=>pos[d]||0)},{name:'POS目标',data:days.map(d=>tlookup('pos','day',d))}],yFmt:fmtMoney});
 
-  // 明细表：按日（时间 / 品牌by-day目标 / 实际GMV / GMV达成率 / POS by-day目标 / POS实际 / POS达成率）
+  // 明细表：和路雪仅展示 POS 列（取消 GMV目标(by day)/GMV实际/GMV达成率）；其余品牌含 GMV + POS 双列
   const rateCell=(act,tgt)=>{ if(!tgt) return '<td>—</td>'; const r=act/tgt; return `<td class="${r>=1?'pos':'neg'}">${fmtPct(r)}</td>`; };
   const dayTgtDates=new Set(); for(const k in TMAP){ const parts=k.split('|'); if(parts[1]==='day'&&parts[2]>=start&&parts[2]<=end) dayTgtDates.add(parts[2]); }
   const detailDays=Array.from(new Set([...Object.keys(gmv),...Object.keys(pos),...dayTgtDates])).filter(d=>d>=start&&d<=end).sort();
-  let head='<tr><th>时间</th><th>品牌目标(by day)</th><th>实际GMV</th><th>GMV达成率</th><th>POS目标(by day)</th><th>POS实际</th><th>POS达成率</th></tr>';
-  let body='';
-  detailDays.forEach(d=>{ const bT=tlookup('brand','day',d), g=gmv[d]||0, pT=tlookup('pos','day',d), p=pos[d]||0; body+=`<tr><td>${d}</td><td>${fmtMoney(bT)}</td><td>${fmtMoney(g)}</td>${rateCell(g,bT)}<td>${fmtMoney(pT)}</td><td>${fmtMoney(p)}</td>${rateCell(p,pT)}</tr>`; });
+  let head, body='';
+  if(isHeLX){
+    head='<tr><th>时间</th><th>POS目标(by day)</th><th>POS实际</th><th>POS达成率</th></tr>';
+    detailDays.forEach(d=>{ const pT=tlookup('pos','day',d), p=pos[d]||0; body+=`<tr><td>${d}</td><td>${fmtMoney(pT)}</td><td>${fmtMoney(p)}</td>${rateCell(p,pT)}</tr>`; });
+  } else {
+    head='<tr><th>时间</th><th>品牌目标(by day)</th><th>实际GMV</th><th>GMV达成率</th><th>POS目标(by day)</th><th>POS实际</th><th>POS达成率</th></tr>';
+    detailDays.forEach(d=>{ const bT=tlookup('brand','day',d), g=gmv[d]||0, pT=tlookup('pos','day',d), p=pos[d]||0; body+=`<tr><td>${d}</td><td>${fmtMoney(bT)}</td><td>${fmtMoney(g)}</td>${rateCell(g,bT)}<td>${fmtMoney(pT)}</td><td>${fmtMoney(p)}</td>${rateCell(p,pT)}</tr>`; });
+  }
   $('#targetTable').innerHTML=`<table class="tbl"><thead>${head}</thead><tbody>${body}</tbody></table>`;
 }
 
