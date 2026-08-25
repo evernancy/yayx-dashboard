@@ -33,6 +33,7 @@
   .subtabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}
   .subtab{padding:7px 15px;border-radius:999px;background:#fff;border:1px solid var(--line);cursor:pointer;font-weight:600;color:var(--muted);font-size:13px}
   .subtab.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+  .subtab.hidden-subtab{display:none!important}
   .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:18px;margin-bottom:16px}
   .panel h2{margin:0 0 4px;font-size:16px}
   .panel .hint{color:var(--muted);font-size:12px;margin:0 0 12px}
@@ -2300,7 +2301,7 @@ function applyBrandSubtabs(){
   const hide=STATE.currentBrand==='和路雪';
   ['jzt','inventory'].forEach(v=>{
     const tab=document.querySelector('.subtab[data-view="'+v+'"]');
-    if(tab) tab.style.display=hide?'none':'';
+    if(tab) tab.classList.toggle('hidden-subtab',hide);
     const sec=document.querySelector('[data-section="lijx"] [data-sub="'+v+'"]');
     if(sec) sec.style.display=(hide||lijxSub!==v)?'none':'block';
   });
