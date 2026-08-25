@@ -616,7 +616,7 @@ const esc = s => String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt
 const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,''); const n=parseFloat(s); return isNaN(n)?0:n; };
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-25-fix23-jzt-old-new-merge';
+const APP_VERSION = '2026-08-25-fix24-recover-url-fix';
 /* 列名同义词映射 */
 const ALIAS = {
   date:['日期','时间','date','day','dt'],
@@ -3690,13 +3690,18 @@ init();
     toast('🔄 正在从云端历史扫描含完整数据的版本…（请稍候）');
     try{
       var path='dashboards/'+currentBoard.id+'.json';
-      var commits=await ghApi('GET','/repos/'+GH_OWNER+'/'+GH_REPO+'/commits?path='+encodeURIComponent(path)+'&per_page=60');
+      // 注意：commits / contents?ref= 用 GH_API（绝对路径），不能用 ghApi（它内部拼 GH_BASE=/contents 前缀会导致路径重复→404）
+      var cr=await fetch(GH_API+'/repos/'+GH_OWNER+'/'+GH_REPO+'/commits?path='+encodeURIComponent(path)+'&per_page=60',{headers:ghHeaders()});
+      if(!cr.ok) throw new Error('HTTP '+cr.status+' 列取提交历史');
+      var commits=await cr.json();
       if(!Array.isArray(commits)||!commits.length){ toast('❌ 未能读取提交历史', true); return; }
       var found=null;
       for(var i=0;i<commits.length;i++){
         var c=commits[i];
         try{
-          var meta=await ghApi('GET','/repos/'+GH_OWNER+'/'+GH_REPO+'/contents/'+path+'?ref='+c.sha);
+          var mr=await fetch(GH_API+'/repos/'+GH_OWNER+'/'+GH_REPO+'/contents/'+path+'?ref='+c.sha,{headers:ghHeaders()});
+          if(!mr.ok) continue;
+          var meta=await mr.json();
           if(!meta||!meta.sha) continue;
           var br=await fetch(GH_API+'/repos/'+GH_OWNER+'/'+GH_REPO+'/git/blobs/'+meta.sha,{headers:ghHeaders()});
           if(!br.ok) continue;
