@@ -99,6 +99,9 @@
   .tbl th:first-child,.tbl td:first-child{text-align:left}
   .tbl th{background:#f3f4f6;position:sticky;top:0}
   .tbl tr:nth-child(even){background:#fafbfc}
+  .pos-input{width:120px;text-align:right;font-size:12px;padding:3px 6px;border:1px solid var(--line);border-radius:6px;font-variant-numeric:tabular-nums;background:#fff}
+  .pos-input:focus{outline:2px solid var(--blue);border-color:var(--blue)}
+  .pos-input::placeholder{color:#b6bcc8}
   .pos{color:var(--green);font-weight:600}.neg{color:var(--red);font-weight:600}
   /* 甘特任务编辑弹窗 */
   .modal-mask{position:fixed;inset:0;background:rgba(17,24,39,.45);display:none;align-items:center;justify-content:center;z-index:10000}
@@ -611,7 +614,7 @@ const esc = s => String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt
 const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,''); const n=parseFloat(s); return isNaN(n)?0:n; };
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-25-fix3';
+const APP_VERSION = '2026-08-25-fix4';
 /* 列名同义词映射 */
 const ALIAS = {
   date:['日期','时间','date','day','dt'],
@@ -1011,7 +1014,7 @@ function sampleAgingWarn(){return `日期\t60-90天长库龄预警金额\t90天�
 const STORE_KEY='ecom_dashboard_v2';
 // 多品牌：每个品牌独立存储 销售/库存周转/浮码/京准通/目标/待办/原始输入；甘特图为三模块共享（不按品牌拆分）
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
-function freshBrand(){ return { sales:[], inventory:[], purchase:[], purchase_order:[], spot_rate:[], aging_warn:[], jzt:[], targets:[], _raw:{sales:'',inventory:'',jzt:'',targets:'',purchase:'',purchase_order:'',spot_rate:'',aging_warn:''}, todo:freshTodo() }; }
+function freshBrand(){ return { sales:[], inventory:[], purchase:[], purchase_order:[], spot_rate:[], aging_warn:[], jzt:[], targets:[], posInput:{}, _raw:{sales:'',inventory:'',jzt:'',targets:'',purchase:'',purchase_order:'',spot_rate:'',aging_warn:''}, todo:freshTodo() }; }
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 let STATE=emptyState();
 let invAsOf=null; // 库存周转「查看日期」：null=最新一天
@@ -1236,6 +1239,12 @@ function computeInv(asOf){
   return {all, cur, dates, maxDate, target, avgDays, slow};
 }
 function posDailyMap(){
+  // 和路雪：POS 实际由前台手动录入（STATE.brands['和路雪'].posInput），不再用库存/浮码公式推算
+  if(STATE.currentBrand==='和路雪'){
+    const m={}; const inp=(B().posInput)||{};
+    for(const d in inp){ const v=Math.round(num(inp[d])); if(v) m[d]=v; }
+    return m;
+  }
   // POS 实际 = Σ（浮码 × 昨日出库商品件数）÷ 1.129
   // 「昨日出库商品件数」取自库存明细（库存周转数据）的「昨日出库商品件数」列，按 时间 + SKU 匹配；
   // 库存明细缺该 SKU/日期的昨日出库时该项留空（不计入 POS）。
@@ -1470,6 +1479,53 @@ function resolveTvRange(){
   return [start,end];
 }
 
+/* ---------- 和路雪：达成明细 POS 实际前台可编辑 ---------- */
+function rateCellHtml(act,tgt){ if(!tgt) return '<td class="rate-pos">—</td>'; const r=act/tgt; return `<td class="rate-pos ${r>=1?'pos':'neg'}">${fmtPct(r)}</td>`; }
+
+let __posSaveDeb;
+// 输入时实时更新状态 + 刷新 KPI/图表/达标率（不重建整表，保住输入焦点）
+function refreshHeLXKpis(){
+  if(STATE.currentBrand!=='和路雪') return;
+  const [start,end]=resolveTvRange();
+  const pos=posDailyMap();
+  const ym=end.slice(0,7), ms=ym+'-01';
+  const mtdDays=dateRange(ms,end).filter(d=>d>=start&&d<=end);
+  const posMtdTarget=mtdDays.reduce((a,d)=>a+tlookup('pos','day',d),0) || tlookup('pos','month',ym);
+  const posActual=sum(mtdDays.map(d=>pos[d]||0));
+  const posGap=Math.max(0, posMtdTarget-posActual);
+  $('#zyTargetKpis').innerHTML=kpiHTML([
+    {label:'POS 目标达成',value:posMtdTarget?fmtPct(posActual/posMtdTarget):'—',cls:posMtdTarget?(posActual>=posMtdTarget?'green':'amber'):'',sub:posMtdTarget?('达成（实际POS）'+fmtMoney(posActual)+' / POS目标'+fmtMoney(posMtdTarget)):('达成（实际POS）'+fmtMoney(posActual)+' / 未设目标')},
+    {label:'POS 缺口(MTD目标-MTD达成)',value:fmtMoney(posGap),cls:posGap>0?'red':'green',sub:ym+' MTD（POS）'},
+  ]);
+  const days=dateRange(start,end).filter(d=>d>=start&&d<=end);
+  barChart('#targetPos',{categories:days,series:[{name:'实际POS',data:days.map(d=>pos[d]||0)},{name:'POS目标',data:days.map(d=>tlookup('pos','day',d))}],yFmt:fmtMoney});
+  $$('#targetTable tr').forEach(tr=>{
+    const inp=tr.querySelector('.pos-input'); if(!inp) return;
+    const d=inp.dataset.date, pT=tlookup('pos','day',d), p=pos[d]||0;
+    const rc=tr.querySelector('.rate-pos'); if(rc) rc.outerHTML=rateCellHtml(p,pT);
+  });
+}
+function onPosInput(e){
+  const inp=e.target;
+  if(!inp.classList || !inp.classList.contains('pos-input')) return;
+  if(STATE.currentBrand!=='和路雪') return;
+  const d=inp.dataset.date;
+  const raw=String(inp.value).replace(/[^\d]/g,'');
+  const v=raw?Number(raw):0;
+  const b=STATE.brands['和路雪']; if(!b.posInput) b.posInput={};
+  if(v===0 && inp.value.trim()==='') delete b.posInput[d]; else b.posInput[d]=v;
+  refreshHeLXKpis();
+  clearTimeout(__posSaveDeb);
+  __posSaveDeb=setTimeout(()=>{ saveState(); saveToService(); }, 600);
+}
+function onPosBlur(e){
+  const inp=e.target;
+  if(!inp.classList || !inp.classList.contains('pos-input')) return;
+  const raw=String(inp.value).replace(/[^\d]/g,'');
+  const v=raw?Number(raw):0;
+  inp.value = v? v.toLocaleString('en-US') : ''; // 失焦后显示千分位整数
+}
+
 function renderTargets(){
   buildTargetMap();
   const view='mtd';
@@ -1579,11 +1635,14 @@ function renderTargets(){
   // 明细表：和路雪仅展示 POS 列（取消 GMV目标(by day)/GMV实际/GMV达成率）；其余品牌含 GMV + POS 双列
   const rateCell=(act,tgt)=>{ if(!tgt) return '<td>—</td>'; const r=act/tgt; return `<td class="${r>=1?'pos':'neg'}">${fmtPct(r)}</td>`; };
   const dayTgtDates=new Set(); for(const k in TMAP){ const parts=k.split('|'); if(parts[1]==='day'&&parts[2]>=start&&parts[2]<=end) dayTgtDates.add(parts[2]); }
-  const detailDays=Array.from(new Set([...Object.keys(gmv),...Object.keys(pos),...dayTgtDates])).filter(d=>d>=start&&d<=end).sort();
+  const detailDays= isHeLX ? days : Array.from(new Set([...Object.keys(gmv),...Object.keys(pos),...dayTgtDates])).filter(d=>d>=start&&d<=end).sort();
   let head, body='';
   if(isHeLX){
-    head='<tr><th>时间</th><th>POS目标(by day)</th><th>POS实际</th><th>POS达成率</th></tr>';
-    detailDays.forEach(d=>{ const pT=tlookup('pos','day',d), p=pos[d]||0; body+=`<tr><td>${d}</td><td>${fmtMoney(pT)}</td><td>${fmtMoney(p)}</td>${rateCell(p,pT)}</tr>`; });
+    head='<tr><th>时间</th><th>POS目标(by day)</th><th>POS实际（可编辑·千分位）</th><th>POS达成率</th></tr>';
+    detailDays.forEach(d=>{ const pT=tlookup('pos','day',d);
+      const raw=(B().posInput&&B().posInput[d]!=null)?Math.round(num(B().posInput[d])):0;
+      const disp=raw?raw.toLocaleString('en-US'):'';
+      body+=`<tr><td>${d}</td><td>${fmtMoney(pT)}</td><td><input class="pos-input" type="text" inputmode="numeric" data-date="${d}" value="${escAttr(disp)}" placeholder="0"></td><td class="rate-pos">${rateCellHtml(raw,pT)}</td></tr>`; });
   } else {
     head='<tr><th>时间</th><th>品牌目标(by day)</th><th>实际GMV</th><th>GMV达成率</th><th>POS目标(by day)</th><th>POS实际</th><th>POS达成率</th></tr>';
     detailDays.forEach(d=>{ const bT=tlookup('brand','day',d), g=gmv[d]||0, pT=tlookup('pos','day',d), p=pos[d]||0; body+=`<tr><td>${d}</td><td>${fmtMoney(bT)}</td><td>${fmtMoney(g)}</td>${rateCell(g,bT)}<td>${fmtMoney(pT)}</td><td>${fmtMoney(p)}</td>${rateCell(p,pT)}</tr>`; });
@@ -3013,6 +3072,7 @@ function normalizeState(st){
       dst._raw=Object.assign({sales:'',inventory:'',jzt:'',targets:'',purchase:'',purchase_order:'',spot_rate:'',aging_warn:''}, src._raw||{});
       // 反向同步：若 _raw.targets 缺失（旧数据/历史 bug 导致），用已解析的 targets 数组回填，确保清除/重建时有正确文本来源、不会丢目标
       if(!dst._raw.targets||!dst._raw.targets.trim()) dst._raw.targets=targetRowsToText(dst.targets);
+      dst.posInput=Object.assign({}, src.posInput||{}); // 和路雪：达成明细 POS 实际前台录入值（按日期）
       dst.todo=src.todo||freshTodo(); });
   } else {
     const lij=out.brands['李锦记']; const oraw=st._raw||{};
@@ -3246,6 +3306,8 @@ $('#refreshBtn').addEventListener('click',async()=>{
 function init(){
   // 若以 file:// 双击打开：浏览器禁用 IndexedDB/跨域 fetch，数据无法自动持久化。提示改用本地服务地址。
   try{ if(location.protocol==='file:'){ toast('⚠️ 当前以 file:// 方式打开，浏览器限制导致数据无法自动保存。请改用 http://127.0.0.1:8765/dashboard.html 打开（数据将自动存储，重开不丢）', true); } }catch(e){}
+  // 和路雪：达成明细 POS 实际前台可编辑（input 实时刷新、blur 千分位重格式化）
+  const tt=$('#targetTable'); if(tt){ tt.addEventListener('input', onPosInput); tt.addEventListener('blur', onPosBlur, true); }
   boot();
 }
 async function boot(){
@@ -3283,7 +3345,7 @@ async function boot(){
         return rows.reduce((s,r)=>s+(Number(r.spend)||0),0).toFixed(2);
       }catch(e){ return 'err'; }
     })();
-    console.log('[dashboard] v2026-08-25-fix3 reparseObj='+!!window.reparseObj+' 麦维他关键词花费='+kwSpend+' jzt总行数='+jztN);
+    console.log('[dashboard] v2026-08-25-fix4 reparseObj='+!!window.reparseObj+' 麦维他关键词花费='+kwSpend+' jzt总行数='+jztN);
     if(fromWhere==='云端'){ toast('已从云端加载数据 · v2026-08-25'); window.__hideCollabBadge=true; }
     else if(fromWhere==='公开快照'){ toast('已载入「'+currentBoard.name+'」最新数据（只读模式，由录入同事每日更新）'); }
     else { toast('已从本地缓存恢复「'+currentBoard.name+'」（云端暂不可用，联网后将自动同步）'); }
