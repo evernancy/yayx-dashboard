@@ -235,7 +235,7 @@
   <section data-sub="jzt">
     <div class="panel" style="border-top:3px solid var(--blue)">
       <h2>京准通推广数据</h2>
-      <p class="hint">投放花费目标来自「目标数据」（类型填 京准通花费 / 投放花费，粒度 month 对应月份）。MTD 与同比基于下方日期范围（默认本月至今）；同比 = 本年区间 vs 去年同日区间。</p>
+      <p class="hint">投放花费目标、费比目标均来自「目标数据」（费比目标：类型填 费比目标、粒度 month、值填小数如 0.15=15%）。MTD 与同比基于下方日期范围（默认本月至今）；同比 = 本年区间 vs 去年同日区间。</p>
       <div class="row">
         <span>起始</span><input type="date" id="jztStart">
         <span>结束</span><input type="date" id="jztEnd">
@@ -1394,14 +1394,25 @@ function renderJztTargets(){
   days.forEach(d=>{ const v=tlookup('jztspend','day',d); if(v){ sd+=v; has=true; } });
   if(has) target=sd;
   else { const ym=end.slice(0,7); const vm=tlookup('jztspend','month',ym); if(vm) target=vm; else { const y=end.slice(0,4); const vy=tlookup('jztspend','year',y); if(vy) target=vy; } }
-  const ach=target>0?cur.spend/target:0;
   const yClicks=yoyInfo(cur.clicks,py.clicks), yCpc=yoyInfo(cur.cpc,py.cpc), yRoi=yoyInfo(cur.roi,py.roi), yFee=yoyInfo(cur.feeRatio,py.feeRatio), yGmv=yoyInfo(cur.gmv,py.gmv);
+  // MTD 费比目标对比（费比目标维度=月度；by day / MTD / 整月 均取当月月度目标，保持一致）
+  const feeYm=end.slice(0,7);
+  const feeTarget=tlookup('fee','month',feeYm);
+  let feeCard;
+  if(feeTarget>0){
+    const diffPts=(cur.feeRatio-feeTarget)*100;
+    const over=diffPts>0;
+    feeCard={label:'MTD 费比 (目标'+fmtPct(feeTarget)+')', value:fmtPct(cur.feeRatio), cls:over?'red':'green',
+      sub:(over?'超目标 ':'低目标 ')+Math.abs(diffPts).toFixed(1)+' 个百分点（实际'+fmtPct(cur.feeRatio)+' / 目标'+fmtPct(feeTarget)+'）'};
+  } else {
+    feeCard={label:'MTD 费比', value:fmtPct(cur.feeRatio), sub:yFee.sub, cls:yFee.cls};
+  }
   $('#jztTargetKpis').innerHTML=kpiHTML([
-    {label:'投放目标达成',value:fmtPct(ach),cls:target?(ach>=1?'green':'amber'):'',sub:'达成 '+fmtMoney(cur.spend)+' / '+(target?fmtMoney(target):'未设目标')},
+    {label:'MTD 投放花费',value:fmtMoney(cur.spend),sub:'点击 '+fmt(cur.clicks,0)+' · CPC '+fmtMoney(cur.cpc)},
     {label:'MTD 点击',value:fmt(cur.clicks,0),sub:yClicks.sub,cls:yClicks.cls},
     {label:'MTD CPC',value:fmtMoney(cur.cpc),sub:yCpc.sub,cls:yCpc.cls},
     {label:'MTD ROI',value:cur.roi.toFixed(2),sub:yRoi.sub,cls:yRoi.cls},
-    {label:'MTD 费比',value:fmtPct(cur.feeRatio),sub:yFee.sub,cls:yFee.cls},
+    feeCard,
     {label:'MTD 成交金额',value:fmtMoney(cur.gmv),sub:yGmv.sub,cls:yGmv.cls},
   ]);
 }
@@ -2088,7 +2099,7 @@ function populateClearTypes(){
   const typeCol=findTypeCol(lines[0]||'');
   const set=new Set();
   if(typeCol>=0){ for(let i=1;i<lines.length;i++){ const c=(lines[i].split(/\t|,/)[typeCol]||'').trim(); if(c) set.add(c); } }
-  ['品牌GMV','采销GMV','内部GMV','POS','京准通花费','投放花费'].forEach(x=>set.add(x));
+  ['品牌GMV','采销GMV','内部GMV','POS','京准通花费','投放花费','费比目标'].forEach(x=>set.add(x));
   const sel=$('#cmType'); sel.innerHTML='';
   Array.from(set).forEach(v=>{ const o=document.createElement('option'); o.value=v; o.textContent=v; sel.appendChild(o); });
 }
@@ -2585,6 +2596,7 @@ const tgtTplBtn=$('#tgtTplBtn'); if(tgtTplBtn) tgtTplBtn.addEventListener('click
     ['内部GMV','month',curYM,560000],
     ['POS','month',curYM,420000],
     ['京准通花费','month',curYM,30000],
+    ['费比目标','month',curYM,0.15],
     ['品牌GMV','day',`${curYM}-01`,90000],
     ['POS','day',`${curYM}-01`,65000],
     ['','','',''],
@@ -2596,10 +2608,11 @@ const tgtTplBtn=$('#tgtTplBtn'); if(tgtTplBtn) tgtTplBtn.addEventListener('click
   ws['!cols']=[{wch:14},{wch:10},{wch:12},{wch:12}];
   const wsHelp=XLSX.utils.aoa_to_sheet([
     ['列','说明','可选值 / 示例'],
-    ['类型','目标指标类型','品牌GMV / 采销GMV / 内部GMV / POS / 京准通花费 / 投放花费'],
+    ['类型','目标指标类型','品牌GMV / 采销GMV / 内部GMV / POS / 京准通花费 / 投放花费 / 费比目标（值填小数，0.15=15%）'],
     ['粒度','统计粒度','month（按月） / day（按天） / year（按年）'],
     ['周期','目标所属期间','month: 2026-08；day: 2026-08-01；year: 2026'],
-    ['目标值','数值目标','纯数字，如 600000']
+    ['目标值','数值目标','纯数字，如 600000'],
+    ['费比目标','费比=花费÷GMV；目标值填小数','类型填「费比目标」、粒度 month；如 0.15 代表 15% 费比上限']
   ]);
   wsHelp['!cols']=[{wch:8},{wch:14},{wch:48}];
   const wb=XLSX.utils.book_new();
