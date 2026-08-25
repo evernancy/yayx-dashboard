@@ -616,7 +616,7 @@ const esc = s => String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt
 const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,''); const n=parseFloat(s); return isNaN(n)?0:n; };
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-25-fix19-posinput-merge-guard';
+const APP_VERSION = '2026-08-25-fix20-deep-merge-guard';
 /* 列名同义词映射 */
 const ALIAS = {
   date:['日期','时间','date','day','dt'],
@@ -3377,24 +3377,49 @@ async function ghUpsertBoard(id,name,state){
   for(var attempt=0; attempt<4; attempt++){
     var f=await ghGetFile(path);
     var payload={id:id,name:name,state:state,updated_at:new Date().toISOString()};
-    // 防御性合并：多设备/多会话协作时，若本机会话的 STATE 缺少某些已录入的 POS 天数，整体覆盖会把云端已填数据抹掉。
-    // 按「天数」对 posInput 做并集——云端已有的天数保留、本机新录入/修改的天数覆盖，避免某次保存把数据截短/丢失。
+    // 防御性合并：多设备/多会话协作时，本机会话的 STATE 可能落后于云端（缺某些品牌/字段）。直接整体覆盖会把云端已录入数据抹掉（李锦记/麦维他 targets、京准通 jzt 曾因此丢失）。
+    // mergeBoardState 对【所有数据字段】做深并集：incoming 非空优先，空则保留云端非空；posInput 按天并集。彻底杜绝覆盖式数据丢失。
     if(f){ try{ var cloud=JSON.parse(f.content); if(cloud&&cloud.state) payload.state=mergeBoardState(state, cloud.state); }catch(e){} }
     try{ await ghPutFile(path, JSON.stringify(payload), f?f.sha:null); return; }
     catch(e){ if(e.status===409 && attempt<3){ continue; } throw e; }
   }
 }
-// 合并两份看板 STATE：仅对 posInput 按天数并集（云端已有的天数保留，incoming 的天数覆盖），其余字段以 incoming 为准。
-// 目的：防止任一会话因本机 STATE 落后于云端而整体覆盖，导致已录入的 POS 天数丢失（和路雪 POS 8/13-8/16 丢失即此因）。
+// 判断值是否为“空”（用于合并时判定某字段是否有数据可保留）。
+function isEmptyVal(v){
+  if(v===null||v===undefined) return true;
+  if(typeof v==='string') return v.trim()==='';
+  if(Array.isArray(v)) return v.length===0;
+  if(typeof v==='object') return Object.keys(v).length===0;
+  return false; // number/boolean 视为有值
+}
+// 合并两份看板 STATE（数据防丢兜底）：incoming = 本机会话 STATE，cloud = 云端最新 STATE。
+// 规则：逐品牌、逐字段，优先用 incoming 的非空值；若 incoming 为空而 cloud 有数据，则保留 cloud（防止本机 STATE 落后时整体覆盖抹掉已录入数据）。
+// 此前的 bug：只并集 posInput，导致李锦记/麦维他 的 targets 与京准通 jzt 被本机空 STATE 覆盖清空。现在对所有数据字段做深并集。
+var __JZT_FIELDS=['targets','sales','inventory','jzt','purchase','purchase_order','spot_rate','aging_warn','goals'];
 function mergeBoardState(incoming, cloud){
   if(!incoming||!incoming.brands||!cloud||!cloud.brands) return incoming;
-  for(var b in incoming.brands){
-    var ob=incoming.brands[b], cb=cloud.brands[b];
-    if(ob && cb && cb.posInput){
+  var out=JSON.parse(JSON.stringify(incoming));
+  for(var b in cloud.brands){
+    var cb=cloud.brands[b];
+    if(!out.brands[b]){ out.brands[b]=JSON.parse(JSON.stringify(cb)); continue; } // 云端独有品牌：整段保留
+    var ob=out.brands[b];
+    // 顶层数据数组：targets / sales / inventory 等
+    ['targets','sales','inventory'].forEach(function(k){
+      if(isEmptyVal(ob[k]) && !isEmptyVal(cb[k])) ob[k]=JSON.parse(JSON.stringify(cb[k]));
+    });
+    // _raw 文本字段逐列：targets / sales / jzt / inventory / purchase ...
+    if(cb._raw){
+      ob._raw=ob._raw||{};
+      __JZT_FIELDS.forEach(function(k){
+        if(isEmptyVal(ob._raw[k]) && !isEmptyVal(cb._raw[k])) ob._raw[k]=cb._raw[k];
+      });
+    }
+    // posInput（POS 按天录入）：按 key 并集，incoming 覆盖 cloud
+    if(cb.posInput){
       ob.posInput=Object.assign({}, cb.posInput, ob.posInput||{});
     }
   }
-  return incoming;
+  return out;
 }
 async function ghRenameBoard(id,name){
   var idx=await ghGetIndex(); var sha=null;
