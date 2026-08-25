@@ -614,7 +614,7 @@ const esc = s => String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt
 const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,''); const n=parseFloat(s); return isNaN(n)?0:n; };
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-25-fix6-daytarget-null';
+const APP_VERSION = '2026-08-25-fix7-monthtotal-kpi';
 /* 列名同义词映射 */
 const ALIAS = {
   date:['日期','时间','date','day','dt'],
@@ -1665,6 +1665,15 @@ function renderMaiweiTargets(start,end){
     // 仅当存在显式「by day」目标时返回；否则返回 null，等待用户上传按日目标（不再用「月度目标÷当月天数」推算单日目标）
     if(tgt[type+'|day|'+d]) return tgt[type+'|day|'+d];
     return null; };
+  // 月度目标（直接取当月 TOTAL，不按MTD天数折算，用于KPI达成率分母）
+  const monthTargetOf=(name,type)=>{
+    const b=STATE.brands[name]||{targets:[]}; const ry=targetRefYear(); const tgt={};
+    (b.targets||[]).forEach(r=>{ const t=normType(r.ttype), p=normPeriod(r.tperiod,ry); let g=normGran(r.tgran); if(!g) g=p.length===10?'day':(p.length===7?'month':'year'); const v=num(r.tvalue); if(t&&g&&p) tgt[t+'|'+g+'|'+p]=v; });
+    const ym0=end.slice(0,7);
+    if(tgt[type+'|month|'+ym0]) return tgt[type+'|month|'+ym0];
+    const mm0=end.slice(5); if(tgt[type+'|month|'+mm0]) return tgt[type+'|month|'+mm0];
+    return 0;
+  };
   // 区间目标：优先日目标求和；否则覆盖到的每个月目标各计一次（MTD/整月/跨月均正确，不会把月目标按天重复累加）；否则年目标
   const rangeTargetOf=(name,type,s,e)=>{
     const b=STATE.brands[name]||{targets:[]}; const ry=targetRefYear(); const tgt={};
@@ -1683,28 +1692,28 @@ function renderMaiweiTargets(start,end){
   const popActual=sum(days.map(d=>popGmv[d]||0));
   const ym=end.slice(0,7); const ms=ym+'-01';
   const mtdDays=dateRange(ms,end).filter(d=>d>=start&&d<=end);
-  // GMV 缺口（自营 / POP）：MTD 品牌GMV目标（区间目标，月度目标按月计一次） - MTD GMV 实际
+  // GMV 缺口（自营 / POP）：月度TOTAL目标 - MTD GMV 实际（不按MTD折算目标）
   function gapOf(name, gmvByDay){
-    const t=rangeTargetOf(name,'brand',ms,end);
+    const t=monthTargetOf(name,'brand');
     const a=sum(mtdDays.map(d=>gmvByDay[d]||0));
     return Math.max(0, t-a);
   }
   const zyGap = gapOf(zyName, zyGmv);
   const popGap = gapOf(popName, popGmv);
-  // KPI：自营
-  const zyTBrand=rangeTargetOf(zyName,'brand',start,end);
-  const zyTProc=rangeTargetOf(zyName,'procure',start,end);
-  const zyTInt=rangeTargetOf(zyName,'internal',start,end);
+  // KPI：自营（目标 = 月度TOTAL，不按MTD折算）
+  const zyTBrand=monthTargetOf(zyName,'brand');
+  const zyTProc=monthTargetOf(zyName,'procure');
+  const zyTInt=monthTargetOf(zyName,'internal');
   $('#zyTargetKpis').innerHTML=kpiHTML([
     {label:'麦维他自营 GMV 目标达成',value:zyTBrand?fmtPct(zyActual/zyTBrand):'—',cls:zyTBrand?(zyActual>=zyTBrand?'green':'amber'):'',sub:zyTBrand?('达成（实际GMV）'+fmtMoney(zyActual)+' / 品牌目标GMV'+fmtMoney(zyTBrand)):('达成（实际GMV）'+fmtMoney(zyActual)+' / 未设目标')},
     {label:'采销GMV 目标达成',value:zyTProc?fmtPct(zyActual/zyTProc):'—',cls:zyTProc?(zyActual>=zyTProc?'green':'amber'):'',sub:zyTProc?('达成（实际GMV）'+fmtMoney(zyActual)+' / 采销目标GMV'+fmtMoney(zyTProc)):('达成（实际GMV）'+fmtMoney(zyActual)+' / 未设目标')},
     {label:'内部GMV 目标达成',value:zyTInt?fmtPct(zyActual/zyTInt):'—',cls:zyTInt?(zyActual>=zyTInt?'green':'amber'):'',sub:zyTInt?('达成（实际GMV）'+fmtMoney(zyActual)+' / 内部目标GMV'+fmtMoney(zyTInt)):('达成（实际GMV）'+fmtMoney(zyActual)+' / 未设目标')},
     {label:'自营 GMV 缺口(MTD目标-MTD达成)',value:fmtMoney(zyGap),cls:zyGap>0?'red':'green',sub:ym+' MTD · 麦维他自营'},
   ]);
-  // KPI：POP
-  const popTBrand=rangeTargetOf(popName,'brand',start,end);
-  const popTProc=rangeTargetOf(popName,'procure',start,end);
-  const popTInt=rangeTargetOf(popName,'internal',start,end);
+  // KPI：POP（目标 = 月度TOTAL，不按MTD折算）
+  const popTBrand=monthTargetOf(popName,'brand');
+  const popTProc=monthTargetOf(popName,'procure');
+  const popTInt=monthTargetOf(popName,'internal');
   $('#popTargetKpis').innerHTML=kpiHTML([
     {label:'麦维他POP GMV 目标达成',value:popTBrand?fmtPct(popActual/popTBrand):'—',cls:popTBrand?(popActual>=popTBrand?'green':'amber'):'',sub:popTBrand?('达成（实际GMV）'+fmtMoney(popActual)+' / 品牌目标GMV'+fmtMoney(popTBrand)):('达成（实际GMV）'+fmtMoney(popActual)+' / 未设目标')},
     {label:'采销GMV 目标达成',value:popTProc?fmtPct(popActual/popTProc):'—',cls:popTProc?(popActual>=popTProc?'green':'amber'):'',sub:popTProc?('达成（实际GMV）'+fmtMoney(popActual)+' / 采销目标GMV'+fmtMoney(popTProc)):('达成（实际GMV）'+fmtMoney(popActual)+' / 未设目标')},
