@@ -1601,6 +1601,7 @@ function renderMaiweiTargets(start,end){
   const tgtOf=(name,type,d)=>{ const b=STATE.brands[name]||{targets:[]}; const ry=targetRefYear(); const tgt={};
     (b.targets||[]).forEach(r=>{ const t=normType(r.ttype), p=normPeriod(r.tperiod,ry); let g=normGran(r.tgran); if(!g) g=p.length===10?'day':(p.length===7?'month':'year'); const v=num(r.tvalue); if(t&&g&&p) tgt[t+'|'+g+'|'+p]=v; });
     if(tgt[type+'|day|'+d]) return tgt[type+'|day|'+d];
+    const ym=d.slice(0,7); if(tgt[type+'|month|'+ym]) return tgt[type+'|month|'+ym];
     const mm=d.slice(5); if(tgt[type+'|month|'+mm]) return tgt[type+'|month|'+mm];
     const yy=d.slice(0,4); if(tgt[type+'|year|'+yy]) return tgt[type+'|year|'+yy];
     return 0; };
