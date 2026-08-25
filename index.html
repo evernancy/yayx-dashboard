@@ -3203,7 +3203,7 @@ async function boot(){
     if(fromWhere==='云端'||fromWhere==='公开快照'){ try{ idbSet(STATE); }catch(e){} }
     const invN=(B().inventory||[]).length, salesN=(B().sales||[]).length, jztN=(B().jzt||[]).length, gN=(STATE.gantt||[]).length;
     ensureGanttIds();
-    if(fromWhere==='云端'){ toast('已从云端加载「'+currentBoard.name+'」（销售 '+salesN+' · 库存 '+invN+' · 京准通 '+jztN+' · 甘特 '+gN+' 行）'); }
+    if(fromWhere==='云端'){ toast('已从云端加载「'+currentBoard.name+'」（销售 '+salesN+' · 库存 '+invN+' · 京准通 '+jztN+' · 甘特 '+gN+' 行）'); window.__hideCollabBadge=true; }
     else if(fromWhere==='公开快照'){ toast('已载入「'+currentBoard.name+'」最新数据（只读模式，由录入同事每日更新）'); }
     else { toast('已从本地缓存恢复「'+currentBoard.name+'」（云端暂不可用，联网后将自动同步）'); }
   } else {
@@ -3231,6 +3231,8 @@ init();
   badge.style.cssText='position:fixed;right:14px;bottom:14px;z-index:99999;background:#0ea571;color:#fff;font:12px/1.4 system-ui,-apple-system,sans-serif;padding:7px 12px;border-radius:20px;box-shadow:0 2px 10px rgba(0,0,0,.25);cursor:default;max-width:60vw';
   badge.textContent='云端协作 · 连接中…';
   document.body.appendChild(badge);
+  // 正常云端加载成功后徽章被隐藏；后续有同步/保存/异常时自动恢复显示
+  function showBadge(){ var b=document.getElementById('collabBadge'); if(b) b.style.display=''; }
   // —— 无令牌（公开部署版）：引导用户输入一次，存本机浏览器 ——
   function noToken(){ return (typeof ghToken==='function') && !ghToken(); }
   function askToken(){
@@ -3303,13 +3305,13 @@ init();
     }
     try{
             var row=await ghGetBoard(currentBoard.id);
-      if(!row||!row.state||!isUsableState(row.state)){ var ut=Date.parse(row.updated_at)||0; badge.textContent='云端协作 · 已连接'+(ut?' · '+fmtTime(new Date(ut)):''); return; }
+      if(!row||!row.state||!isUsableState(row.state)){ var ut=Date.parse(row.updated_at)||0; showBadge(); badge.textContent='云端协作 · 已连接'+(ut?' · '+fmtTime(new Date(ut)):''); return; }
       var srvUpd=Date.parse(row.updated_at)||0;
       if(srvUpd>window.__lastSaveAt && !isTyping() && !modalOpen()){
-        if(JSON.stringify(dataOnly(STATE))!==JSON.stringify(dataOnly(row.state))){ hydrateFromState(row.state); renderAll(); setupTodoAll(); badge.textContent='云端协作 · 已同步 '+fmtTime(new Date()); syncing=false; return; }
+        if(JSON.stringify(dataOnly(STATE))!==JSON.stringify(dataOnly(row.state))){ hydrateFromState(row.state); renderAll(); setupTodoAll(); showBadge(); badge.textContent='云端协作 · 已同步 '+fmtTime(new Date()); syncing=false; return; }
       }
-      badge.textContent='云端协作 · 已连接'+(srvUpd?' · '+fmtTime(new Date(srvUpd)):'');
-    }catch(e){ var msg=errMsg(e); badge.textContent='云端协作 · 离线（'+msg.slice(0,90)+'）'; console.error('[GitHub] 连接失败:', e, '| 字符串化:', JSON.stringify(e)); diagHints(JSON.stringify(e)); }
+      showBadge(); badge.textContent='云端协作 · 已连接'+(srvUpd?' · '+fmtTime(new Date(srvUpd)):'');
+    }catch(e){ var msg=errMsg(e); showBadge(); badge.textContent='云端协作 · 离线（'+msg.slice(0,90)+'）'; console.error('[GitHub] 连接失败:', e, '| 字符串化:', JSON.stringify(e)); diagHints(JSON.stringify(e)); }
     finally{ syncing=false; }
   }
   // 记录本地保存时间，避免把"自己刚保存的"误判成"别人更新的"而回拉。
@@ -3342,6 +3344,8 @@ init();
       console.error('[GitHub] diag 异常:', e, '| 字符串化:', JSON.stringify(e));
       diagHints(JSON.stringify(e));
     }
+    // 正常云端加载成功后，隐藏徽章（只保留 toast 提示）；后续同步/保存/异常时 showBadge() 恢复
+    if(window.__hideCollabBadge){ var b=document.getElementById('collabBadge'); if(b) b.style.display='none'; }
   })();
 })();
 </script>
