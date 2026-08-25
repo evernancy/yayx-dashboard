@@ -614,7 +614,7 @@ const esc = s => String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt
 const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,''); const n=parseFloat(s); return isNaN(n)?0:n; };
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-25-fix4';
+const APP_VERSION = '2026-08-25-fix5-target48w';
 /* 列名同义词映射 */
 const ALIAS = {
   date:['日期','时间','date','day','dt'],
@@ -1119,6 +1119,7 @@ function kpiHTML(items){ return items.map(it=>`<div class="kpi"><div class="labe
 function ymdAdd(str,n){ let [y,m,dd]=str.split('-').map(Number); const dt=new Date(y,m-1,dd); dt.setDate(dt.getDate()+n); return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`; }
 function dateRange(s,e){ const out=[]; let cur=s; while(cur<=e){ out.push(cur); cur=ymdAdd(cur,1); } return out; }
 function lastDayOfMonth(ym){ const [y,m]=ym.split('-').map(Number); const dt=new Date(y,m,0); return `${y}-${String(m).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`; }
+function daysInMonth(ym){ return Number(lastDayOfMonth(ym).slice(8,10)); }
 /* 时间进度：结束日期的「日」/ 当月总天数（百分比）。两端都空时取默认范围（本月至今）。 */
 function timeProgress(end){
   if(!end || !/^\d{4}-\d{2}-\d{2}$/.test(end)) return null;
@@ -1456,16 +1457,18 @@ function buildTargetMap(){
   });
 }
 function tlookup(type,gran,period){ if(TMAP[type+'|'+gran+'|'+period]) return TMAP[type+'|'+gran+'|'+period]; if(gran==='month'){ const mm=period.slice(5); if(mm && TMAP[type+'|month|'+mm]) return TMAP[type+'|month|'+mm]; } return 0; }
-// 范围目标：优先日目标求和；否则整月/整年目标；否则0
+// 范围目标：优先日目标求和；否则覆盖到的每个月目标各计一次（MTD/整月/跨月均正确）；否则年目标；否则0
 function rangeTarget(type,start,end){
   const days=dateRange(start,end); let sd=0,has=false;
   days.forEach(d=>{ const v=tlookup(type,'day',d); if(v){ sd+=v; has=true; } });
   if(has) return sd;
-  const ym=start.slice(0,7);
-  if(start===ym+'-01' && end===lastDayOfMonth(ym)){ const v=tlookup(type,'month',ym); if(v) return v; }
   const y=start.slice(0,4);
   if(start===y+'-01-01' && end===y+'-12-31'){ const v=tlookup(type,'year',y); if(v) return v; }
-  return 0;
+  const months=[...new Set(days.map(d=>d.slice(0,7)))];
+  let mSum=0; months.forEach(ym=>{ const v=tlookup(type,'month',ym); if(v) mSum+=v; });
+  if(mSum) return mSum;
+  const y2=days[0].slice(0,4); if(tlookup(type,'year',y2)) return tlookup(type,'year',y2);
+  return mSum;
 }
 // 周期目标（按视图）
 function periodTarget(type,view,key){ if(view==='day') return tlookup(type,'day',key); if(view==='month'||view==='mtd') return tlookup(type,'month',key); if(view==='year') return tlookup(type,'year',key); return 0; }
@@ -1660,26 +1663,32 @@ function renderMaiweiTargets(start,end){
   const tgtOf=(name,type,d)=>{ const b=STATE.brands[name]||{targets:[]}; const ry=targetRefYear(); const tgt={};
     (b.targets||[]).forEach(r=>{ const t=normType(r.ttype), p=normPeriod(r.tperiod,ry); let g=normGran(r.tgran); if(!g) g=p.length===10?'day':(p.length===7?'month':'year'); const v=num(r.tvalue); if(t&&g&&p) tgt[t+'|'+g+'|'+p]=v; });
     if(tgt[type+'|day|'+d]) return tgt[type+'|day|'+d];
-    const ym=d.slice(0,7); if(tgt[type+'|month|'+ym]) return tgt[type+'|month|'+ym];
-    const mm=d.slice(5); if(tgt[type+'|month|'+mm]) return tgt[type+'|month|'+mm];
-    const yy=d.slice(0,4); if(tgt[type+'|year|'+yy]) return tgt[type+'|year|'+yy];
+    // 仅设月度/年度目标时，按天查询回退为「月目标÷当月天数」「年目标÷365」，使单日目标与月度目标自洽
+    const ym=d.slice(0,7); if(tgt[type+'|month|'+ym]) return tgt[type+'|month|'+ym]/daysInMonth(ym);
+    const mm=d.slice(5); if(tgt[type+'|month|'+mm]) return tgt[type+'|month|'+mm]/daysInMonth('2026-'+mm);
+    const yy=d.slice(0,4); if(tgt[type+'|year|'+yy]) return tgt[type+'|year|'+yy]/365;
     return 0; };
+  // 区间目标：优先日目标求和；否则覆盖到的每个月目标各计一次（MTD/整月/跨月均正确，不会把月目标按天重复累加）；否则年目标
   const rangeTargetOf=(name,type,s,e)=>{
-    const ds=dateRange(s,e); let sd=0,has=false;
-    ds.forEach(d=>{ const v=tgtOf(name,type,d); if(v){ sd+=v; has=true; } });
-    if(has) return sd;
-    const ym2=s.slice(0,7);
-    if(s===ym2+'-01' && e===lastDayOfMonth(ym2)){ const v=tgtOf(name,type,s); if(v) return v; }
-    const y2=s.slice(0,4);
-    if(s===y2+'-01-01' && e===y2+'-12-31'){ const v=tgtOf(name,type,s); if(v) return v; }
+    const b=STATE.brands[name]||{targets:[]}; const ry=targetRefYear(); const tgt={};
+    (b.targets||[]).forEach(r=>{ const t=normType(r.ttype), p=normPeriod(r.tperiod,ry); let g=normGran(r.tgran); if(!g) g=p.length===10?'day':(p.length===7?'month':'year'); const v=num(r.tvalue); if(t&&g&&p) tgt[t+'|'+g+'|'+p]=v; });
+    const ds=dateRange(s,e); let sd=0,hasDay=false;
+    ds.forEach(d=>{ const v=tgt[type+'|day|'+d]; if(v){ sd+=v; hasDay=true; } });
+    if(hasDay) return sd;
+    const y=s.slice(0,4);
+    if(s===y+'-01-01' && e===y+'-12-31'){ if(tgt[type+'|year|'+y]) return tgt[type+'|year|'+y]; }
+    const months=[...new Set(ds.map(d=>d.slice(0,7)))];
+    let mSum=0; months.forEach(ym=>{ const v=tgt[type+'|month|'+ym]; if(v) mSum+=v; });
+    if(mSum) return mSum;
+    const y2=ds[0].slice(0,4); if(tgt[type+'|year|'+y2]) return tgt[type+'|year|'+y2];
     return 0; };
   const zyActual=sum(days.map(d=>zyGmv[d]||0));
   const popActual=sum(days.map(d=>popGmv[d]||0));
   const ym=end.slice(0,7); const ms=ym+'-01';
   const mtdDays=dateRange(ms,end).filter(d=>d>=start&&d<=end);
-  // GMV 缺口（自营 / POP）：MTD 品牌GMV目标（逐日 by day 求和，未设则月度） - MTD GMV 实际
+  // GMV 缺口（自营 / POP）：MTD 品牌GMV目标（区间目标，月度目标按月计一次） - MTD GMV 实际
   function gapOf(name, gmvByDay){
-    const t=mtdDays.reduce((a,d)=>a+tgtOf(name,'brand',d),0) || tgtOf(name,'brand',ym);
+    const t=rangeTargetOf(name,'brand',ms,end);
     const a=sum(mtdDays.map(d=>gmvByDay[d]||0));
     return Math.max(0, t-a);
   }
