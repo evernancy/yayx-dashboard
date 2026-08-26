@@ -512,6 +512,29 @@
       </details>
 
       <details>
+        <summary>2.8 · 库存明细（丝蕴）</summary>
+        <p class="hint">表头（共 69 列）：<b>时间 / 商品名称 / SKU / 品牌 / 一级类目 / 二级类目 / 三级类目 / 店铺名称 / 供应商简码 / 供应商名称 / 是否售完即止 / 是否厂直 / 是否影分身 / 是否虚拟组套 / 是否虚拟品类 / 上柜时间 / 是否平行库存 / 是否赠品 / SPU编码 / 条形码 / 保质期 / RDC / 配送中心 / 仓网选品打标 / 上级B配送中心编码 / 上级B配送中心名称 / 上下柜状态 / 商品价格 / 全国采购价 / 长度 / 宽度 / 高度 / 重量 / 现货库存 / 内配在途 / 可订购库存 / B仓(商)京东自营渠道采购在途库存 / B仓(商)京东自营渠道现货库存 / 采购在途数量 / 滞销库存件数 / 不动销库存件数 / 长库龄数量 / 91-120天库存数量 / 121-150天库存数量 / 151-180天库存数量 / 181-360天库存数量 / 1年以上库存数量 / 昨日出库商品件数 / 近7日出库商品件数 / 近14日出库商品件数 / 近28日出库商品件数 / 近30日出库商品件数 / 近60日出库商品件数 / 近90日出库商品件数 / 月至今出库商品件数 / 昨日收货地商品件数 / 近7日收货地商品件数 / 近14日收货地商品件数 / 近28日收货地商品件数 / 近30日收货地商品件数 / 近60日收货地商品件数 / 近90日收货地商品件数 / 月至今收货地商品件数 / 昨日采购入库件数 / 近7日采购入库件数 / 近14日采购入库件数 / 近28日采购入库件数 / 近30日采购入库件数 / 月至今采购入库件数</b>。每行=某天某 SKU 的库存快照。<b>该数据独立录入、独立存储</b>，与 2.7 库存明细(全量列)互不覆盖；粘贴含表头的数据后点「应用并更新看板」即保存。点击「填入模板」可自动生成完整表头。列名自动识别，缺列留空。</p>
+        <div class="row">
+          <span class="muted" style="font-size:12px">品牌</span>
+          <select id="brand_inv_siyun" class="secBrand" data-sec="inv_siyun" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px">
+            <option value="李锦记">李锦记</option>
+            <option value="麦维他自营">麦维他自营</option>
+            <option value="麦维他POP">麦维他POP</option>
+            <option value="丝蕴">丝蕴</option>
+            <option value="和路雪">和路雪</option>
+            <option value="家乐">家乐</option>
+            <option value="联合利华">联合利华</option>
+          </select>
+          <label class="filelabel">上传文件<input type="file" id="invSiyunFile" accept=".csv,.xlsx,.xls" hidden></label>
+          <button class="btn2 ghost" data-fill="inv_siyun">填入模板</button>
+          <button class="btn2 ghost" id="invSiyunTplBtn">下载填写模板</button>
+          <button class="btn2 ghost clearBtn" data-which="inv_siyun">清除历史</button>
+        </div>
+        <textarea id="invSiyunInput" placeholder="粘贴丝蕴库存明细（含表头，列名自动识别）；点击「填入模板」可自动生成完整表头。数据独立存储，与 2.7 库存明细(全量列)互不覆盖。" style="min-height:140px"></textarea>
+        <div class="diag" id="diagInvSiyun"></div>
+      </details>
+
+      <details>
         <summary>3 · 京东京准通推广数据</summary>
         <div class="row">
           <span class="muted" style="font-size:12px">品牌</span>
@@ -680,7 +703,7 @@ const esc = s => String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt
 const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,''); const n=parseFloat(s); return isNaN(n)?0:n; };
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-26-fix38-inv-three-part-kpi-cards';
+const APP_VERSION = '2026-08-26-fix39-inv-siyun-template';
 /* 列名同义词映射 */
 const ALIAS = {
   date:['日期','时间','date','day','dt','订购时间','采购时间','下单时间'],
@@ -1162,7 +1185,7 @@ function sampleAgingWarn(){return `日期\t60-90天长库龄预警金额\t90天�
 const STORE_KEY='ecom_dashboard_v2';
 // 多品牌：每个品牌独立存储 销售/库存周转/浮码/京准通/目标/待办/原始输入；甘特图为三模块共享（不按品牌拆分）
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
-function freshBrand(){ return { sales:[], inventory:[], inv_full:[], chaohu:[], purchase:[], purchase_order:[], spot_rate:[], aging_warn:[], jzt:[], targets:[], posInput:{}, _raw:{sales:'',inventory:'',inv_full:'',chaohu:'',jzt:'',targets:'',purchase:'',purchase_order:'',spot_rate:'',aging_warn:''}, todo:freshTodo() }; }
+function freshBrand(){ return { sales:[], inventory:[], inv_full:[], inv_siyun:[], chaohu:[], purchase:[], purchase_order:[], spot_rate:[], aging_warn:[], jzt:[], targets:[], posInput:{}, _raw:{sales:'',inventory:'',inv_full:'',inv_siyun:'',chaohu:'',jzt:'',targets:'',purchase:'',purchase_order:'',spot_rate:'',aging_warn:''}, todo:freshTodo() }; }
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 let STATE=emptyState();
 let invAsOf=null; // 库存周转「查看日期」：null=最新一天
@@ -2433,9 +2456,9 @@ function findDateCol(header, which){
 }
 // date 是否落在 [d, ed] 内（ed 空=只看 d 当天）
 function dateInRange(date, d, ed){ if(!d) return false; if(!ed) return d===date; return date>=d && date<=ed; }
-const CLEAR_NAME={sales:'销售',inventory:'库存周转',inv_full:'库存明细(全量列)',chaohu:'巢湖库存数据',jzt:'京准通',targets:'目标',gantt:'甘特图',purchase:'浮码',purchase_order:'采购单',spot_rate:'现货率',aging_warn:'长库龄预警'};
+const CLEAR_NAME={sales:'销售',inventory:'库存周转',inv_full:'库存明细(全量列)',inv_siyun:'库存明细(丝蕴)',chaohu:'巢湖库存数据',jzt:'京准通',targets:'目标',gantt:'甘特图',purchase:'浮码',purchase_order:'采购单',spot_rate:'现货率',aging_warn:'长库龄预警'};
 let cmWhich=null;
-const CLEAR_EL={sales:'#salesInput',inventory:'#invInput',inv_full:'#invFullInput',chaohu:'#chaohuInput',jzt:'#jztInput',targets:'#tgtInput',gantt:'#ganttInput',purchase:'#ppInput',purchase_order:'#poInput',spot_rate:'#srInput',aging_warn:'#awInput'};
+const CLEAR_EL={sales:'#salesInput',inventory:'#invInput',inv_full:'#invFullInput',inv_siyun:'#invSiyunInput',chaohu:'#chaohuInput',jzt:'#jztInput',targets:'#tgtInput',gantt:'#ganttInput',purchase:'#ppInput',purchase_order:'#poInput',spot_rate:'#srInput',aging_warn:'#awInput'};
 // 目标「类型」列下标
 function findTypeCol(header){
   const cells=String(header||'').split(/\t|,/).map(s=>String(s||'').trim().toLowerCase());
@@ -2612,6 +2635,7 @@ function reparseBrand(brand){
   b.spot_rate=parseTable(b._raw.spot_rate||'');
   b.aging_warn=parseTable(b._raw.aging_warn||'');
   b.inv_full=parseTable(b._raw.inv_full||'');
+  b.inv_siyun=parseTable(b._raw.inv_siyun||'');
   b.chaohu=parseTable(b._raw.chaohu||'');
   b.targets=tgt;
 }
@@ -2632,6 +2656,7 @@ function reparseObj(b){
   b.spot_rate=parseTable(b._raw.spot_rate||'');
   b.aging_warn=parseTable(b._raw.aging_warn||'');
   b.inv_full=parseTable(b._raw.inv_full||'');
+  b.inv_siyun=parseTable(b._raw.inv_siyun||'');
   b.chaohu=parseTable(b._raw.chaohu||'');
   b.targets=tgt;
 }
@@ -2779,7 +2804,7 @@ function syncBrandUI(){
     p.classList.toggle('active', currentView==='lijx' && active);
   });
   // 输入区选择器：麦维他渠道保持当前渠道（自营/POP），其余品牌选自身
-  ['sales','inventory','inv_full','chaohu','purchase','purchase_order','spot_rate','aging_warn','jzt','targets'].forEach(w=>{ const sel=document.getElementById('brand_'+w); if(sel) sel.value=STATE.currentBrand; });
+  ['sales','inventory','inv_full','inv_siyun','chaohu','purchase','purchase_order','spot_rate','aging_warn','jzt','targets'].forEach(w=>{ const sel=document.getElementById('brand_'+w); if(sel) sel.value=STATE.currentBrand; });
 }
 function switchBrand(name){
   // 「麦维他」为顶层品牌 tab，实际数据按渠道存于「麦维他自营」（默认渠道）
@@ -2796,8 +2821,8 @@ function switchBrand(name){
 // 数据输入区：某个 section 切换品牌 → 仅将该 section 的文本框填充为目标品牌的原始输入（不影响其他 section）
 $$('.secBrand').forEach(sel=>sel.addEventListener('change',()=>{
   const w=sel.dataset.sec, b=STATE.brands[sel.value]; if(!b) return;
-  const TA_ID={sales:'salesInput',inventory:'invInput',inv_full:'invFullInput',chaohu:'chaohuInput',purchase:'ppInput',purchase_order:'poInput',spot_rate:'srInput',aging_warn:'awInput',jzt:'jztInput',targets:'tgtInput'};
-  const DIAG_KEY={sales:'Sales',inventory:'Inv',inv_full:'InvFull',chaohu:'Chaohu',purchase:'Pp',purchase_order:'Po',spot_rate:'Sr',aging_warn:'Aw',jzt:'Jzt',targets:'Targets'};
+  const TA_ID={sales:'salesInput',inventory:'invInput',inv_full:'invFullInput',inv_siyun:'invSiyunInput',chaohu:'chaohuInput',purchase:'ppInput',purchase_order:'poInput',spot_rate:'srInput',aging_warn:'awInput',jzt:'jztInput',targets:'tgtInput'};
+  const DIAG_KEY={sales:'Sales',inventory:'Inv',inv_full:'InvFull',inv_siyun:'InvSiyun',chaohu:'Chaohu',purchase:'Pp',purchase_order:'Po',spot_rate:'Sr',aging_warn:'Aw',jzt:'Jzt',targets:'Targets'};
   $('#'+TA_ID[w]).value=b._raw[w]||'';
   updateDiag(b._raw[w]||'', w==='targets'?parseTargets(b._raw[w]||'').length:(b[w]||[]).length, DIAG_KEY[w]);
 }));
@@ -2866,9 +2891,9 @@ function routeRawByBrand(w, cur, fallback, edited){
 
 function readInputs(mode, silent){
   mode=mode||'merge';
-  const SECTIONS=['sales','inventory','inv_full','chaohu','jzt','targets','purchase','purchase_order','spot_rate','aging_warn'];
-  const TA={sales:'salesInput',inventory:'invInput',inv_full:'invFullInput',chaohu:'chaohuInput',jzt:'jztInput',targets:'tgtInput',purchase:'ppInput',purchase_order:'poInput',spot_rate:'srInput',aging_warn:'awInput'};
-  const DIAG={sales:'Sales',inventory:'Inv',inv_full:'InvFull',chaohu:'Chaohu',jzt:'Jzt',targets:'Targets',purchase:'Pp',purchase_order:'Po',spot_rate:'Sr',aging_warn:'Aw'};
+  const SECTIONS=['sales','inventory','inv_full','inv_siyun','chaohu','jzt','targets','purchase','purchase_order','spot_rate','aging_warn'];
+  const TA={sales:'salesInput',inventory:'invInput',inv_full:'invFullInput',inv_siyun:'invSiyunInput',chaohu:'chaohuInput',jzt:'jztInput',targets:'tgtInput',purchase:'ppInput',purchase_order:'poInput',spot_rate:'srInput',aging_warn:'awInput'};
+  const DIAG={sales:'Sales',inventory:'Inv',inv_full:'InvFull',inv_siyun:'InvSiyun',chaohu:'Chaohu',jzt:'Jzt',targets:'Targets',purchase:'Pp',purchase_order:'Po',spot_rate:'Sr',aging_warn:'Aw'};
   // 每个输入框所属品牌：取对应 <select id="brand_xxx"> 的当前值（无效则回退当前查看品牌）
   const brandOf={}; const edited=new Set();
   SECTIONS.forEach(w=>{ const sel=document.getElementById('brand_'+w); const v=(sel&&sel.value)||STATE.currentBrand; brandOf[w]=(STATE.brands[v]?v:STATE.currentBrand); edited.add(brandOf[w]); });
@@ -2899,13 +2924,14 @@ function readInputs(mode, silent){
     const srIn=parseTable(b._raw.spot_rate||'');
     const awIn=parseTable(b._raw.aging_warn||'');
     const invFullIn=parseTable(b._raw.inv_full||'');
+    const invSiyunIn=parseTable(b._raw.inv_siyun||'');
     const chIn=parseTable(b._raw.chaohu||'');
     const tgtIn=tgt;
     // 增量上传(merge)：与已有数据按业务键合并（重复自动忽略）；全量替换(replace)：以文本框为准整组重建
     if(mode==='replace'){
-      b.sales=salesIn; b.inventory=invIn; b.inv_full=invFullIn; b.jzt=jztIn; b.targets=tgtIn; b.purchase=ppIn; b.purchase_order=poIn; b.spot_rate=srIn; b.aging_warn=awIn; b.chaohu=chIn;
+      b.sales=salesIn; b.inventory=invIn; b.inv_full=invFullIn; b.inv_siyun=invSiyunIn; b.jzt=jztIn; b.targets=tgtIn; b.purchase=ppIn; b.purchase_order=poIn; b.spot_rate=srIn; b.aging_warn=awIn; b.chaohu=chIn;
     } else {
-      const sb=b.sales.length, ib=b.inventory.length, invb=(b.inv_full||[]).length, chb=(b.chaohu||[]).length, jb=b.jzt.length, pb=b.purchase.length, pob=b.purchase_order.length, srb=(b.spot_rate||[]).length, awb=(b.aging_warn||[]).length, tb=b.targets.length;
+      const sb=b.sales.length, ib=b.inventory.length, invb=(b.inv_full||[]).length, invsiyunb=(b.inv_siyun||[]).length, chb=(b.chaohu||[]).length, jb=b.jzt.length, pb=b.purchase.length, pob=b.purchase_order.length, srb=(b.spot_rate||[]).length, awb=(b.aging_warn||[]).length, tb=b.targets.length;
       b.sales=mergeRows(b.sales||[], salesIn);
       b.inventory=mergeRows(b.inventory||[], invIn);
       b.jzt=mergeRows(b.jzt||[], jztIn);
@@ -2916,11 +2942,12 @@ function readInputs(mode, silent){
       b.aging_warn=mergeRows(b.aging_warn||[], awIn);
       b.chaohu=mergeRows(b.chaohu||[], chIn);
       b.inv_full=mergeRows(b.inv_full||[], invFullIn);
-      statAdd+=(b.sales.length-sb)+(b.inventory.length-ib)+(b.inv_full.length-invb)+(b.chaohu.length-chb)+(b.jzt.length-jb)+(b.purchase.length-pb)+(b.purchase_order.length-pob)+(b.spot_rate.length-srb)+(b.aging_warn.length-awb)+(b.targets.length-tb);
+      b.inv_siyun=mergeRows(b.inv_siyun||[], invSiyunIn);
+      statAdd+=(b.sales.length-sb)+(b.inventory.length-ib)+(b.inv_full.length-invb)+(b.inv_siyun.length-invsiyunb)+(b.chaohu.length-chb)+(b.jzt.length-jb)+(b.purchase.length-pb)+(b.purchase_order.length-pob)+(b.spot_rate.length-srb)+(b.aging_warn.length-awb)+(b.targets.length-tb);
       statDup+=Math.max(0, salesIn.length-(b.sales.length-sb)) + Math.max(0, invIn.length-(b.inventory.length-ib))
              + Math.max(0, jztIn.length-(b.jzt.length-jb)) + Math.max(0, ppIn.length-(b.purchase.length-pb))
              + Math.max(0, poIn.length-(b.purchase_order.length-pob)) + Math.max(0, srIn.length-(b.spot_rate.length-srb))
-             + Math.max(0, awIn.length-(b.aging_warn.length-awb)) + Math.max(0, invFullIn.length-(b.inv_full.length-invb)) + Math.max(0, chIn.length-(b.chaohu.length-chb)) + Math.max(0, tgtIn.length-(b.targets.length-tb));
+             + Math.max(0, awIn.length-(b.aging_warn.length-awb)) + Math.max(0, invFullIn.length-(b.inv_full.length-invb)) + Math.max(0, invSiyunIn.length-(b.inv_siyun.length-invsiyunb)) + Math.max(0, chIn.length-(b.chaohu.length-chb)) + Math.max(0, tgtIn.length-(b.targets.length-tb));
     }
   });
   // 甘特图重建（共享）：replace 模式清空历史只用本次数据；merge 模式增量合并
@@ -2947,15 +2974,16 @@ $('#srInput').addEventListener('input',()=>{ clearTimeout(deb); deb=setTimeout(r
 $('#chaohuInput').addEventListener('input',()=>{ clearTimeout(deb); deb=setTimeout(readInputs,700); });
 $('#awInput').addEventListener('input',()=>{ clearTimeout(deb); deb=setTimeout(readInputs,700); });
 $('#invFullInput').addEventListener('input',()=>{ clearTimeout(deb); deb=setTimeout(readInputs,700); });
+$('#invSiyunInput').addEventListener('input',()=>{ clearTimeout(deb); deb=setTimeout(readInputs,700); });
 
 $$('[data-fill]').forEach(b=>{ b.addEventListener('click',()=>{
-  const map={sales:'#salesInput',inventory:'#invInput',inv_full:'#invFullInput',chaohu:'#chaohuInput',jzt:'#jztInput',jzt2:'#jztInput',targets:'#tgtInput',gantt:'#ganttInput',purchase:'#ppInput',purchase_order:'#poInput',spot_rate:'#srInput',aging_warn:'#awInput'};
+  const map={sales:'#salesInput',inventory:'#invInput',inv_full:'#invFullInput',inv_siyun:'#invSiyunInput',chaohu:'#chaohuInput',jzt:'#jztInput',jzt2:'#jztInput',targets:'#tgtInput',gantt:'#ganttInput',purchase:'#ppInput',purchase_order:'#poInput',spot_rate:'#srInput',aging_warn:'#awInput'};
   // 销售模板按品牌区分（麦维他自营/麦维他POP 各有独立模板，李锦记/其他沿用原模板）
   const salesSrc={ '麦维他自营':sampleSalesMcv, '麦维他POP':sampleSalesPop };
   const sec=b.dataset.fill;
   let val;
   if(sec==='sales'){ const sel=document.getElementById('brand_sales'); val=(salesSrc[(sel&&sel.value)]||sampleSales)(); }
-  else { const src={inventory:sampleInv,jzt:sampleJzt,jzt2:sampleJzt2,targets:sampleTargets,gantt:sampleGantt,purchase:samplePurchase,purchase_order:samplePurchaseOrder,spot_rate:sampleSpotRate,aging_warn:sampleAgingWarn,inv_full:sampleInvFull,chaohu:sampleChaohu}; val=src[sec](); }
+  else { const src={inventory:sampleInv,jzt:sampleJzt,jzt2:sampleJzt2,targets:sampleTargets,gantt:sampleGantt,purchase:samplePurchase,purchase_order:samplePurchaseOrder,spot_rate:sampleSpotRate,aging_warn:sampleAgingWarn,inv_full:sampleInvFull,inv_siyun:sampleInvSiyun,chaohu:sampleChaohu}; val=src[sec](); }
   $(map[sec]).value=val;
   readInputs();
 }); });
@@ -3185,6 +3213,50 @@ const chaohuTplBtn=$('#chaohuTplBtn'); if(chaohuTplBtn) chaohuTplBtn.addEventLis
   toast('已下载 Excel 模板（.xlsx，含「巢湖库存数据」+「填写说明」两个 Sheet）');
 });
 
+// 库存明细（丝蕴）：表头常量 + 示例生成 + 下载模板
+const INV_SIYUN_H=['时间','商品名称','SKU','品牌','一级类目','二级类目','三级类目','店铺名称','供应商简码','供应商名称','是否售完即止','是否厂直','是否影分身','是否虚拟组套','是否虚拟品类','上柜时间','是否平行库存','是否赠品','SPU编码','条形码','保质期','RDC','配送中心','仓网选品打标','上级B配送中心编码','上级B配送中心名称','上下柜状态','商品价格','全国采购价','长度','宽度','高度','重量','现货库存','内配在途','可订购库存','B仓(商)京东自营渠道采购在途库存','B仓(商)京东自营渠道现货库存','采购在途数量','滞销库存件数','不动销库存件数','长库龄数量','91-120天库存数量','121-150天库存数量','151-180天库存数量','181-360天库存数量','1年以上库存数量','昨日出库商品件数','近7日出库商品件数','近14日出库商品件数','近28日出库商品件数','近30日出库商品件数','近60日出库商品件数','近90日出库商品件数','月至今出库商品件数','昨日收货地商品件数','近7日收货地商品件数','近14日收货地商品件数','近28日收货地商品件数','近30日收货地商品件数','近60日收货地商品件数','近90日收货地商品件数','月至今收货地商品件数','昨日采购入库件数','近7日采购入库件数','近14日采购入库件数','近28日采购入库件数','近30日采购入库件数','月至今采购入库件数'];
+function sampleInvSiyun(){
+  const H=INV_SIYUN_H;
+  const mk=()=>H.map(()=>'');
+  const today=()=>{ const t=new Date(); return `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`; };
+  const set=(r,k,v)=>{ const i=H.indexOf(k); if(i>=0) r[i]=v; };
+  const r1=mk();
+  set(r1,'时间',today()); set(r1,'商品名称','丝蕴洗发水修护型400ml'); set(r1,'SKU','SKU-SIYUN-001'); set(r1,'品牌','丝蕴'); set(r1,'一级类目','个护'); set(r1,'二级类目','洗护清洁'); set(r1,'三级类目','洗发水'); set(r1,'店铺名称','丝蕴官方旗舰店'); set(r1,'供应商简码','S-SY'); set(r1,'供应商名称','丝蕴供应链有限公司'); set(r1,'是否厂直','否'); set(r1,'上下柜状态','上柜'); set(r1,'商品价格',39.9); set(r1,'全国采购价',25.5); set(r1,'现货库存',5600); set(r1,'内配在途',300); set(r1,'可订购库存',5400); set(r1,'采购在途数量',1200); set(r1,'滞销库存件数',120); set(r1,'长库龄数量',60); set(r1,'昨日出库商品件数',180); set(r1,'近7日出库商品件数',1200); set(r1,'近14日出库商品件数',2400); set(r1,'近28日出库商品件数',4800); set(r1,'近30日出库商品件数',5100); set(r1,'近60日出库商品件数',9800); set(r1,'近90日出库商品件数',14200); set(r1,'月至今出库商品件数',5100); set(r1,'昨日收货地商品件数',200); set(r1,'近7日收货地商品件数',1300); set(r1,'近14日收货地商品件数',2600); set(r1,'近28日收货地商品件数',5200); set(r1,'近30日收货地商品件数',5200); set(r1,'近60日收货地商品件数',10000); set(r1,'近90日收货地商品件数',14500); set(r1,'月至今收货地商品件数',5200); set(r1,'昨日采购入库件数',150); set(r1,'近7日采购入库件数',900); set(r1,'近14日采购入库件数',1800); set(r1,'近28日采购入库件数',3600); set(r1,'近30日采购入库件数',3600); set(r1,'月至今采购入库件数',3600);
+  const r2=mk();
+  set(r2,'时间',today()); set(r2,'商品名称','丝蕴沐浴露滋润型500ml'); set(r2,'SKU','SKU-SIYUN-002'); set(r2,'品牌','丝蕴'); set(r2,'一级类目','个护'); set(r2,'二级类目','洗护清洁'); set(r2,'三级类目','沐浴露'); set(r2,'店铺名称','丝蕴官方旗舰店'); set(r2,'供应商简码','S-SY'); set(r2,'供应商名称','丝蕴供应链有限公司'); set(r2,'是否厂直','否'); set(r2,'上下柜状态','上柜'); set(r2,'商品价格',29.9); set(r2,'全国采购价',18.0); set(r2,'现货库存',4200); set(r2,'可订购库存',4000); set(r2,'采购在途数量',800); set(r2,'昨日出库商品件数',120); set(r2,'近7日出库商品件数',800); set(r2,'近14日出库商品件数',1600); set(r2,'近28日出库商品件数',3200); set(r2,'近30日出库商品件数',3400); set(r2,'近60日出库商品件数',6500); set(r2,'近90日出库商品件数',9100); set(r2,'月至今出库商品件数',3400); set(r2,'昨日收货地商品件数',130); set(r2,'近7日收货地商品件数',880); set(r2,'近14日收货地商品件数',1700); set(r2,'近28日收货地商品件数',3500); set(r2,'近30日收货地商品件数',3500); set(r2,'近60日收货地商品件数',6900); set(r2,'近90日收货地商品件数',9800); set(r2,'月至今收货地商品件数',3500); set(r2,'昨日采购入库件数',100); set(r2,'近7日采购入库件数',600); set(r2,'近14日采购入库件数',1200); set(r2,'近28日采购入库件数',2400); set(r2,'近30日采购入库件数',2400); set(r2,'月至今采购入库件数',2400);
+  return [H.join('\t')].concat([r1,r2].map(r=>r.join('\t'))).join('\n');
+}
+const invSiyunTplBtn=$('#invSiyunTplBtn'); if(invSiyunTplBtn) invSiyunTplBtn.addEventListener('click',()=>{
+  const H=INV_SIYUN_H;
+  const blank=()=>H.map(()=>'');
+  const t=new Date(); const d=`${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;
+  const r1=blank(); const set=(k,v)=>{ const i=H.indexOf(k); if(i>=0) r1[i]=v; };
+  set('时间',d); set('商品名称','丝蕴洗发水修护型400ml'); set('SKU','SKU-SIYUN-001'); set('品牌','丝蕴'); set('一级类目','个护'); set('二级类目','洗护清洁'); set('三级类目','洗发水'); set('店铺名称','丝蕴官方旗舰店'); set('供应商简码','S-SY'); set('供应商名称','丝蕴供应链有限公司'); set('是否厂直','否'); set('上下柜状态','上柜'); set('商品价格',39.9); set('全国采购价',25.5); set('现货库存',5600); set('内配在途',300); set('可订购库存',5400); set('采购在途数量',1200); set('滞销库存件数',120); set('长库龄数量',60); set('昨日出库商品件数',180); set('近7日出库商品件数',1200); set('近14日出库商品件数',2400); set('近28日出库商品件数',4800); set('近30日出库商品件数',5100); set('近60日出库商品件数',9800); set('近90日出库商品件数',14200); set('月至今出库商品件数',5100); set('昨日收货地商品件数',200); set('近7日收货地商品件数',1300); set('近14日收货地商品件数',2600); set('近28日收货地商品件数',5200); set('近30日收货地商品件数',5200); set('近60日收货地商品件数',10000); set('近90日收货地商品件数',14500); set('月至今收货地商品件数',5200); set('昨日采购入库件数',150); set('近7日采购入库件数',900); set('近14日采购入库件数',1800); set('近28日采购入库件数',3600); set('近30日采购入库件数',3600); set('月至今采购入库件数',3600);
+  const r2=blank(); set('时间',d); set('商品名称','丝蕴沐浴露滋润型500ml'); set('SKU','SKU-SIYUN-002'); set('品牌','丝蕴'); set('一级类目','个护'); set('二级类目','洗护清洁'); set('三级类目','沐浴露'); set('店铺名称','丝蕴官方旗舰店'); set('供应商简码','S-SY'); set('供应商名称','丝蕴供应链有限公司'); set('是否厂直','否'); set('上下柜状态','上柜'); set('商品价格',29.9); set('全国采购价',18.0); set('现货库存',4200); set('可订购库存',4000); set('采购在途数量',800); set('昨日出库商品件数',120); set('近7日出库商品件数',800); set('近14日出库商品件数',1600); set('近28日出库商品件数',3200); set('近30日出库商品件数',3400); set('近60日出库商品件数',6500); set('近90日出库商品件数',9100); set('月至今出库商品件数',3400); set('昨日收货地商品件数',130); set('近7日收货地商品件数',880); set('近14日收货地商品件数',1700); set('近28日收货地商品件数',3500); set('近30日收货地商品件数',3500); set('近60日收货地商品件数',6900); set('近90日收货地商品件数',9800); set('月至今收货地商品件数',3500); set('昨日采购入库件数',100); set('近7日采购入库件数',600); set('近14日采购入库件数',1200); set('近28日采购入库件数',2400); set('近30日采购入库件数',2400); set('月至今采购入库件数',2400);
+  const rows=[H, r1, r2, blank(), blank()];
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=H.map(()=>({wch:12}));
+  const wsHelp=XLSX.utils.aoa_to_sheet([
+    ['列','说明','示例'],
+    ['时间','库存快照日期（每行=某天某SKU的库存快照）', d],
+    ['品牌','品牌名（用于按品牌归户）','丝蕴'],
+    ['全国采购价','全国采购价（金额）',25.5],
+    ['现货库存 / 可订购库存','现货库存件数 / 可订购库存件数','5600 / 5400'],
+    ['近7/14/30日出库商品件数','近N日出库商品件数','1200 / 2400 / 5100'],
+    ['采购在途数量','采购在途数量',1200],
+    ['长库龄数量 / 滞销库存件数','长库龄件数 / 滞销件数','60 / 120'],
+    ['说明','逐行录入，列名自动识别，缺列不报错；该数据独立录入、独立存储，与 2.7 库存明细(全量列)互不覆盖。','—']
+  ]);
+  wsHelp['!cols']=[{wch:20},{wch:52},{wch:22}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '库存明细(丝蕴)');
+  XLSX.utils.book_append_sheet(wb, wsHelp, '填写说明');
+  const wbout=XLSX.write(wb,{bookType:'xlsx',type:'array'});
+  const blob=new Blob([wbout],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='库存明细(丝蕴)填写模板.xlsx'; a.click();
+  toast('已下载 Excel 模板（.xlsx，含「库存明细(丝蕴)」+「填写说明」两个 Sheet）');
+});
+
 // 下载采购单填写模板（真实 .xlsx：模板2 采购单 全量列，含示例行与空行，附填写说明表）
 const poTplBtn=$('#poTplBtn'); if(poTplBtn) poTplBtn.addEventListener('click',()=>{
   const t=new Date(); const y=t.getFullYear(), m=String(t.getMonth()+1).padStart(2,'0');
@@ -3412,10 +3484,10 @@ function setupFile(id,key){ const inp=$(id); const ta=()=>{ const t=$('#'+key+'I
   }catch(err){ toast('Excel解析失败：'+(err.name||'Error')+' - '+err.message+'｜若已改过代码，请重新打开本页(Cmd+Shift+R)后再试', true); }
 }); }
 function loadScript(src){ return new Promise((res,rej)=>{ const s=document.createElement('script'); s.src=src; s.onload=res; s.onerror=()=>rej(new Error('CDN加载失败')); document.head.appendChild(s); }); }
-setupFile('#salesFile','sales'); setupFile('#invFile','inv'); setupFile('#jztFile','jzt'); setupFile('#tgtFile','tgt'); setupFile('#ganttFile','gantt'); setupFile('#ppFile','pp'); setupFile('#poFile','po'); setupFile('#srFile','sr'); setupFile('#awFile','aw'); setupFile('#invFullFile','invFull'); setupFile('#chaohuFile','chaohu');
+setupFile('#salesFile','sales'); setupFile('#invFile','inv'); setupFile('#jztFile','jzt'); setupFile('#tgtFile','tgt'); setupFile('#ganttFile','gantt'); setupFile('#ppFile','pp'); setupFile('#poFile','po'); setupFile('#srFile','sr'); setupFile('#awFile','aw'); setupFile('#invFullFile','invFull'); setupFile('#invSiyunFile','invSiyun'); setupFile('#chaohuFile','chaohu');
 
-$('#resetBtn').addEventListener('click',()=>{ $('#salesInput').value=sampleSales(); $('#invInput').value=sampleInv(); $('#jztInput').value=sampleJzt(); $('#tgtInput').value=sampleTargets(); $('#ganttInput').value=sampleGantt(); $('#ppInput').value=samplePurchase(); $('#poInput').value=samplePurchaseOrder(); $('#srInput').value=sampleSpotRate(); $('#awInput').value=sampleAgingWarn(); $('#invFullInput').value=sampleInvFull(); $('#chaohuInput').value=sampleChaohu(); readInputs('replace'); syncBrandUI(); toast('已恢复示例数据（写入品牌「'+STATE.currentBrand+'」，历史已清空，重新计算）'); });
-$('#clearBtn').addEventListener('click',()=>{ const bn=STATE.currentBrand; if(confirm('确认清空品牌「'+bn+'」的全部数据？（甘特图与事项除外）')){ const b=B(); b.sales=[];b.inventory=[];b.inv_full=[];b.chaohu=[];b.jzt=[];b.targets=[];b.purchase=[];b.purchase_order=[];b.spot_rate=[];b.aging_warn=[]; b._raw={sales:'',inventory:'',inv_full:'',chaohu:'',jzt:'',targets:'',purchase:'',purchase_order:'',spot_rate:'',aging_warn:''}; b.todo=freshTodo(); $('#salesInput').value='';$('#invInput').value='';$('#invFullInput').value='';$('#chaohuInput').value='';$('#jztInput').value='';$('#tgtInput').value='';$('#ppInput').value='';$('#poInput').value='';$('#srInput').value='';$('#awInput').value=''; syncBrandUI(); readInputs('replace', true); saveState(); renderAll(); saveToService(); setupTodoAll(); toast('已清空品牌「'+bn+'」的数据'); } });
+$('#resetBtn').addEventListener('click',()=>{ $('#salesInput').value=sampleSales(); $('#invInput').value=sampleInv(); $('#jztInput').value=sampleJzt(); $('#tgtInput').value=sampleTargets(); $('#ganttInput').value=sampleGantt(); $('#ppInput').value=samplePurchase(); $('#poInput').value=samplePurchaseOrder(); $('#srInput').value=sampleSpotRate(); $('#awInput').value=sampleAgingWarn(); $('#invFullInput').value=sampleInvFull(); $('#invSiyunInput').value=sampleInvSiyun(); $('#chaohuInput').value=sampleChaohu(); readInputs('replace'); syncBrandUI(); toast('已恢复示例数据（写入品牌「'+STATE.currentBrand+'」，历史已清空，重新计算）'); });
+$('#clearBtn').addEventListener('click',()=>{ const bn=STATE.currentBrand; if(confirm('确认清空品牌「'+bn+'」的全部数据？（甘特图与事项除外）')){ const b=B(); b.sales=[];b.inventory=[];b.inv_full=[];b.inv_siyun=[];b.chaohu=[];b.jzt=[];b.targets=[];b.purchase=[];b.purchase_order=[];b.spot_rate=[];b.aging_warn=[]; b._raw={sales:'',inventory:'',inv_full:'',inv_siyun:'',chaohu:'',jzt:'',targets:'',purchase:'',purchase_order:'',spot_rate:'',aging_warn:''}; b.todo=freshTodo(); $('#salesInput').value='';$('#invInput').value='';$('#invFullInput').value='';$('#invSiyunInput').value='';$('#chaohuInput').value='';$('#jztInput').value='';$('#tgtInput').value='';$('#ppInput').value='';$('#poInput').value='';$('#srInput').value='';$('#awInput').value=''; syncBrandUI(); readInputs('replace', true); saveState(); renderAll(); saveToService(); setupTodoAll(); toast('已清空品牌「'+bn+'」的数据'); } });
 // 导出数据包：把完整 STATE（含解析结果与原始输入）存成 JSON 文件，刷新/换机后可「导入数据包」还原
 $('#exportBtn').addEventListener('click',()=>{
   const pkg={ version:3, exportedAt:new Date().toISOString(), state:STATE };
@@ -3532,8 +3604,8 @@ function normalizeState(st){
     if(st.brands['麦维他'] && !st.brands['麦维他自营']) st.brands['麦维他自营']=st.brands['麦维他'];
     BRANDS.forEach(b=>{ const src=st.brands[b]||{}; const dst=out.brands[b];
       dst.sales=Array.isArray(src.sales)?src.sales:[]; dst.inventory=Array.isArray(src.inventory)?src.inventory:[];
-      dst.purchase=Array.isArray(src.purchase)?src.purchase:[]; dst.chaohu=Array.isArray(src.chaohu)?src.chaohu:[]; dst.purchase_order=Array.isArray(src.purchase_order)?src.purchase_order:[]; dst.spot_rate=Array.isArray(src.spot_rate)?src.spot_rate:[]; dst.aging_warn=Array.isArray(src.aging_warn)?src.aging_warn:[]; dst.inv_full=Array.isArray(src.inv_full)?src.inv_full:[]; dst.jzt=Array.isArray(src.jzt)?src.jzt:[]; dst.targets=Array.isArray(src.targets)?src.targets:[];
-      dst._raw=Object.assign({sales:'',inventory:'',inv_full:'',chaohu:'',jzt:'',targets:'',purchase:'',purchase_order:'',spot_rate:'',aging_warn:''}, src._raw||{});
+      dst.purchase=Array.isArray(src.purchase)?src.purchase:[]; dst.chaohu=Array.isArray(src.chaohu)?src.chaohu:[]; dst.purchase_order=Array.isArray(src.purchase_order)?src.purchase_order:[]; dst.spot_rate=Array.isArray(src.spot_rate)?src.spot_rate:[]; dst.aging_warn=Array.isArray(src.aging_warn)?src.aging_warn:[]; dst.inv_full=Array.isArray(src.inv_full)?src.inv_full:[]; dst.inv_siyun=Array.isArray(src.inv_siyun)?src.inv_siyun:[]; dst.jzt=Array.isArray(src.jzt)?src.jzt:[]; dst.targets=Array.isArray(src.targets)?src.targets:[];
+      dst._raw=Object.assign({sales:'',inventory:'',inv_full:'',inv_siyun:'',chaohu:'',jzt:'',targets:'',purchase:'',purchase_order:'',spot_rate:'',aging_warn:''}, src._raw||{});
       // 反向同步：若 _raw.targets 缺失（旧数据/历史 bug 导致），用已解析的 targets 数组回填，确保清除/重建时有正确文本来源、不会丢目标
       if(!dst._raw.targets||!dst._raw.targets.trim()) dst._raw.targets=targetRowsToText(dst.targets);
       dst.posInput=Object.assign({}, src.posInput||{}); // 和路雪：达成明细 POS 实际前台录入值（按日期）
@@ -3541,8 +3613,8 @@ function normalizeState(st){
   } else {
     const lij=out.brands['李锦记']; const oraw=st._raw||{};
     lij.sales=Array.isArray(st.sales)?st.sales:[]; lij.inventory=Array.isArray(st.inventory)?st.inventory:[];
-    lij.purchase=Array.isArray(st.purchase)?st.purchase:[]; lij.chaohu=Array.isArray(st.chaohu)?st.chaohu:[]; lij.purchase_order=Array.isArray(st.purchase_order)?st.purchase_order:[]; lij.spot_rate=Array.isArray(st.spot_rate)?st.spot_rate:[]; lij.aging_warn=Array.isArray(st.aging_warn)?st.aging_warn:[]; lij.inv_full=Array.isArray(st.inv_full)?st.inv_full:[]; lij.jzt=Array.isArray(st.jzt)?st.jzt:[]; lij.targets=Array.isArray(st.targets)?st.targets:[];
-    lij._raw={ sales:oraw.sales||'', inventory:oraw.inventory||'', inv_full:oraw.inv_full||'', chaohu:oraw.chaohu||'', jzt:oraw.jzt||'', targets:oraw.targets||'', purchase:oraw.purchase||'', purchase_order:oraw.purchase_order||'', spot_rate:oraw.spot_rate||'', aging_warn:oraw.aging_warn||'' };
+    lij.purchase=Array.isArray(st.purchase)?st.purchase:[]; lij.chaohu=Array.isArray(st.chaohu)?st.chaohu:[]; lij.purchase_order=Array.isArray(st.purchase_order)?st.purchase_order:[]; lij.spot_rate=Array.isArray(st.spot_rate)?st.spot_rate:[]; lij.aging_warn=Array.isArray(st.aging_warn)?st.aging_warn:[]; lij.inv_full=Array.isArray(st.inv_full)?st.inv_full:[]; lij.inv_siyun=Array.isArray(st.inv_siyun)?st.inv_siyun:[]; lij.jzt=Array.isArray(st.jzt)?st.jzt:[]; lij.targets=Array.isArray(st.targets)?st.targets:[];
+    lij._raw={ sales:oraw.sales||'', inventory:oraw.inventory||'', inv_full:oraw.inv_full||'', inv_siyun:oraw.inv_siyun||'', chaohu:oraw.chaohu||'', jzt:oraw.jzt||'', targets:oraw.targets||'', purchase:oraw.purchase||'', purchase_order:oraw.purchase_order||'', spot_rate:oraw.spot_rate||'', aging_warn:oraw.aging_warn||'' };
     lij.todo=st.todo||freshTodo(); out.ganttRaw=oraw.gantt||'';
   }
   out.gantt=Array.isArray(st.gantt)?st.gantt:[];
@@ -3742,9 +3814,9 @@ function brandFilePath(id, b){ return 'dashboards/'+id+'__'+encodeURIComponent(b
 function mergeBrandData(inc, cloud){
   if(!inc) return cloud||{}; if(!cloud) return inc;
   var out=JSON.parse(JSON.stringify(inc));
-  ['sales','inventory','purchase','purchase_order','spot_rate','aging_warn','inv_full','chaohu','jzt','targets'].forEach(function(k){ if(isEmptyVal(out[k]) && !isEmptyVal(cloud[k])) out[k]=JSON.parse(JSON.stringify(cloud[k])); });
+  ['sales','inventory','purchase','purchase_order','spot_rate','aging_warn','inv_full','inv_siyun','chaohu','jzt','targets'].forEach(function(k){ if(isEmptyVal(out[k]) && !isEmptyVal(cloud[k])) out[k]=JSON.parse(JSON.stringify(cloud[k])); });
   out._raw=out._raw||{};
-  ['sales','inventory','jzt','targets','purchase','purchase_order','spot_rate','aging_warn','inv_full','chaohu'].forEach(function(k){ if(isEmptyVal(out._raw[k]) && !isEmptyVal(cloud._raw&&cloud._raw[k])) out._raw[k]=cloud._raw[k]; });
+  ['sales','inventory','jzt','targets','purchase','purchase_order','spot_rate','aging_warn','inv_full','inv_siyun','chaohu'].forEach(function(k){ if(isEmptyVal(out._raw[k]) && !isEmptyVal(cloud._raw&&cloud._raw[k])) out._raw[k]=cloud._raw[k]; });
   if(cloud.posInput) out.posInput=Object.assign({}, cloud.posInput, out.posInput||{});
   return out;
 }
@@ -3752,11 +3824,11 @@ function extractBrandData(b){
   if(!b) return freshBrand();
   return {
     sales:Array.isArray(b.sales)?b.sales:[], inventory:Array.isArray(b.inventory)?b.inventory:[],
-    inv_full:Array.isArray(b.inv_full)?b.inv_full:[],
+    inv_full:Array.isArray(b.inv_full)?b.inv_full:[], inv_siyun:Array.isArray(b.inv_siyun)?b.inv_siyun:[],
     purchase:Array.isArray(b.purchase)?b.purchase:[], purchase_order:Array.isArray(b.purchase_order)?b.purchase_order:[],
     spot_rate:Array.isArray(b.spot_rate)?b.spot_rate:[], aging_warn:Array.isArray(b.aging_warn)?b.aging_warn:[], chaohu:Array.isArray(b.chaohu)?b.chaohu:[],
     jzt:Array.isArray(b.jzt)?b.jzt:[], targets:Array.isArray(b.targets)?b.targets:[],
-    _raw:Object.assign({sales:'',inventory:'',inv_full:'',chaohu:'',jzt:'',targets:'',purchase:'',purchase_order:'',spot_rate:'',aging_warn:''}, b._raw||{}),
+    _raw:Object.assign({sales:'',inventory:'',inv_full:'',inv_siyun:'',chaohu:'',jzt:'',targets:'',purchase:'',purchase_order:'',spot_rate:'',aging_warn:''}, b._raw||{}),
     posInput:Object.assign({}, b.posInput||{}),
     todo:b.todo||freshBrand().todo
   };
@@ -3843,7 +3915,7 @@ function isEmptyVal(v){
 // 合并两份看板 STATE（数据防丢兜底）：incoming = 本机会话 STATE，cloud = 云端最新 STATE。
 // 规则：逐品牌、逐字段，优先用 incoming 的非空值；若 incoming 为空而 cloud 有数据，则保留 cloud（防止本机 STATE 落后时整体覆盖抹掉已录入数据）。
 // 此前的 bug：只并集 posInput，导致李锦记/麦维他 的 targets 与京准通 jzt 被本机空 STATE 覆盖清空。现在对所有数据字段做深并集。
-var __JZT_FIELDS=['targets','sales','inventory','jzt','purchase','purchase_order','spot_rate','aging_warn','inv_full','chaohu','goals'];
+var __JZT_FIELDS=['targets','sales','inventory','jzt','purchase','purchase_order','spot_rate','aging_warn','inv_full','inv_siyun','chaohu','goals'];
 function mergeBoardState(incoming, cloud){
   if(!incoming||!incoming.brands||!cloud||!cloud.brands) return incoming;
   var out=JSON.parse(JSON.stringify(incoming));
@@ -3852,7 +3924,7 @@ function mergeBoardState(incoming, cloud){
     if(!out.brands[b]){ out.brands[b]=JSON.parse(JSON.stringify(cb)); continue; } // 云端独有品牌：整段保留
     var ob=out.brands[b];
     // 顶层数据数组：targets / sales / inventory 等
-    ['targets','sales','inventory','inv_full'].forEach(function(k){
+    ['targets','sales','inventory','inv_full','inv_siyun'].forEach(function(k){
       if(isEmptyVal(ob[k]) && !isEmptyVal(cb[k])) ob[k]=JSON.parse(JSON.stringify(cb[k]));
     });
     // _raw 文本字段逐列：targets / sales / jzt / inventory / purchase ...
@@ -3895,7 +3967,7 @@ function hydrateFromState(st){
 // 把当前品牌的原始输入回填到数据输入区文本框（供查看/编辑）；甘特图回填到共享框
 function fillInputsForCurrentBrand(){
   const b=B();
-  $('#invFullInput').value=b._raw.inv_full||''; $('#salesInput').value=b._raw.sales||''; $('#invInput').value=b._raw.inventory||''; $('#jztInput').value=b._raw.jzt||'';
+  $('#invFullInput').value=b._raw.inv_full||''; $('#invSiyunInput').value=b._raw.inv_siyun||''; $('#salesInput').value=b._raw.sales||''; $('#invInput').value=b._raw.inventory||''; $('#jztInput').value=b._raw.jzt||'';
   $('#tgtInput').value=(b._raw.targets&&b._raw.targets.trim())?b._raw.targets:targetRowsToText(b.targets||[]); $('#ppInput').value=b._raw.purchase||''; $('#poInput').value=b._raw.purchase_order||''; $('#srInput').value=b._raw.spot_rate||''; $('#awInput').value=b._raw.aging_warn||''; $('#chaohuInput').value=b._raw.chaohu||''; $('#ganttInput').value=STATE.ganttRaw||'';
   // 同步品牌栏与各输入区品牌选择器为当前品牌
   syncBrandUI();
@@ -4172,7 +4244,7 @@ init();
       for(var bb in found.state.brands){
         if(!STATE.brands[bb]){ STATE.brands[bb]=found.state.brands[bb]; continue; }
         var ob=STATE.brands[bb], cb=found.state.brands[bb];
-        ['targets','sales','inventory','inv_full'].forEach(function(k){ if(isEmptyVal(ob[k])&&!isEmptyVal(cb[k])) ob[k]=cb[k]; });
+        ['targets','sales','inventory','inv_full','inv_siyun'].forEach(function(k){ if(isEmptyVal(ob[k])&&!isEmptyVal(cb[k])) ob[k]=cb[k]; });
         if(cb._raw){ ob._raw=ob._raw||{}; for(var k2 in cb._raw){ if(isEmptyVal(ob._raw[k2])&&!isEmptyVal(cb._raw[k2])) ob._raw[k2]=cb._raw[k2]; } }
         if(cb.posInput){ ob.posInput=Object.assign({}, cb.posInput, ob.posInput||{}); }
       }
