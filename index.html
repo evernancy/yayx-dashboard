@@ -402,7 +402,30 @@
       </details>
 
       <details>
-        <summary>2.4 · 现货率数据</summary>
+        <summary>2.4 · 巢湖库存数据</summary>
+        <p class="hint">表头：<b>时间&#9;仓库&#9;货主&#9;商家编码&#9;货品名称&#9;条形码&#9;品牌&#9;生产日期&#9;保质期&#9;有效期&#9;距离到期天数&#9;是否正品&#9;可发库存&#9;黄/红/黑/绿货&#9;临期预警&#9;采购价&#9;可发金额&#9;1/2效期&#9;库内周转45天允收期&#9;紧急临期时间&#9;最后入仓时间&#9;品牌采购在途</b>。逐行录入（每行一个货品在某仓的快照），列名自动识别，缺列留空。<b>该数据独立录入、独立存储</b>，与 2.1 库存周转数据互不覆盖；粘贴含表头的数据后点「应用并更新看板」即保存。点击「填入模板」可自动生成完整表头，点「下载填写模板」可导出 .xlsx。</p>
+        <div class="row">
+          <span class="muted" style="font-size:12px">品牌</span>
+          <select id="brand_chaohu" class="secBrand" data-sec="chaohu" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px">
+            <option value="李锦记">李锦记</option>
+            <option value="麦维他自营">麦维他自营</option>
+            <option value="麦维他POP">麦维他POP</option>
+            <option value="丝蕴">丝蕴</option>
+            <option value="和路雪">和路雪</option>
+            <option value="家乐">家乐</option>
+            <option value="联合利华">联合利华</option>
+          </select>
+          <label class="filelabel">上传文件<input type="file" id="chaohuFile" accept=".csv,.xlsx,.xls" hidden></label>
+          <button class="btn2 ghost" data-fill="chaohu">填入模板</button>
+          <button class="btn2 ghost" id="chaohuTplBtn">下载填写模板</button>
+          <button class="btn2 ghost clearBtn" data-which="chaohu">清除历史</button>
+        </div>
+        <textarea id="chaohuInput" placeholder="时间&#9;仓库&#9;货主&#9;商家编码&#9;货品名称&#9;条形码&#9;品牌&#9;生产日期&#9;保质期&#9;有效期&#9;距离到期天数&#9;是否正品&#9;可发库存&#9;黄/红/黑/绿货&#9;临期预警&#9;采购价&#9;可发金额&#9;1/2效期&#9;库内周转45天允收期&#9;紧急临期时间&#9;最后入仓时间&#9;品牌采购在途&#9;（逐行录入；缺列留空，列名自动识别）" style="min-height:120px"></textarea>
+        <div class="diag" id="diagChaohu"></div>
+      </details>
+
+      <details>
+        <summary>2.5 · 现货率数据</summary>
         <p class="hint">表头：<b>PV现货率&#9;实库现货率</b>。每日一行（日期 + 两列比率，0~1 小数或百分比均可，列名自动识别，缺列留空）。<b>该数据独立录入、独立存储，前台按天展示；优先于库存明细里的同名列。</b>同一「日期」重复录入即覆盖更新。</p>
         <div class="row">
           <span class="muted" style="font-size:12px">品牌</span>
@@ -425,7 +448,7 @@
       </details>
 
       <details>
-        <summary>2.5 · 长库龄预警金额数据</summary>
+        <summary>2.6 · 长库龄预警金额数据</summary>
         <p class="hint">表头：<b>60-90天长库龄预警金额&#9;90天以上长库龄金额&#9;60-90天长库龄预警金额（基调）&#9;60-90天长库龄预警金额（复调）&#9;90天以上长库龄金额（基调）&#9;90天以上长库龄金额（复调）</b>。每日一行，列名自动识别，缺列留空。<b>该数据独立录入、独立存储，前台按天展示；优先于库存明细里的同名列。</b>同一「日期」重复录入即覆盖更新。</p>
         <div class="row">
           <span class="muted" style="font-size:12px">品牌</span>
@@ -448,7 +471,7 @@
       </details>
 
       <details>
-        <summary>2.6 · 库存明细（全量列·含全国及城市仓）</summary>
+        <summary>2.7 · 库存明细（全量列·含全国及城市仓）</summary>
         <p class="hint">本模板为供应链「库存明细·全量列」导出：含 时间 / 商品名称 / SKU / 品牌 / 一级~三级类目 / 店铺名称 / 供应商 / 全国采购价 … 前缀列，外加「全国」与各城市/仓（上海、北京、成都…林芝等约 80 个）的库存·出入库·厂直·VMI·采购·退供应商等指标块。<b>列名自动识别，缺列留空</b>；每行 = 某天某个 SKU 的全量快照。<b>该数据独立录入、独立存储</b>（与 2.1 库存周转数据互不覆盖）；粘贴含表头的数据后点「应用并更新看板」即保存。点击「填入模板」可自动生成完整表头，点「下载填写模板」可导出 .xlsx。</p>
         <div class="row">
           <span class="muted" style="font-size:12px">品牌</span>
@@ -639,7 +662,7 @@ const esc = s => String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt
 const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,''); const n=parseFloat(s); return isNaN(n)?0:n; };
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-26-fix32-invfull-tpl';
+const APP_VERSION = '2026-08-26-fix33-chaohu-inv';
 /* 列名同义词映射 */
 const ALIAS = {
   date:['日期','时间','date','day','dt'],
@@ -1113,7 +1136,7 @@ function sampleAgingWarn(){return `日期\t60-90天长库龄预警金额\t90天�
 const STORE_KEY='ecom_dashboard_v2';
 // 多品牌：每个品牌独立存储 销售/库存周转/浮码/京准通/目标/待办/原始输入；甘特图为三模块共享（不按品牌拆分）
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
-function freshBrand(){ return { sales:[], inventory:[], inv_full:[], purchase:[], purchase_order:[], spot_rate:[], aging_warn:[], jzt:[], targets:[], posInput:{}, _raw:{sales:'',inventory:'',inv_full:'',jzt:'',targets:'',purchase:'',purchase_order:'',spot_rate:'',aging_warn:''}, todo:freshTodo() }; }
+function freshBrand(){ return { sales:[], inventory:[], inv_full:[], chaohu:[], purchase:[], purchase_order:[], spot_rate:[], aging_warn:[], jzt:[], targets:[], posInput:{}, _raw:{sales:'',inventory:'',inv_full:'',chaohu:'',jzt:'',targets:'',purchase:'',purchase_order:'',spot_rate:'',aging_warn:''}, todo:freshTodo() }; }
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 let STATE=emptyState();
 let invAsOf=null; // 库存周转「查看日期」：null=最新一天
@@ -2266,9 +2289,9 @@ function findDateCol(header, which){
 }
 // date 是否落在 [d, ed] 内（ed 空=只看 d 当天）
 function dateInRange(date, d, ed){ if(!d) return false; if(!ed) return d===date; return date>=d && date<=ed; }
-const CLEAR_NAME={sales:'销售',inventory:'库存周转',inv_full:'库存明细(全量列)',jzt:'京准通',targets:'目标',gantt:'甘特图',purchase:'浮码',purchase_order:'采购单',spot_rate:'现货率',aging_warn:'长库龄预警'};
+const CLEAR_NAME={sales:'销售',inventory:'库存周转',inv_full:'库存明细(全量列)',chaohu:'巢湖库存数据',jzt:'京准通',targets:'目标',gantt:'甘特图',purchase:'浮码',purchase_order:'采购单',spot_rate:'现货率',aging_warn:'长库龄预警'};
 let cmWhich=null;
-const CLEAR_EL={sales:'#salesInput',inventory:'#invInput',inv_full:'#invFullInput',jzt:'#jztInput',targets:'#tgtInput',gantt:'#ganttInput',purchase:'#ppInput',purchase_order:'#poInput',spot_rate:'#srInput',aging_warn:'#awInput'};
+const CLEAR_EL={sales:'#salesInput',inventory:'#invInput',inv_full:'#invFullInput',chaohu:'#chaohuInput',jzt:'#jztInput',targets:'#tgtInput',gantt:'#ganttInput',purchase:'#ppInput',purchase_order:'#poInput',spot_rate:'#srInput',aging_warn:'#awInput'};
 // 目标「类型」列下标
 function findTypeCol(header){
   const cells=String(header||'').split(/\t|,/).map(s=>String(s||'').trim().toLowerCase());
@@ -2445,6 +2468,7 @@ function reparseBrand(brand){
   b.spot_rate=parseTable(b._raw.spot_rate||'');
   b.aging_warn=parseTable(b._raw.aging_warn||'');
   b.inv_full=parseTable(b._raw.inv_full||'');
+  b.chaohu=parseTable(b._raw.chaohu||'');
   b.targets=tgt;
 }
 // 从 _raw 重新派生已解析数组（销售/库存/京准通/采购单/现货率/长库龄/目标）。
@@ -2464,6 +2488,7 @@ function reparseObj(b){
   b.spot_rate=parseTable(b._raw.spot_rate||'');
   b.aging_warn=parseTable(b._raw.aging_warn||'');
   b.inv_full=parseTable(b._raw.inv_full||'');
+  b.chaohu=parseTable(b._raw.chaohu||'');
   b.targets=tgt;
 }
 // 全部品牌清除：遍历每个品牌，对其 _raw[which] 应用 filter 后重建
@@ -2608,7 +2633,7 @@ function syncBrandUI(){
     p.classList.toggle('active', currentView==='lijx' && active);
   });
   // 输入区选择器：麦维他渠道保持当前渠道（自营/POP），其余品牌选自身
-  ['sales','inventory','inv_full','purchase','purchase_order','spot_rate','aging_warn','jzt','targets'].forEach(w=>{ const sel=document.getElementById('brand_'+w); if(sel) sel.value=STATE.currentBrand; });
+  ['sales','inventory','inv_full','chaohu','purchase','purchase_order','spot_rate','aging_warn','jzt','targets'].forEach(w=>{ const sel=document.getElementById('brand_'+w); if(sel) sel.value=STATE.currentBrand; });
 }
 function switchBrand(name){
   // 「麦维他」为顶层品牌 tab，实际数据按渠道存于「麦维他自营」（默认渠道）
@@ -2625,8 +2650,8 @@ function switchBrand(name){
 // 数据输入区：某个 section 切换品牌 → 仅将该 section 的文本框填充为目标品牌的原始输入（不影响其他 section）
 $$('.secBrand').forEach(sel=>sel.addEventListener('change',()=>{
   const w=sel.dataset.sec, b=STATE.brands[sel.value]; if(!b) return;
-  const TA_ID={sales:'salesInput',inventory:'invInput',inv_full:'invFullInput',purchase:'ppInput',purchase_order:'poInput',spot_rate:'srInput',aging_warn:'awInput',jzt:'jztInput',targets:'tgtInput'};
-  const DIAG_KEY={sales:'Sales',inventory:'Inv',inv_full:'InvFull',purchase:'Pp',purchase_order:'Po',spot_rate:'Sr',aging_warn:'Aw',jzt:'Jzt',targets:'Targets'};
+  const TA_ID={sales:'salesInput',inventory:'invInput',inv_full:'invFullInput',chaohu:'chaohuInput',purchase:'ppInput',purchase_order:'poInput',spot_rate:'srInput',aging_warn:'awInput',jzt:'jztInput',targets:'tgtInput'};
+  const DIAG_KEY={sales:'Sales',inventory:'Inv',inv_full:'InvFull',chaohu:'Chaohu',purchase:'Pp',purchase_order:'Po',spot_rate:'Sr',aging_warn:'Aw',jzt:'Jzt',targets:'Targets'};
   $('#'+TA_ID[w]).value=b._raw[w]||'';
   updateDiag(b._raw[w]||'', w==='targets'?parseTargets(b._raw[w]||'').length:(b[w]||[]).length, DIAG_KEY[w]);
 }));
@@ -2695,9 +2720,9 @@ function routeRawByBrand(w, cur, fallback, edited){
 
 function readInputs(mode, silent){
   mode=mode||'merge';
-  const SECTIONS=['sales','inventory','inv_full','jzt','targets','purchase','purchase_order','spot_rate','aging_warn'];
-  const TA={sales:'salesInput',inventory:'invInput',inv_full:'invFullInput',jzt:'jztInput',targets:'tgtInput',purchase:'ppInput',purchase_order:'poInput',spot_rate:'srInput',aging_warn:'awInput'};
-  const DIAG={sales:'Sales',inventory:'Inv',inv_full:'InvFull',jzt:'Jzt',targets:'Targets',purchase:'Pp',purchase_order:'Po',spot_rate:'Sr',aging_warn:'Aw'};
+  const SECTIONS=['sales','inventory','inv_full','chaohu','jzt','targets','purchase','purchase_order','spot_rate','aging_warn'];
+  const TA={sales:'salesInput',inventory:'invInput',inv_full:'invFullInput',chaohu:'chaohuInput',jzt:'jztInput',targets:'tgtInput',purchase:'ppInput',purchase_order:'poInput',spot_rate:'srInput',aging_warn:'awInput'};
+  const DIAG={sales:'Sales',inventory:'Inv',inv_full:'InvFull',chaohu:'Chaohu',jzt:'Jzt',targets:'Targets',purchase:'Pp',purchase_order:'Po',spot_rate:'Sr',aging_warn:'Aw'};
   // 每个输入框所属品牌：取对应 <select id="brand_xxx"> 的当前值（无效则回退当前查看品牌）
   const brandOf={}; const edited=new Set();
   SECTIONS.forEach(w=>{ const sel=document.getElementById('brand_'+w); const v=(sel&&sel.value)||STATE.currentBrand; brandOf[w]=(STATE.brands[v]?v:STATE.currentBrand); edited.add(brandOf[w]); });
@@ -2728,12 +2753,13 @@ function readInputs(mode, silent){
     const srIn=parseTable(b._raw.spot_rate||'');
     const awIn=parseTable(b._raw.aging_warn||'');
     const invFullIn=parseTable(b._raw.inv_full||'');
+    const chIn=parseTable(b._raw.chaohu||'');
     const tgtIn=tgt;
     // 增量上传(merge)：与已有数据按业务键合并（重复自动忽略）；全量替换(replace)：以文本框为准整组重建
     if(mode==='replace'){
-      b.sales=salesIn; b.inventory=invIn; b.inv_full=invFullIn; b.jzt=jztIn; b.targets=tgtIn; b.purchase=ppIn; b.purchase_order=poIn; b.spot_rate=srIn; b.aging_warn=awIn;
+      b.sales=salesIn; b.inventory=invIn; b.inv_full=invFullIn; b.jzt=jztIn; b.targets=tgtIn; b.purchase=ppIn; b.purchase_order=poIn; b.spot_rate=srIn; b.aging_warn=awIn; b.chaohu=chIn;
     } else {
-      const sb=b.sales.length, ib=b.inventory.length, invb=(b.inv_full||[]).length, jb=b.jzt.length, pb=b.purchase.length, pob=b.purchase_order.length, srb=(b.spot_rate||[]).length, awb=(b.aging_warn||[]).length, tb=b.targets.length;
+      const sb=b.sales.length, ib=b.inventory.length, invb=(b.inv_full||[]).length, chb=(b.chaohu||[]).length, jb=b.jzt.length, pb=b.purchase.length, pob=b.purchase_order.length, srb=(b.spot_rate||[]).length, awb=(b.aging_warn||[]).length, tb=b.targets.length;
       b.sales=mergeRows(b.sales||[], salesIn);
       b.inventory=mergeRows(b.inventory||[], invIn);
       b.jzt=mergeRows(b.jzt||[], jztIn);
@@ -2742,12 +2768,13 @@ function readInputs(mode, silent){
       b.purchase_order=mergeRows(b.purchase_order||[], poIn);
       b.spot_rate=mergeRows(b.spot_rate||[], srIn);
       b.aging_warn=mergeRows(b.aging_warn||[], awIn);
+      b.chaohu=mergeRows(b.chaohu||[], chIn);
       b.inv_full=mergeRows(b.inv_full||[], invFullIn);
-      statAdd+=(b.sales.length-sb)+(b.inventory.length-ib)+(b.inv_full.length-invb)+(b.jzt.length-jb)+(b.purchase.length-pb)+(b.purchase_order.length-pob)+(b.spot_rate.length-srb)+(b.aging_warn.length-awb)+(b.targets.length-tb);
+      statAdd+=(b.sales.length-sb)+(b.inventory.length-ib)+(b.inv_full.length-invb)+(b.chaohu.length-chb)+(b.jzt.length-jb)+(b.purchase.length-pb)+(b.purchase_order.length-pob)+(b.spot_rate.length-srb)+(b.aging_warn.length-awb)+(b.targets.length-tb);
       statDup+=Math.max(0, salesIn.length-(b.sales.length-sb)) + Math.max(0, invIn.length-(b.inventory.length-ib))
              + Math.max(0, jztIn.length-(b.jzt.length-jb)) + Math.max(0, ppIn.length-(b.purchase.length-pb))
              + Math.max(0, poIn.length-(b.purchase_order.length-pob)) + Math.max(0, srIn.length-(b.spot_rate.length-srb))
-             + Math.max(0, awIn.length-(b.aging_warn.length-awb)) + Math.max(0, invFullIn.length-(b.inv_full.length-invb)) + Math.max(0, tgtIn.length-(b.targets.length-tb));
+             + Math.max(0, awIn.length-(b.aging_warn.length-awb)) + Math.max(0, invFullIn.length-(b.inv_full.length-invb)) + Math.max(0, chIn.length-(b.chaohu.length-chb)) + Math.max(0, tgtIn.length-(b.targets.length-tb));
     }
   });
   // 甘特图重建（共享）：replace 模式清空历史只用本次数据；merge 模式增量合并
@@ -2771,17 +2798,18 @@ $('#ganttInput').addEventListener('input',()=>{ clearTimeout(deb); deb=setTimeou
 $('#ppInput').addEventListener('input',()=>{ clearTimeout(deb); deb=setTimeout(readInputs,700); });
 $('#poInput').addEventListener('input',()=>{ clearTimeout(deb); deb=setTimeout(readInputs,700); });
 $('#srInput').addEventListener('input',()=>{ clearTimeout(deb); deb=setTimeout(readInputs,700); });
+$('#chaohuInput').addEventListener('input',()=>{ clearTimeout(deb); deb=setTimeout(readInputs,700); });
 $('#awInput').addEventListener('input',()=>{ clearTimeout(deb); deb=setTimeout(readInputs,700); });
 $('#invFullInput').addEventListener('input',()=>{ clearTimeout(deb); deb=setTimeout(readInputs,700); });
 
 $$('[data-fill]').forEach(b=>{ b.addEventListener('click',()=>{
-  const map={sales:'#salesInput',inventory:'#invInput',inv_full:'#invFullInput',jzt:'#jztInput',jzt2:'#jztInput',targets:'#tgtInput',gantt:'#ganttInput',purchase:'#ppInput',purchase_order:'#poInput',spot_rate:'#srInput',aging_warn:'#awInput'};
+  const map={sales:'#salesInput',inventory:'#invInput',inv_full:'#invFullInput',chaohu:'#chaohuInput',jzt:'#jztInput',jzt2:'#jztInput',targets:'#tgtInput',gantt:'#ganttInput',purchase:'#ppInput',purchase_order:'#poInput',spot_rate:'#srInput',aging_warn:'#awInput'};
   // 销售模板按品牌区分（麦维他自营/麦维他POP 各有独立模板，李锦记/其他沿用原模板）
   const salesSrc={ '麦维他自营':sampleSalesMcv, '麦维他POP':sampleSalesPop };
   const sec=b.dataset.fill;
   let val;
   if(sec==='sales'){ const sel=document.getElementById('brand_sales'); val=(salesSrc[(sel&&sel.value)]||sampleSales)(); }
-  else { const src={inventory:sampleInv,jzt:sampleJzt,jzt2:sampleJzt2,targets:sampleTargets,gantt:sampleGantt,purchase:samplePurchase,purchase_order:samplePurchaseOrder,spot_rate:sampleSpotRate,aging_warn:sampleAgingWarn,inv_full:sampleInvFull}; val=src[sec](); }
+  else { const src={inventory:sampleInv,jzt:sampleJzt,jzt2:sampleJzt2,targets:sampleTargets,gantt:sampleGantt,purchase:samplePurchase,purchase_order:samplePurchaseOrder,spot_rate:sampleSpotRate,aging_warn:sampleAgingWarn,inv_full:sampleInvFull,chaohu:sampleChaohu}; val=src[sec](); }
   $(map[sec]).value=val;
   readInputs();
 }); });
@@ -2957,6 +2985,52 @@ const invFullTplBtn=$('#invFullTplBtn'); if(invFullTplBtn) invFullTplBtn.addEven
   const blob=new Blob([wbout],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='库存明细(全量列)填写模板.xlsx'; a.click();
   toast('已下载 Excel 模板（.xlsx，含「库存明细(全量列)」+「填写说明」两个 Sheet）');
+});
+
+// 巢湖库存数据：表头常量 + 示例生成 + 下载模板
+const CHAOHU_H=['时间','仓库','货主','商家编码','货品名称','条形码','品牌','生产日期','保质期','有效期','距离到期天数','是否正品','可发库存','黄/红/黑/绿货','临期预警','采购价','可发金额','1/2效期','库内周转45天允收期','紧急临期时间','最后入仓时间','品牌采购在途'];
+function sampleChaohu(){ return CHAOHU_H.join('\t')+'\n'+['2026-08-01','巢湖仓','李锦记','S001','李锦记蒸鱼豉油610g','6901234567890','李锦记','2026-05-01','18个月','2027-11-01',92,'是',1200,'绿货','否',18.5,22200,'否','2026-06-15','2026-07-20','2026-07-20',500].join('\t')+'\n'+['2026-08-01','巢湖仓','麦维他','S002','麦维他消化饼','6901234567891','麦维他','2026-06-01','12个月','2027-06-01',310,'是',800,'绿货','否',9.9,7920,'否','2026-07-01','2026-07-25','2026-07-25',300].join('\t'); }
+const chaohuTplBtn=$('#chaohuTplBtn'); if(chaohuTplBtn) chaohuTplBtn.addEventListener('click',()=>{
+  const t=new Date(); const y=t.getFullYear(), m=String(t.getMonth()+1).padStart(2,'0');
+  const d=n=>`${y}-${m}-${String(n).padStart(2,'0')}`;
+  const H=CHAOHU_H;
+  const blank=()=>H.map(()=>'');
+  const r1=blank();
+  r1[0]=d(1); r1[1]='巢湖仓'; r1[2]='李锦记'; r1[3]='S001'; r1[4]='李锦记蒸鱼豉油610g'; r1[5]='6901234567890'; r1[6]='李锦记'; r1[7]=d(1); r1[8]='18个月'; r1[9]='2027-11-01'; r1[10]=92; r1[11]='是'; r1[12]=1200; r1[13]='绿货'; r1[14]='否'; r1[15]=18.5; r1[16]=22200; r1[17]='否'; r1[18]='2026-06-15'; r1[19]=d(20); r1[20]=d(20); r1[21]=500;
+  const r2=blank();
+  r2[0]=d(2); r2[1]='巢湖仓'; r2[2]='麦维他'; r2[3]='S002'; r2[4]='麦维他消化饼'; r2[5]='6901234567891'; r2[6]='麦维他'; r2[7]=d(2); r2[8]='12个月'; r2[9]='2027-06-01'; r2[10]=310; r2[11]='是'; r2[12]=800; r2[13]='绿货'; r2[14]='否'; r2[15]=9.9; r2[16]=7920; r2[17]='否'; r2[18]='2026-07-01'; r2[19]=d(25); r2[20]=d(25); r2[21]=300;
+  const rows=[H, r1, r2, blank(), blank()];
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=H.map(()=>({wch:14}));
+  const wsHelp=XLSX.utils.aoa_to_sheet([
+    ['列','说明','示例'],
+    ['时间','快照日期（每行=某天某货品在巢湖仓的库存快照）','2026-08-01'],
+    ['仓库','仓库名','巢湖仓'],
+    ['货主 / 商家编码','货主与商家编码','李锦记 / S001'],
+    ['货品名称 / 条形码','货品与条形码','李锦记蒸鱼豉油610g / 6901234567890'],
+    ['品牌','品牌名','李锦记'],
+    ['生产日期 / 保质期 / 有效期','生产日期、保质期、有效期','2026-05-01 / 18个月 / 2027-11-01'],
+    ['距离到期天数','距有效期的天数','92'],
+    ['是否正品','是否正品','是'],
+    ['可发库存','可发库存件数','1200'],
+    ['黄/红/黑/绿货','货品质量分级','绿货'],
+    ['临期预警','是否临期预警','否'],
+    ['采购价 / 可发金额','采购单价与可发金额','18.5 / 22200'],
+    ['1/2效期','是否处于 1/2 效期','否'],
+    ['库内周转45天允收期','库内周转45天允收期','2026-06-15'],
+    ['紧急临期时间','紧急临期时间','2026-07-20'],
+    ['最后入仓时间','最后入仓时间','2026-07-20'],
+    ['品牌采购在途','品牌采购在途数量','500'],
+    ['说明','逐行录入，列名自动识别，缺列留空；该数据独立录入、独立存储，与库存周转数据互不覆盖。','—']
+  ]);
+  wsHelp['!cols']=[{wch:18},{wch:50},{wch:24}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '巢湖库存数据');
+  XLSX.utils.book_append_sheet(wb, wsHelp, '填写说明');
+  const wbout=XLSX.write(wb,{bookType:'xlsx',type:'array'});
+  const blob=new Blob([wbout],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='巢湖库存数据填写模板.xlsx'; a.click();
+  toast('已下载 Excel 模板（.xlsx，含「巢湖库存数据」+「填写说明」两个 Sheet）');
 });
 
 // 下载采购单填写模板（真实 .xlsx：模板2 采购单 全量列，含示例行与空行，附填写说明表）
@@ -3186,10 +3260,10 @@ function setupFile(id,key){ const inp=$(id); const ta=()=>{ const t=$('#'+key+'I
   }catch(err){ toast('Excel解析失败：'+(err.name||'Error')+' - '+err.message+'｜若已改过代码，请重新打开本页(Cmd+Shift+R)后再试', true); }
 }); }
 function loadScript(src){ return new Promise((res,rej)=>{ const s=document.createElement('script'); s.src=src; s.onload=res; s.onerror=()=>rej(new Error('CDN加载失败')); document.head.appendChild(s); }); }
-setupFile('#salesFile','sales'); setupFile('#invFile','inv'); setupFile('#jztFile','jzt'); setupFile('#tgtFile','tgt'); setupFile('#ganttFile','gantt'); setupFile('#ppFile','pp'); setupFile('#poFile','po'); setupFile('#srFile','sr'); setupFile('#awFile','aw'); setupFile('#invFullFile','invFull');
+setupFile('#salesFile','sales'); setupFile('#invFile','inv'); setupFile('#jztFile','jzt'); setupFile('#tgtFile','tgt'); setupFile('#ganttFile','gantt'); setupFile('#ppFile','pp'); setupFile('#poFile','po'); setupFile('#srFile','sr'); setupFile('#awFile','aw'); setupFile('#invFullFile','invFull'); setupFile('#chaohuFile','chaohu');
 
-$('#resetBtn').addEventListener('click',()=>{ $('#salesInput').value=sampleSales(); $('#invInput').value=sampleInv(); $('#jztInput').value=sampleJzt(); $('#tgtInput').value=sampleTargets(); $('#ganttInput').value=sampleGantt(); $('#ppInput').value=samplePurchase(); $('#poInput').value=samplePurchaseOrder(); $('#srInput').value=sampleSpotRate(); $('#awInput').value=sampleAgingWarn(); $('#invFullInput').value=sampleInvFull(); readInputs('replace'); syncBrandUI(); toast('已恢复示例数据（写入品牌「'+STATE.currentBrand+'」，历史已清空，重新计算）'); });
-$('#clearBtn').addEventListener('click',()=>{ const bn=STATE.currentBrand; if(confirm('确认清空品牌「'+bn+'」的全部数据？（甘特图与事项除外）')){ const b=B(); b.sales=[];b.inventory=[];b.inv_full=[];b.jzt=[];b.targets=[];b.purchase=[];b.purchase_order=[];b.spot_rate=[];b.aging_warn=[]; b._raw={sales:'',inventory:'',inv_full:'',jzt:'',targets:'',purchase:'',purchase_order:'',spot_rate:'',aging_warn:''}; b.todo=freshTodo(); $('#salesInput').value='';$('#invInput').value='';$('#invFullInput').value='';$('#jztInput').value='';$('#tgtInput').value='';$('#ppInput').value='';$('#poInput').value='';$('#srInput').value='';$('#awInput').value=''; syncBrandUI(); readInputs('replace', true); saveState(); renderAll(); saveToService(); setupTodoAll(); toast('已清空品牌「'+bn+'」的数据'); } });
+$('#resetBtn').addEventListener('click',()=>{ $('#salesInput').value=sampleSales(); $('#invInput').value=sampleInv(); $('#jztInput').value=sampleJzt(); $('#tgtInput').value=sampleTargets(); $('#ganttInput').value=sampleGantt(); $('#ppInput').value=samplePurchase(); $('#poInput').value=samplePurchaseOrder(); $('#srInput').value=sampleSpotRate(); $('#awInput').value=sampleAgingWarn(); $('#invFullInput').value=sampleInvFull(); $('#chaohuInput').value=sampleChaohu(); readInputs('replace'); syncBrandUI(); toast('已恢复示例数据（写入品牌「'+STATE.currentBrand+'」，历史已清空，重新计算）'); });
+$('#clearBtn').addEventListener('click',()=>{ const bn=STATE.currentBrand; if(confirm('确认清空品牌「'+bn+'」的全部数据？（甘特图与事项除外）')){ const b=B(); b.sales=[];b.inventory=[];b.inv_full=[];b.chaohu=[];b.jzt=[];b.targets=[];b.purchase=[];b.purchase_order=[];b.spot_rate=[];b.aging_warn=[]; b._raw={sales:'',inventory:'',inv_full:'',chaohu:'',jzt:'',targets:'',purchase:'',purchase_order:'',spot_rate:'',aging_warn:''}; b.todo=freshTodo(); $('#salesInput').value='';$('#invInput').value='';$('#invFullInput').value='';$('#chaohuInput').value='';$('#jztInput').value='';$('#tgtInput').value='';$('#ppInput').value='';$('#poInput').value='';$('#srInput').value='';$('#awInput').value=''; syncBrandUI(); readInputs('replace', true); saveState(); renderAll(); saveToService(); setupTodoAll(); toast('已清空品牌「'+bn+'」的数据'); } });
 // 导出数据包：把完整 STATE（含解析结果与原始输入）存成 JSON 文件，刷新/换机后可「导入数据包」还原
 $('#exportBtn').addEventListener('click',()=>{
   const pkg={ version:3, exportedAt:new Date().toISOString(), state:STATE };
@@ -3306,8 +3380,8 @@ function normalizeState(st){
     if(st.brands['麦维他'] && !st.brands['麦维他自营']) st.brands['麦维他自营']=st.brands['麦维他'];
     BRANDS.forEach(b=>{ const src=st.brands[b]||{}; const dst=out.brands[b];
       dst.sales=Array.isArray(src.sales)?src.sales:[]; dst.inventory=Array.isArray(src.inventory)?src.inventory:[];
-      dst.purchase=Array.isArray(src.purchase)?src.purchase:[]; dst.purchase_order=Array.isArray(src.purchase_order)?src.purchase_order:[]; dst.spot_rate=Array.isArray(src.spot_rate)?src.spot_rate:[]; dst.aging_warn=Array.isArray(src.aging_warn)?src.aging_warn:[]; dst.inv_full=Array.isArray(src.inv_full)?src.inv_full:[]; dst.jzt=Array.isArray(src.jzt)?src.jzt:[]; dst.targets=Array.isArray(src.targets)?src.targets:[];
-      dst._raw=Object.assign({sales:'',inventory:'',inv_full:'',jzt:'',targets:'',purchase:'',purchase_order:'',spot_rate:'',aging_warn:''}, src._raw||{});
+      dst.purchase=Array.isArray(src.purchase)?src.purchase:[]; dst.chaohu=Array.isArray(src.chaohu)?src.chaohu:[]; dst.purchase_order=Array.isArray(src.purchase_order)?src.purchase_order:[]; dst.spot_rate=Array.isArray(src.spot_rate)?src.spot_rate:[]; dst.aging_warn=Array.isArray(src.aging_warn)?src.aging_warn:[]; dst.inv_full=Array.isArray(src.inv_full)?src.inv_full:[]; dst.jzt=Array.isArray(src.jzt)?src.jzt:[]; dst.targets=Array.isArray(src.targets)?src.targets:[];
+      dst._raw=Object.assign({sales:'',inventory:'',inv_full:'',chaohu:'',jzt:'',targets:'',purchase:'',purchase_order:'',spot_rate:'',aging_warn:''}, src._raw||{});
       // 反向同步：若 _raw.targets 缺失（旧数据/历史 bug 导致），用已解析的 targets 数组回填，确保清除/重建时有正确文本来源、不会丢目标
       if(!dst._raw.targets||!dst._raw.targets.trim()) dst._raw.targets=targetRowsToText(dst.targets);
       dst.posInput=Object.assign({}, src.posInput||{}); // 和路雪：达成明细 POS 实际前台录入值（按日期）
@@ -3315,8 +3389,8 @@ function normalizeState(st){
   } else {
     const lij=out.brands['李锦记']; const oraw=st._raw||{};
     lij.sales=Array.isArray(st.sales)?st.sales:[]; lij.inventory=Array.isArray(st.inventory)?st.inventory:[];
-    lij.purchase=Array.isArray(st.purchase)?st.purchase:[]; lij.purchase_order=Array.isArray(st.purchase_order)?st.purchase_order:[]; lij.spot_rate=Array.isArray(st.spot_rate)?st.spot_rate:[]; lij.aging_warn=Array.isArray(st.aging_warn)?st.aging_warn:[]; lij.inv_full=Array.isArray(st.inv_full)?st.inv_full:[]; lij.jzt=Array.isArray(st.jzt)?st.jzt:[]; lij.targets=Array.isArray(st.targets)?st.targets:[];
-    lij._raw={ sales:oraw.sales||'', inventory:oraw.inventory||'', inv_full:oraw.inv_full||'', jzt:oraw.jzt||'', targets:oraw.targets||'', purchase:oraw.purchase||'', purchase_order:oraw.purchase_order||'', spot_rate:oraw.spot_rate||'', aging_warn:oraw.aging_warn||'' };
+    lij.purchase=Array.isArray(st.purchase)?st.purchase:[]; lij.chaohu=Array.isArray(st.chaohu)?st.chaohu:[]; lij.purchase_order=Array.isArray(st.purchase_order)?st.purchase_order:[]; lij.spot_rate=Array.isArray(st.spot_rate)?st.spot_rate:[]; lij.aging_warn=Array.isArray(st.aging_warn)?st.aging_warn:[]; lij.inv_full=Array.isArray(st.inv_full)?st.inv_full:[]; lij.jzt=Array.isArray(st.jzt)?st.jzt:[]; lij.targets=Array.isArray(st.targets)?st.targets:[];
+    lij._raw={ sales:oraw.sales||'', inventory:oraw.inventory||'', inv_full:oraw.inv_full||'', chaohu:oraw.chaohu||'', jzt:oraw.jzt||'', targets:oraw.targets||'', purchase:oraw.purchase||'', purchase_order:oraw.purchase_order||'', spot_rate:oraw.spot_rate||'', aging_warn:oraw.aging_warn||'' };
     lij.todo=st.todo||freshTodo(); out.ganttRaw=oraw.gantt||'';
   }
   out.gantt=Array.isArray(st.gantt)?st.gantt:[];
@@ -3516,9 +3590,9 @@ function brandFilePath(id, b){ return 'dashboards/'+id+'__'+encodeURIComponent(b
 function mergeBrandData(inc, cloud){
   if(!inc) return cloud||{}; if(!cloud) return inc;
   var out=JSON.parse(JSON.stringify(inc));
-  ['sales','inventory','purchase','purchase_order','spot_rate','aging_warn','inv_full','jzt','targets'].forEach(function(k){ if(isEmptyVal(out[k]) && !isEmptyVal(cloud[k])) out[k]=JSON.parse(JSON.stringify(cloud[k])); });
+  ['sales','inventory','purchase','purchase_order','spot_rate','aging_warn','inv_full','chaohu','jzt','targets'].forEach(function(k){ if(isEmptyVal(out[k]) && !isEmptyVal(cloud[k])) out[k]=JSON.parse(JSON.stringify(cloud[k])); });
   out._raw=out._raw||{};
-  ['sales','inventory','jzt','targets','purchase','purchase_order','spot_rate','aging_warn','inv_full'].forEach(function(k){ if(isEmptyVal(out._raw[k]) && !isEmptyVal(cloud._raw&&cloud._raw[k])) out._raw[k]=cloud._raw[k]; });
+  ['sales','inventory','jzt','targets','purchase','purchase_order','spot_rate','aging_warn','inv_full','chaohu'].forEach(function(k){ if(isEmptyVal(out._raw[k]) && !isEmptyVal(cloud._raw&&cloud._raw[k])) out._raw[k]=cloud._raw[k]; });
   if(cloud.posInput) out.posInput=Object.assign({}, cloud.posInput, out.posInput||{});
   return out;
 }
@@ -3528,9 +3602,9 @@ function extractBrandData(b){
     sales:Array.isArray(b.sales)?b.sales:[], inventory:Array.isArray(b.inventory)?b.inventory:[],
     inv_full:Array.isArray(b.inv_full)?b.inv_full:[],
     purchase:Array.isArray(b.purchase)?b.purchase:[], purchase_order:Array.isArray(b.purchase_order)?b.purchase_order:[],
-    spot_rate:Array.isArray(b.spot_rate)?b.spot_rate:[], aging_warn:Array.isArray(b.aging_warn)?b.aging_warn:[],
+    spot_rate:Array.isArray(b.spot_rate)?b.spot_rate:[], aging_warn:Array.isArray(b.aging_warn)?b.aging_warn:[], chaohu:Array.isArray(b.chaohu)?b.chaohu:[],
     jzt:Array.isArray(b.jzt)?b.jzt:[], targets:Array.isArray(b.targets)?b.targets:[],
-    _raw:Object.assign({sales:'',inventory:'',inv_full:'',jzt:'',targets:'',purchase:'',purchase_order:'',spot_rate:'',aging_warn:''}, b._raw||{}),
+    _raw:Object.assign({sales:'',inventory:'',inv_full:'',chaohu:'',jzt:'',targets:'',purchase:'',purchase_order:'',spot_rate:'',aging_warn:''}, b._raw||{}),
     posInput:Object.assign({}, b.posInput||{}),
     todo:b.todo||freshBrand().todo
   };
@@ -3617,7 +3691,7 @@ function isEmptyVal(v){
 // 合并两份看板 STATE（数据防丢兜底）：incoming = 本机会话 STATE，cloud = 云端最新 STATE。
 // 规则：逐品牌、逐字段，优先用 incoming 的非空值；若 incoming 为空而 cloud 有数据，则保留 cloud（防止本机 STATE 落后时整体覆盖抹掉已录入数据）。
 // 此前的 bug：只并集 posInput，导致李锦记/麦维他 的 targets 与京准通 jzt 被本机空 STATE 覆盖清空。现在对所有数据字段做深并集。
-var __JZT_FIELDS=['targets','sales','inventory','jzt','purchase','purchase_order','spot_rate','aging_warn','inv_full','goals'];
+var __JZT_FIELDS=['targets','sales','inventory','jzt','purchase','purchase_order','spot_rate','aging_warn','inv_full','chaohu','goals'];
 function mergeBoardState(incoming, cloud){
   if(!incoming||!incoming.brands||!cloud||!cloud.brands) return incoming;
   var out=JSON.parse(JSON.stringify(incoming));
@@ -3670,11 +3744,11 @@ function hydrateFromState(st){
 function fillInputsForCurrentBrand(){
   const b=B();
   $('#invFullInput').value=b._raw.inv_full||''; $('#salesInput').value=b._raw.sales||''; $('#invInput').value=b._raw.inventory||''; $('#jztInput').value=b._raw.jzt||'';
-  $('#tgtInput').value=(b._raw.targets&&b._raw.targets.trim())?b._raw.targets:targetRowsToText(b.targets||[]); $('#ppInput').value=b._raw.purchase||''; $('#poInput').value=b._raw.purchase_order||''; $('#srInput').value=b._raw.spot_rate||''; $('#awInput').value=b._raw.aging_warn||''; $('#ganttInput').value=STATE.ganttRaw||'';
+  $('#tgtInput').value=(b._raw.targets&&b._raw.targets.trim())?b._raw.targets:targetRowsToText(b.targets||[]); $('#ppInput').value=b._raw.purchase||''; $('#poInput').value=b._raw.purchase_order||''; $('#srInput').value=b._raw.spot_rate||''; $('#awInput').value=b._raw.aging_warn||''; $('#chaohuInput').value=b._raw.chaohu||''; $('#ganttInput').value=STATE.ganttRaw||'';
   // 同步品牌栏与各输入区品牌选择器为当前品牌
   syncBrandUI();
 }
-function clearInputs(){ $('#salesInput').value=''; $('#invInput').value=''; $('#invFullInput').value=''; $('#jztInput').value=''; $('#tgtInput').value=''; $('#ganttInput').value=''; $('#ppInput').value=''; $('#poInput').value=''; $('#srInput').value=''; $('#awInput').value=''; readInputs('replace', true); }
+function clearInputs(){ $('#salesInput').value=''; $('#invInput').value=''; $('#invFullInput').value=''; $('#chaohuInput').value=''; $('#jztInput').value=''; $('#tgtInput').value=''; $('#ganttInput').value=''; $('#ppInput').value=''; $('#poInput').value=''; $('#srInput').value=''; $('#awInput').value=''; readInputs('replace', true); }
 
 // 自动保存：每次解析/导入/编辑后调用。云端 GitHub(共享,多人可见) + 本地 IndexedDB(离线缓存)。
 async function saveToService(){
