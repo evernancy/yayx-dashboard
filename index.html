@@ -513,7 +513,7 @@
 
       <details>
         <summary>2.8 · 库存明细（丝蕴）</summary>
-        <p class="hint">表头（共 69 列）：<b>时间 / 商品名称 / SKU / 品牌 / 一级类目 / 二级类目 / 三级类目 / 店铺名称 / 供应商简码 / 供应商名称 / 是否售完即止 / 是否厂直 / 是否影分身 / 是否虚拟组套 / 是否虚拟品类 / 上柜时间 / 是否平行库存 / 是否赠品 / SPU编码 / 条形码 / 保质期 / RDC / 配送中心 / 仓网选品打标 / 上级B配送中心编码 / 上级B配送中心名称 / 上下柜状态 / 商品价格 / 全国采购价 / 长度 / 宽度 / 高度 / 重量 / 现货库存 / 内配在途 / 可订购库存 / B仓(商)京东自营渠道采购在途库存 / B仓(商)京东自营渠道现货库存 / 采购在途数量 / 滞销库存件数 / 不动销库存件数 / 长库龄数量 / 91-120天库存数量 / 121-150天库存数量 / 151-180天库存数量 / 181-360天库存数量 / 1年以上库存数量 / 昨日出库商品件数 / 近7日出库商品件数 / 近14日出库商品件数 / 近28日出库商品件数 / 近30日出库商品件数 / 近60日出库商品件数 / 近90日出库商品件数 / 月至今出库商品件数 / 昨日收货地商品件数 / 近7日收货地商品件数 / 近14日收货地商品件数 / 近28日收货地商品件数 / 近30日收货地商品件数 / 近60日收货地商品件数 / 近90日收货地商品件数 / 月至今收货地商品件数 / 昨日采购入库件数 / 近7日采购入库件数 / 近14日采购入库件数 / 近28日采购入库件数 / 近30日采购入库件数 / 月至今采购入库件数</b>。每行=某天某 SKU 的库存快照。<b>该数据独立录入、独立存储</b>，与 2.7 库存明细(全量列)互不覆盖；粘贴含表头的数据后点「应用并更新看板」即保存。点击「填入模板」可自动生成完整表头。列名自动识别，缺列留空。</p>
+        <p class="hint">表头（共 69 列）：<b>时间 / 商品名称 / SKU / 品牌 / 一级类目 / 二级类目 / 三级类目 / 店铺名称 / 供应商简码 / 供应商名称 / 是否售完即止 / 是否厂直 / 是否影分身 / 是否虚拟组套 / 是否虚拟品类 / 上柜时间 / 是否平行库存 / 是否赠品 / SPU编码 / 条形码 / 保质期 / RDC / 配送中心 / 仓网选品打标 / 上级B配送中心编码 / 上级B配送中心名称 / 上下柜状态 / 商品价格 / 全国采购价 / 长度 / 宽度 / 高度 / 重量 / 现货库存 / 内配在途 / 可订购库存 / B仓(商)京东自营渠道采购在途库存 / B仓(商)京东自营渠道现货库存 / 采购在途数量 / 滞销库存件数 / 不动销库存件数 / 长库龄数量 / 91-120天库存数量 / 121-150天库存数量 / 151-180天库存数量 / 181-360天库存数量 / 1年以上库存数量 / 昨日出库商品件数 / 近7日出库商品件数 / 近14日出库商品件数 / 近28日出库商品件数 / 近30日出库商品件数 / 近60日出库商品件数 / 近90日出库商品件数 / 月至今出库商品件数 / 昨日收货地商品件数 / 近7日收货地商品件数 / 近14日收货地商品件数 / 近28日收货地商品件数 / 近30日收货地商品件数 / 近60日收货地商品件数 / 近90日收货地商品件数 / 月至今收货地商品件数 / 昨日采购入库件数 / 近7日采购入库件数 / 近14日采购入库件数 / 近28日采购入库件数 / 近30日采购入库件数 / 月至今采购入库件数</b>。每行=某天某 SKU 的库存快照。<b>该数据独立录入、独立存储</b>，与 2.7 库存明细(全量列)互不覆盖；粘贴含表头的数据后点「应用并更新看板」即保存。点击「填入模板」可自动生成完整表头。列名自动识别，缺列留空。<br>看板「丝蕴」库存周转视图取值：<b>库存数量</b>（兼容「现货库存/可用库存」）、<b>近7天出库件数</b>、<b>近14天出库件数</b>（兼容「近N日出库商品件数」）；<b>在途数量</b>=采购单「采购数量」(R列) 合计；<b>PV现货率/实库现货率</b>取自 2.5 现货率数据（按天匹配）。</p>
         <div class="row">
           <span class="muted" style="font-size:12px">品牌</span>
           <select id="brand_inv_siyun" class="secBrand" data-sec="inv_siyun" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px">
@@ -703,7 +703,7 @@ const esc = s => String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt
 const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,''); const n=parseFloat(s); return isNaN(n)?0:n; };
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-26-fix39-inv-siyun-template';
+const APP_VERSION = '2026-08-27-fix40-siyun-inv-turnover';
 /* 列名同义词映射 */
 const ALIAS = {
   date:['日期','时间','date','day','dt','订购时间','采购时间','下单时间'],
@@ -1519,7 +1519,81 @@ function renderInvThreePartHTML(tp){
   ]);
   return `<div class="tp-grid">${r1}${r2}${r3}</div>`;
 }
+
+/* ---------- 计算：丝蕴库存周转（库存明细(丝蕴) + 采购单在途 + 现货率）---------- */
+// 库存数量 = 库存明细(丝蕴) 库存数量列（兼容「现货库存/可用库存」）；在途数量 = 采购单「采购数量」合计（R列）
+// 7天周转 = 库存数量/近7天出库件数*7；14天周转 = 库存数量/近14天出库件数*14
+// PV现货率 / 实库现货率 取自「2.5 现货率数据」录入（按天匹配）
+function computeSiyunTurnover(asOf){
+  const inv=B().inv_siyun||[];
+  const resKey=name=>{ const lk=String(name).trim().toLowerCase(); for(const f in ALIAS){ if(ALIAS[f].includes(lk)) return f; } return 'ext_'+lk.replace(/\s+/g,''); };
+  const g1=(r,names)=>{ for(const n of names){ const k=resKey(n); const v=r[k]; if(v!==undefined&&v!==''){ const x=num(v); if(!isNaN(x)) return x; } } return 0; };
+  const QTY=['库存数量','现货库存','可用库存','库存件数'];
+  const O7=['近7天出库件数','近7日出库商品件数','近7日出库'];
+  const O14=['近14天出库件数','近14日出库商品件数','近14日出库'];
+  const dates=[...new Set(inv.map(r=>String(r.date||'').slice(0,10)))].filter(Boolean).sort();
+  const target=asOf||dates[dates.length-1];
+  if(!dates.length){
+    return {all:[], cur:{date:target||'—', qty:0, intr:0, turn7:null, turn14:null, o7:0, o14:0, pvRate:undefined, realRate:undefined}, dates:[], target:target||'', hasData:false};
+  }
+  const all=dates.map(d=>{
+    const day=inv.filter(r=>String(r.date||'').slice(0,10)===d);
+    let qty=0, o7=0, o14=0;
+    day.forEach(r=>{ qty+=g1(r,QTY); o7+=g1(r,O7); o14+=g1(r,O14); });
+    const turn7=(qty>0&&o7>0)? qty/o7*7 : null;
+    const turn14=(qty>0&&o14>0)? qty/o14*14 : null;
+    return {date:d, qty, o7, o14, turn7, turn14};
+  });
+  // 在途数量 = 丝蕴采购单「采购数量」(R列) 合计
+  let intr=0; (B().purchase_order||[]).forEach(r=>{ intr+=num(r.ppQty); });
+  all.forEach(a=>{ a.intr=intr; });
+  // PV现货率 / 实库现货率：按天匹配（来自 2.5 现货率数据录入）
+  const srByDate={}; (B().spot_rate||[]).forEach(r=>{ const d=String(r.date||'').slice(0,10); if(d) srByDate[d]=r; });
+  all.forEach(x=>{ const sr=srByDate[x.date]; if(sr){ const pv=num(sr.pvRate!==undefined?sr.pvRate:sr.PV现货率), rr=num(sr.realRate!==undefined?sr.realRate:sr.实库现货率); if(pv||rr){ x.pvRate=pv; x.realRate=rr; } } });
+  const cur=all.find(x=>x.date===target)||all[all.length-1];
+  return {all, cur, dates, target, hasData:true};
+}
+function renderSiyunTurnoverHTML(tp){
+  const x=tp.cur;
+  const num0=v=> (v==null||isNaN(v)||v===0)?'—':fmt(v,0);
+  const days=v=> (v==null||isNaN(v)||v<=0)?'—':v.toFixed(1);
+  const pct=v=>{ if(v===undefined||isNaN(v)||v===0) return '—'; const p=v>1? v : v*100; return p.toFixed(1)+'%'; };
+  const pctCls=v=>{ if(v===undefined||isNaN(v)) return ''; const p=v>1? v : v*100; return p>=90?'green':(p>=70?'amber':'red'); };
+  const el=$('#invKpis'); const panel=$('#invThreePartPanel');
+  el.style.display=''; panel.style.display='none'; $('#invThreePart').innerHTML='';
+  el.innerHTML=`<div class="kpi-sep">丝蕴 · 库存周转</div>`+kpiHTML([
+    {label:'库存数量',value:num0(x.qty)},
+    {label:'在途数量',value:num0(x.intr)},
+    {label:'7天库存周转(天)',value:days(x.turn7)},
+    {label:'14天库存周转(天)',value:days(x.turn14)},
+    {label:'近7天出库件数',value:num0(x.o7)},
+    {label:'近14天出库件数',value:num0(x.o14)},
+    {label:'PV现货率',value:pct(x.pvRate),cls:pctCls(x.pvRate)},
+    {label:'实库现货率',value:pct(x.realRate),cls:pctCls(x.realRate)},
+  ])+(tp.hasData?'':'<div style="color:#9ca3af;font-size:12px;margin-top:4px;">（占位视图：当前未录入数据，数值显示 —；在「数据输入区」录入库存明细(丝蕴)/采购单/现货率后将自动计算）</div>');
+  lineChart('#invRate',{labels:tp.dates, series:[
+    {name:'7天库存周转(天)',data:tp.all.map(x=>x.turn7||null)},
+    {name:'14天库存周转(天)',data:tp.all.map(x=>x.turn14||null)},
+  ], yFmt:v=>v==null?'—':v.toFixed(1)});
+  lineChart('#invDays',{labels:tp.dates, series:[
+    {name:'库存数量',data:tp.all.map(x=>x.qty||null)},
+    {name:'在途数量',data:tp.all.map(x=>x.intr||null)},
+    {name:'近7天出库件数',data:tp.all.map(x=>x.o7||null)},
+    {name:'近14天出库件数',data:tp.all.map(x=>x.o14||null)},
+  ], yFmt:v=>v==null?'—':fmt(v,0)});
+  let t='<table class="tpl" style="margin-top:8px"><tr><th>日期</th><th>库存数量</th><th>在途数量</th><th>7天周转(天)</th><th>14天周转(天)</th><th>近7天出库件数</th><th>近14天出库件数</th><th>PV现货率</th><th>实库现货率</th></tr>';
+  if(tp.all.length){ tp.all.forEach(x=>{ t+=`<tr><td>${esc(x.date)}</td><td>${x.qty?fmt(x.qty,0):'—'}</td><td>${x.intr?fmt(x.intr,0):'—'}</td><td>${x.turn7?x.turn7.toFixed(1):'—'}</td><td>${x.turn14?x.turn14.toFixed(1):'—'}</td><td>${x.o7?fmt(x.o7,0):'—'}</td><td>${x.o14?fmt(x.o14,0):'—'}</td><td>${x.pvRate?pct(x.pvRate):'—'}</td><td>${x.realRate?pct(x.realRate):'—'}</td></tr>`; }); }
+  else t+='<tr><td colspan="9" class="empty">暂无数据，数值显示 —</td></tr>';
+  t+='</table>'; $('#invTable').innerHTML=t;
+}
+
 function renderInv(){
+  // 丝蕴：独立「库存周转」视图（库存明细(丝蕴) + 采购单在途 + 现货率）
+  if(STATE.currentBrand==='丝蕴'){
+    const tp=computeSiyunTurnover(invAsOf);
+    renderSiyunTurnoverHTML(tp);
+    return;
+  }
   const isThree=INV_THREE_PART_BRANDS.includes(STATE.currentBrand);
   const el=$('#invKpis'); const panel=$('#invThreePartPanel');
   if(isThree){
