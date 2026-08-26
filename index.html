@@ -616,7 +616,7 @@ const esc = s => String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt
 const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,''); const n=parseFloat(s); return isNaN(n)?0:n; };
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-26-fix30-upsert-lock';
+const APP_VERSION = '2026-08-26-fix31-unsynced-badge';
 /* 列名同义词映射 */
 const ALIAS = {
   date:['日期','时间','date','day','dt'],
@@ -3604,9 +3604,10 @@ async function saveToService(){
       window.__warnedNoToken=true;
       toast('⚠️ 未配置 GitHub 令牌：刚录入的数据仅存本机浏览器，刷新/换设备/清缓存将丢失，且同事看不到。点右下角「未配置令牌」徽章粘贴令牌，即可云端保存并团队共享。', true);
     }
+    if(typeof window.markLocalUnsynced==='function') window.markLocalUnsynced(); // fix31：常驻"未同步"警告
     return; // 无令牌不尝试云端，避免无谓 401 报错
   }
-  try{ await ghUpsertBoard(currentBoard.id, currentBoard.name, STATE); }
+  try{ await ghUpsertBoard(currentBoard.id, currentBoard.name, STATE); if(typeof window.clearLocalUnsynced==='function') window.clearLocalUnsynced(); }
   catch(e){ /* 云端不可达：忽略，依赖本地缓存；下次保存会自动重试 */ }
   // 有令牌时同步公开快照（查看者免令牌只读）
   try{ if(ghToken()) await ghPutPublicSnapshot(); }catch(e){ /* 快照失败不影响主存储 */ }
@@ -3724,6 +3725,14 @@ init();
     badge.style.background='#b45309'; badge.style.cursor='pointer';
     badge.onclick=askToken;
   }
+  // fix31：无令牌同事本地有"未同步到云端"的数据时，常驻醒目警告，避免以为已传团队（实际只存本机）
+  function showUnsyncedBadge(){
+    badge.textContent='⚠️ 本机有未同步数据 · 团队看不到（点此配置令牌同步）';
+    badge.style.background='#dc2626'; badge.style.cursor='pointer';
+    badge.onclick=askToken; showBadge();
+  }
+  window.markLocalUnsynced=function(){ try{ localStorage.setItem('__localUnsynced','1'); }catch(e){} showUnsyncedBadge(); };
+  window.clearLocalUnsynced=function(){ try{ localStorage.removeItem('__localUnsynced'); }catch(e){} };
   function showSnapshotBadge(snap){
     badge.textContent='云端协作 · 已连接（只读）'+(snap.updated_at?' · '+fmtTime(new Date(Date.parse(snap.updated_at)||Date.now())):'');
     badge.style.background='#185FA5'; badge.style.cursor='pointer';
@@ -3875,6 +3884,9 @@ init();
   // 首次立即诊断：显示具体连接错误
   (async function diag(){
     if(noToken()){
+      // fix31：本机有未同步数据时，常驻红色警告优先于普通"未配置令牌"徽章
+      var _unsync=false; try{ _unsync=localStorage.getItem('__localUnsynced')==='1'; }catch(e){}
+      if(_unsync){ showUnsyncedBadge(); return; }
       var s=await fetchPublicSnapshot();
       if(s) showSnapshotBadge(s); else showTokenSetup();
       return;
