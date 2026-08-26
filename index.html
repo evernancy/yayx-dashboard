@@ -701,9 +701,13 @@ const sum = a => a.reduce((s,x)=>s+(Number(x)||0),0);
 const uniq = a => Array.from(new Set(a));
 const esc = s => String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,''); const n=parseFloat(s); return isNaN(n)?0:n; };
+/* 当前品牌数据访问器（fix43 恢复：此前被误删导致 B() 未定义、库存周转等视图全部报 ReferenceError）*/
+function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-26-fix42-ljk-inv-header';
+const APP_VERSION = '2026-08-26-fix43-inv-compute-restore';
+/* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
+const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 /* 列名同义词映射 */
 const ALIAS = {
   date:['日期','时间','date','day','dt','订购时间','采购时间','下单时间'],
@@ -745,10 +749,10 @@ const ALIAS = {
   refundQty:['退款商品件数','取消及售后退款商品件数','refund_qty','cancel_refund_qty'],
   refundOrders:['退款单量','取消及售后退款单量','refund_orders','cancel_refund_orders'],
   begin:['期初库存','期初','begin','opening','begin_inv'],
-  end:['期末库存','期末','end','closing','end_inv','现货库存'],
+  end:['期末库存','期末','end','closing','end_inv'],
   invQty:['期间销量','销量','销售数量','出库量','出库件数','sold','inv_sales','period_sales'],
   invDays:['周转天数','天数','days','turnover_days','预计可售天数'],
-  purchase:['采购价','采购成本','进价','买价','purchase','cost_price','buy_price','price','全国采购价','浮码'],
+  purchase:['采购成本','进价','买价','purchase','cost_price','buy_price','price','浮码'],
   aging:['库龄天数','库龄','长库龄','aging','age_days','库存天数'],
   exposure:['曝光量','曝光','pv','page_view','exposure'],
   // —— 浮码数据（单独录入，不并入库存周转）——
@@ -786,6 +790,9 @@ const ALIAS = {
   realRate:['实库现货率','real_rate','实库现货率','real_avail'],
   chaohu:['巢湖库存','chaohu','chaohu_inv','巢湖'],
   fullChain:['全链路周转','full_chain','全链路'],
+  // —— 仓库维度（fix43：纳入去重键，避免「同 SKU 同日期不同配送中心/大区」被折叠成 1 行）——
+  warehouse:['配送中心','仓库','中心仓','城市仓','warehouse','storehouse','dc','distributioncenter'],
+  rdc:['RDC','rdc','区域配送中心','大区仓','区域仓'],
   // —— 麦维他「库存周转·三部分」专用：京仓真是在途 / 全链路金额 ——
   jcIntransit:['京仓真是在途金额','京仓真在途','京仓真实在途','京仓在途金额','京仓在途','真实在途金额','真实在途','京仓实际在途'],
   fcAmount:['全链路金额','全链路库存金额','全链路总库存','全链路库存'],
@@ -1176,6 +1183,123 @@ function renderSiyunTurnoverHTML(tp){
   if(tp.all.length){ tp.all.forEach(x=>{ t+=`<tr><td>${esc(x.date)}</td><td>${x.qty?fmt(x.qty,0):'—'}</td><td>${x.intr?fmt(x.intr,0):'—'}</td><td>${x.turn7?x.turn7.toFixed(1):'—'}</td><td>${x.turn14?x.turn14.toFixed(1):'—'}</td><td>${x.o7?fmt(x.o7,0):'—'}</td><td>${x.o14?fmt(x.o14,0):'—'}</td><td>${x.pvRate?pct(x.pvRate):'—'}</td><td>${x.realRate?pct(x.realRate):'—'}</td></tr>`; }); }
   else t+='<tr><td colspan="9" class="empty">暂无数据，数值显示 —</td></tr>';
   t+='</table>'; $('#invTable').innerHTML=t;
+}
+
+function chGet(r,name){
+  if(r[name]!==undefined && r[name]!=='') return r[name];
+  const ek='ext_'+name.replace(/\s+/g,'');
+  if(r[ek]!==undefined && r[ek]!=='') return r[ek];
+  for(const k in r){ if(k && k.replace(/^ext_/,'').indexOf(name)>=0 && r[k]!=='') return r[k]; }
+  return undefined;
+}
+function invRow(r){
+  if(!r) return {date:''};
+  const g=k=>num(r[k]);
+  return {
+    date: r.date||'',
+    invQtyTotal: g('invQtyTotal'), invAmount: g('invAmount'), turnDays: g('turnDays'),
+    spotQty: g('spotQty'), purPrice: g('purPrice'),
+    outBO: g('outBO'), outBI: g('outBI'), outBJ: g('outBJ'), outBH: g('outBH'),
+    s7qty: g('s7qty'), s7amt: g('s7amt'), s14qty: g('s14qty'), s14amt: g('s14amt'),
+    dqty: g('dqty'), damt: g('damt'),
+    age60: g('age60'), age60_j: g('age60_j'), age60_f: g('age60_f'),
+    age90: g('age90'), age90_j: g('age90_j'), age90_f: g('age90_f'),
+    sluggish: g('sluggish'), sluggish_j: g('sluggish_j'), sluggish_f: g('sluggish_f'),
+    pvRate: g('pvRate'), realRate: g('realRate'),
+    chaohu: g('chaohu'), fullChain: g('fullChain'),
+    jcIntransit: g('jcIntransit'), fcAmount: g('fcAmount'),
+  };
+}
+function computeThreePart(asOf){
+  const inv=B().inv_full||[];
+  // 浮码价格索引：优先 日期|SKU，回退 SKU 最新价
+  const ppBySku={}, ppByDS={};
+  (B().purchase||[]).forEach(r=>{ const d=String(r.date||'').slice(0,10); const sku=String(r.sku||'').trim(); const p=num(r.purchase); if(isNaN(p)) return; if(sku) ppBySku[sku]=p; if(d&&sku) ppByDS[d+'|'+sku]=p; });
+  const priceOf=(d,sku)=>{ const k=d+'|'+sku; if(ppByDS[k]!==undefined) return ppByDS[k]; if(ppBySku[sku]!==undefined) return ppBySku[sku]; return undefined; };
+  const poSku=r=>String(r.sku||r['商品编号']||r['ext_商品编号']||'').trim();
+  const poQty=r=>num(r.ppQty!==undefined?r.ppQty:(r['采购数量']!==undefined?r['采购数量']:r['ext_采购数量']));
+  const poDate=r=>String(r.date||r['订购时间']||r['ext_订购时间']||'').slice(0,10);
+  // 巢湖按日聚合
+  const chByDate={};
+  (B().chaohu||[]).forEach(r=>{ const d=String(r.date||'').slice(0,10); if(!d) return; chByDate[d]=chByDate[d]||{qty:0,amt:0,intr:0}; chByDate[d].qty+=num(chGet(r,'可发库存')); chByDate[d].amt+=num(chGet(r,'可发金额')); chByDate[d].intr+=num(chGet(r,'品牌采购在途')); });
+  // 长库龄预警按日
+  const awByDate={};
+  (B().aging_warn||[]).forEach(r=>{ const d=String(r.date||'').slice(0,10); if(!d) return; const g=k=>num(r[k]); awByDate[d]={ age60:g('age60')||num(r['60-90天长库龄预警金额']), age90:g('age90')||num(r['90天以上长库龄金额']) }; });
+  const ds=[...new Set(inv.map(r=>String(r.date||'').slice(0,10)))].filter(Boolean).sort();
+  const target=asOf||ds[ds.length-1];
+  if(!ds.length){
+    // 暂无库存明细数据：返回占位结构，三卡显示 -/0，便于先看布局
+    return {all:[], cur:{date:target||'—', jcQty:0,jcAmt:0,jcIntr:0,jc7:0,jc14:0,s30:0,jcTurn:null,chQty:0,chAmt:0,chIntr:0,fcAmt:0,fcTurn:null,sluggish:0,longAge:0}, dates:[], target:target||'', hasData:false};
+  }
+  const all=ds.map(d=>{
+    const day=inv.filter(r=>String(r.date||'').slice(0,10)===d);
+    let jcQty=0,jcAmt=0,s7=0,s14=0,s30=0;
+    day.forEach(r=>{ const sku=String(r.sku||'').trim(); const p=priceOf(d,sku); const avail=num(r.nationAvail); jcQty+=avail; if(p!==undefined){ jcAmt+=avail*p; s7+=num(r.nation7Out)*p; s14+=num(r.nation14Out)*p; s30+=num(r.nation30Out)*p; } });
+    let jcIntr=0; (B().purchase_order||[]).forEach(r=>{ if(poDate(r)!==d) return; const p=priceOf(d,poSku(r)); const q=poQty(r); if(p!==undefined) jcIntr+=q*p; });
+    const ch=chByDate[d]||{qty:0,amt:0,intr:0};
+    const fcAmt=jcAmt+jcIntr+ch.amt+ch.intr;
+    const jcTurn=s30>0? jcAmt/s30*30 : null;
+    const fcTurn=s30>0? fcAmt/s30*30 : null;
+    const aw=awByDate[d]||{age60:0,age90:0};
+    return {date:d, jcQty, jcAmt, jcIntr, jc7:s7, jc14:s14, s30, jcTurn, chQty:ch.qty, chAmt:ch.amt, chIntr:ch.intr, fcAmt, fcTurn, sluggish:aw.age90, longAge:aw.age60};
+  });
+  const cur=all.find(x=>x.date===target)||all[all.length-1];
+  return {all, cur, dates:ds, target, hasData:true};
+}
+/* ---------- 计算：李锦记 / 通用库存周转（数据来自 2.1 库存明细（李锦记）= B().inventory）---------- */
+function computeInv(asOf){
+  const rows=B().inventory;
+  // 库存明细为空时，仍允许现货率/长库龄预警等独立每日快照驱动展示（这些录入区不依赖库存明细行）
+  const hasInv=!!rows.length;
+  if(!hasInv && !(B().spot_rate||[]).length && !(B().aging_warn||[]).length) return null;
+  // 日期集合：合并库存明细 + 现货率 + 长库龄预警，确保任一类有数据的日期都会出现在看板
+  const dateSet=new Set();
+  rows.forEach(r=>{ if(r.date) dateSet.add(r.date); });
+  (B().spot_rate||[]).forEach(r=>{ const d=String(r.date||'').slice(0,10); if(d) dateSet.add(d); });
+  (B().aging_warn||[]).forEach(r=>{ const d=String(r.date||'').slice(0,10); if(d) dateSet.add(d); });
+  const dates=[...dateSet].filter(Boolean).sort();
+  const maxDate=dates[dates.length-1];
+  const target=asOf||maxDate;                              // 选定查看日（默认最新）
+  // 采购单：按「订购时间」归到对应日期（列名自动识别，缺日期则跳过）
+  const poByDate={};
+  (B().purchase_order||[]).forEach(r=>{ const d=String(r.date||r.订购时间||'').slice(0,10); if(!d) return; poByDate[d]=(poByDate[d]||0)+num(r.poAmt!==undefined?r.poAmt:r.采购金额); });
+  // 独立录入区（直接录入、按天展示）：优先取这两张表；缺则回退库存明细读列
+  const srByDate={}; (B().spot_rate||[]).forEach(r=>{ const d=String(r.date||'').slice(0,10); if(d) srByDate[d]=r; });
+  const awByDate={}; (B().aging_warn||[]).forEach(r=>{ const d=String(r.date||'').slice(0,10); if(d) awByDate[d]=r; });
+  // 每个日期：派生 13 项指标（库存金额/周转天/各销售金额按公式计算，库龄/现货率优先独立录入区）
+  const all=dates.map(d=>{
+    const dr=rows.filter(r=>r.date===d);
+    const x=invRow(dr[dr.length-1])||{date:d};
+    // 库存金额 = Σ(现货库存×全国采购价) + 当日采购单采购金额
+    let sumSpot=0, mtdOutAmt=0, biAmt=0, bjAmt=0;
+    dr.forEach(r=>{ const p=num(r.purPrice!==undefined?r.purPrice:r.purchase); if(p){ const sq=num(r.spotQty!==undefined?r.spotQty:r.end); sumSpot+=sq*p; mtdOutAmt+=num(r.outBO)*p; biAmt+=num(r.outBI)*p; bjAmt+=num(r.outBJ)*p; } });
+    const invAmt = sumSpot + (poByDate[d]||0);
+    // 月至今 T-1 天 = 当月已过天数（不含当天）
+    const dt=new Date(d+'T00:00:00'); const T1=dt.getDate()-1;
+    x.invAmount = invAmt;
+    x.s7amt = biAmt;                                  // 近7天销售(额) = 近7日出库×采购价
+    x.s14amt = bjAmt;                                 // 近14天销售(额) = 近14日出库×采购价
+    x.damt = (T1>0 && mtdOutAmt>0)? mtdOutAmt/T1 : null;  // 日均销售(额) = 月至今出库额 / T-1天
+    x.turnDays = (T1>0 && mtdOutAmt>0)? invAmt/mtdOutAmt*T1 : null;  // 周转(天) = 库存金额 / 月至今出库额 × T-1天
+    // 现货率 / 长库龄预警：优先独立录入区，按天覆盖；缺则保留库存明细读列（x 已读列）
+    const sr=srByDate[d]; if(sr){ const pv=num(sr.pvRate!==undefined?sr.pvRate:sr.PV现货率), rr=num(sr.realRate!==undefined?sr.realRate:sr.实库现货率); if(pv||rr){ x.pvRate=pv; x.realRate=rr; } }
+    const aw=awByDate[d]; if(aw){
+      const g=k=>num(aw[k]);
+      x.age60=g('age60')||num(aw['60-90天长库龄预警金额']);
+      x.age60_j=g('age60_j')||num(aw['60-90天长库龄预警金额（基调）']);
+      x.age60_f=g('age60_f')||num(aw['60-90天长库龄预警金额（复调）']);
+      x.age90=g('age90')||num(aw['90天以上长库龄金额']);
+      x.age90_j=g('age90_j')||num(aw['90天以上长库龄金额（基调）']);
+      x.age90_f=g('age90_f')||num(aw['90天以上长库龄金额（复调）']);
+    }
+    return x;
+  });
+  const cur=all.find(x=>x.date===target)||all[all.length-1];
+  if(!cur) return null;
+  const turnArr=all.map(x=>x.turnDays).filter(v=>v!=null&&!isNaN(v));
+  const avgDays= turnArr.length? sum(turnArr)/turnArr.length : 0;
+  const slow= all.filter(x=>x.turnDays>60).length;
+  return {all, cur, dates, maxDate, target, avgDays, slow};
 }
 
 function renderInv(){
@@ -3744,6 +3868,321 @@ async function boot(){
   syncBrandUI(); // 确保品牌栏与输入区选择器高亮当前品牌
   applyBrandSubtabs(); // 家乐/联合利华/和路雪：临时隐藏京准通推广/库存周转子视图（保留代码，后续改 JZT_INV_HIDDEN_BRANDS 即可放出）
 }
+
+
+
+/* ============ fix43 恢复：从 fix40 补全被误删的通用函数（渲染/存储/图表/采样模板） ============ */
+
+function allDates(){ const s=B().sales.map(r=>r.date).filter(Boolean); const i=B().inventory.map(r=>r.date).filter(Boolean); const a=s.concat(i); return a.length?a:['2026-08-01']; }
+
+
+function barChart(elId,{categories,series,yFmt=fmt,height=300}){
+  const el=$(elId); if(!el) return;
+  if(!categories||!categories.length){ el.innerHTML='<div class="empty">暂无数据</div>'; return; }
+  const W=800,H=height,padL=56,padR=16,padT=18,padB=42;
+  const iw=W-padL-padR, ih=H-padT-padB;
+  let maxV=0; series.forEach(s=>s.data.forEach(v=>{ if(v!=null&&!isNaN(v)) maxV=Math.max(maxV,Math.abs(v)); }));
+  if(maxV<=0) maxV=1;
+  const n=categories.length;
+  const groupW=iw/n, barW=Math.min(46, groupW*0.62/series.length), gap=4;
+  const yAt=v=> padT+ih-(Math.abs(v)/maxV)*ih;
+  let g='';
+  const ticks=4;
+  for(let t=0;t<=ticks;t++){ const v=maxV*t/ticks; const y=yAt(v); g+=`<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="#eef0f4"/>`; g+=`<text x="${padL-8}" y="${y+4}" text-anchor="end" font-size="11" fill="#9ca3af">${yFmt(v)}</text>`; }
+  // X轴日期格式化：YYYY-MM-DD → M/D（如 8/01），tooltip仍保留完整日期
+  const fmtAxisLabel=(s)=>{ const m=String(s).match(/^(\d{4})-(\d{1,2})-(\d{1,2})/); return m?Number(m[2])+'/'+m[3].padStart(2,'0'):String(s); };
+  categories.forEach((c,i)=>{
+    const cx=padL+groupW*i+groupW/2;
+    g+=`<text x="${cx}" y="${H-padB+18}" text-anchor="middle" font-size="10" fill="#9ca3af">${esc(fmtAxisLabel(c))}</text>`;
+    const totalBars=series.length; const startX=cx-(barW*totalBars+gap*(totalBars-1))/2;
+    series.forEach((s,si)=>{
+      const v=s.data[i]||0; const h=(Math.abs(v)/maxV)*ih; const x=startX+si*(barW+gap); const y=padT+ih-h;
+      const color=PALETTE[si%PALETTE.length];
+      g+=`<rect x="${x}" y="${y}" width="${barW}" height="${h}" rx="3" fill="${color}" data-tip="${esc(c)}<br>${esc(s.name)}: ${yFmt(v)}" style="cursor:pointer"/>`;
+    });
+  });
+  el.innerHTML=svgEl(W,H,g)+legendHTML(series.map((s,si)=>({name:s.name,color:PALETTE[si%PALETTE.length]})));
+  bindTips(el);
+}
+
+function bindTips(el){ el.querySelectorAll('[data-tip]').forEach(node=>{ node.addEventListener('mousemove',e=>showTip(node.getAttribute('data-tip'),e.clientX,e.clientY)); node.addEventListener('mouseleave',hideTip); }); }
+function kpiHTML(items){ return items.map(it=>`<div class="kpi"><div class="label">${esc(it.label)}</div><div class="value ${it.cls||''}">${esc(it.value)}</div>${it.sub?`<div class="muted" style="font-size:11px;margin-top:2px">${esc(it.sub)}</div>`:''}</div>`).join(''); }
+
+function computeSales(){
+  const rows=B().sales; if(!rows.length) return null;
+  const totalAmt=sum(rows.map(r=>num(r.amount)));
+  const totalQty=sum(rows.map(r=>num(r.qty)));
+  const totalCost=sum(rows.map(r=>num(r.cost)));
+  const totalRef=sum(rows.map(r=>num(r.refund)));
+  const totalBuyers=sum(rows.map(r=>num(r.buyers)));
+  const rawOrders=sum(rows.map(r=>num(r.orders)));
+  const orders=rawOrders>0?rawOrders:uniq(rows.map(r=>r.date+(r.product||'')+(r.channel||''))).length;
+  const totalViews=sum(rows.map(r=>num(r.views)));
+  const totalVisitors=sum(rows.map(r=>num(r.visitors)));
+  const totalCartUsers=sum(rows.map(r=>num(r.cartUsers)));
+  const profit=totalAmt-totalCost-totalRef;
+  const cvr=totalVisitors>0?totalBuyers/totalVisitors:0;
+  const byDate={}; rows.forEach(r=>{ const k=r.date||'未知'; byDate[k]=byDate[k]||0; byDate[k]+=num(r.amount); });
+  const byChannel={}; rows.forEach(r=>{ const k=r.channel||'未知'; byChannel[k]=byChannel[k]||0; byChannel[k]+=num(r.amount); });
+  return {totalAmt,totalQty,totalCost,totalRef,totalBuyers,orders,totalViews,totalVisitors,totalCartUsers,cvr,byDate,byChannel,profit,aov:totalAmt/orders};
+}
+
+function dateRange(s,e){ const out=[]; let cur=s; while(cur<=e){ out.push(cur); cur=ymdAdd(cur,1); } return out; }
+function lastDayOfMonth(ym){ const [y,m]=ym.split('-').map(Number); const dt=new Date(y,m,0); return `${y}-${String(m).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`; }
+
+function daysInMonth(ym){ return Number(lastDayOfMonth(ym).slice(8,10)); }
+/* 时间进度：结束日期的「日」/ 当月总天数（百分比）。两端都空时取默认范围（本月至今）。 */
+
+function donutChart(elId,{data,yFmt=fmt}){
+  const el=$(elId); if(!el) return;
+  if(!data||!data.length){ el.innerHTML='<div class="empty">暂无数据</div>'; return; }
+  const total=sum(data.map(d=>d.value)); if(total<=0){ el.innerHTML='<div class="empty">暂无数据</div>'; return; }
+  const W=800,H=300,cx=160,cy=150,r=110,sw=38;
+  let g=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#eef0f4" stroke-width="${sw}"/>`;
+  let acc=0;
+  data.forEach((d,i)=>{ const frac=d.value/total; const a0=acc*2*Math.PI- Math.PI/2; const a1=(acc+frac)*2*Math.PI- Math.PI/2; acc+=frac;
+    const x0=cx+r*Math.cos(a0),y0=cy+r*Math.sin(a0),x1=cx+r*Math.cos(a1),y1=cy+r*Math.sin(a1);
+    const large=frac>0.5?1:0; const color=PALETTE[i%PALETTE.length];
+    g+=`<path d="M${x0} ${y0} A${r} ${r} 0 ${large} 1 ${x1} ${y1}" fill="none" stroke="${color}" stroke-width="${sw}" data-tip="${esc(d.name)}<br>${yFmt(d.value)} (${(frac*100).toFixed(1)}%)" style="cursor:pointer"/>`;
+  });
+  g+=`<text x="${cx}" y="${cy-4}" text-anchor="middle" font-size="20" font-weight="700" fill="#1f2937">${yFmt(total)}</text>`;
+  g+=`<text x="${cx}" y="${cy+16}" text-anchor="middle" font-size="11" fill="#9ca3af">合计</text>`;
+  let lg='<div style="display:flex;gap:20px;flex-wrap:wrap;align-items:center">';
+  lg+=`<svg class="chart-svg" viewBox="0 0 320 300" style="width:320px;flex:0 0 320px">${g}</svg>`;
+  lg+='<div style="flex:1;min-width:200px">';
+  data.forEach((d,i)=>{ lg+=`<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #f1f5f9;font-size:12px"><span><i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${PALETTE[i%PALETTE.length]};margin-right:6px"></i>${esc(d.name)}</span><b>${(d.value/total*100).toFixed(1)}%</b></div>`; });
+  lg+='</div></div>';
+  el.innerHTML=lg; bindTips(el);
+}
+
+function freshBrand(){ return { sales:[], inventory:[], inv_full:[], inv_siyun:[], chaohu:[], purchase:[], purchase_order:[], spot_rate:[], aging_warn:[], jzt:[], targets:[], posInput:{}, _raw:{sales:'',inventory:'',inv_full:'',inv_siyun:'',chaohu:'',jzt:'',targets:'',purchase:'',purchase_order:'',spot_rate:'',aging_warn:''}, todo:freshTodo() }; }
+
+
+function hideTip(){ tip.style.opacity=0; }
+function svgEl(W,H,inner){ return `<svg class="chart-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">${inner}</svg>`; }
+
+function idbGet(){ return new Promise(async res=>{ try{ const db=await idbOpen(); const tx=db.transaction(IDB_STORE,'readonly'); const rq=tx.objectStore(IDB_STORE).get(IDB_KEY); rq.onsuccess=()=>res(rq.result||null); rq.onerror=()=>res(null); }catch(e){ res(null); } }); }
+function idbSet(val){ return new Promise(async res=>{ try{ const db=await idbOpen(); const tx=db.transaction(IDB_STORE,'readwrite'); tx.objectStore(IDB_STORE).put(val,IDB_KEY); tx.oncomplete=()=>res(true); tx.onerror=()=>res(false); }catch(e){ res(false); } }); }
+
+function idbOpen(){ return new Promise((res,rej)=>{ try{ if(typeof indexedDB==='undefined'){ rej(new Error('no idb')); return; } const r=indexedDB.open(IDB_NAME,1); r.onupgradeneeded=()=>{ try{ r.result.createObjectStore(IDB_STORE); }catch(_){} }; r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error||new Error('idb open failed')); }catch(e){ rej(e); } }); }
+
+
+
+function loadState(){ try{ const raw=localStorage.getItem(STORE_KEY); if(raw){ STATE=normalizeState(JSON.parse(raw)); return true; } }catch(e){} return false; }
+
+
+
+
+
+
+
+function legendHTML(items){ let h='<div class="legend">'; items.forEach(it=>{ h+=`<span><i style="background:${it.color}"></i>${esc(it.name)}</span>`; }); return h+'</div>'; }
+
+
+function lineChart(elId,{labels,series,yFmt=fmt,height=300}){
+  const el=$(elId); if(!el) return;
+  if(!labels||!labels.length){ el.innerHTML='<div class="empty">暂无数据</div>'; return; }
+  const W=800,H=height,padL=56,padR=16,padT=18,padB=42;
+  const iw=W-padL-padR, ih=H-padT-padB;
+  let maxV=0; series.forEach(s=>s.data.forEach(v=>{ if(v!=null&&!isNaN(v)) maxV=Math.max(maxV,v); }));
+  if(maxV<=0) maxV=1;
+  const n=labels.length;
+  const xAt=i=> padL + (n===1?iw/2: iw*i/(n-1));
+  const yAt=v=> padT + ih - (v/maxV)*ih;
+  let g='';
+  const ticks=4;
+  for(let t=0;t<=ticks;t++){ const v=maxV*t/ticks; const y=yAt(v); g+=`<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="#eef0f4"/>`; g+=`<text x="${padL-8}" y="${y+4}" text-anchor="end" font-size="11" fill="#9ca3af">${yFmt(v)}</text>`; }
+  const step=Math.ceil(n/7);
+  labels.forEach((l,i)=>{ if(i%step===0||i===n-1){ g+=`<text x="${xAt(i)}" y="${H-padB+18}" text-anchor="middle" font-size="10" fill="#9ca3af">${esc(String(l).length>8?String(l).slice(-8):l)}</text>`; } });
+  series.forEach((s,si)=>{
+    const color=PALETTE[si%PALETTE.length];
+    let d=''; s.data.forEach((v,i)=>{ if(v==null) return; d+=(d===''?'M':'L')+xAt(i)+' '+yAt(v)+' '; });
+    g+=`<path d="${d}" fill="none" stroke="${color}" stroke-width="2.4" stroke-linejoin="round"/>`;
+    s.data.forEach((v,i)=>{ if(v==null) return; g+=`<circle cx="${xAt(i)}" cy="${yAt(v)}" r="3.5" fill="${color}" data-tip="${esc(s.name)} · ${esc(labels[i])}<br>${yFmt(v)}" style="cursor:pointer"/>`; });
+  });
+  el.innerHTML=svgEl(W,H,g)+legendHTML(series.map((s,si)=>({name:s.name,color:PALETTE[si%PALETTE.length]})));
+  bindTips(el);
+}
+
+
+function saveState(){ try{ localStorage.setItem(STORE_KEY,JSON.stringify(STATE)); }catch(e){ /* 全量约30MB>5MB配额，超了属正常，依赖 IndexedDB */ } }
+
+function ownerColor(name){
+  if(!name) return '#9ca3af';
+  let h=0; for(let i=0;i<name.length;i++){ h=((h<<5)-h)+name.charCodeAt(i); h|=0; }
+  return OWNER_PALETTE[Math.abs(h)%OWNER_PALETTE.length];
+}
+
+function posDailyMap(){
+  // 和路雪：POS 实际由前台手动录入（STATE.brands['和路雪'].posInput），不再用库存/浮码公式推算
+  if(STATE.currentBrand==='和路雪'){
+    const m={}; const inp=(B().posInput)||{};
+    for(const d in inp){ const v=Math.round(num(inp[d])); if(v) m[d]=v; }
+    return m;
+  }
+  // POS 实际 = Σ（浮码 × 昨日出库商品件数）÷ 1.129
+  // 「昨日出库商品件数」取自库存明细（库存周转数据）的「昨日出库商品件数」列，按 时间 + SKU 匹配；
+  // 库存明细缺该 SKU/日期的昨日出库时该项留空（不计入 POS）。
+  const m={};
+  // 构建库存明细「昨日出库」索引：key = 日期|SKU → 昨日出库件数
+  const invBH={};
+  B().inventory.forEach(r=>{ const d=String(r.date||'').slice(0,10); const sku=String(r.sku||'').trim(); if(!d||!sku) return; invBH[d+'|'+sku]=num(r.outBH); });
+  let used=false;
+  (B().purchase||[]).forEach(r=>{
+    const d=String(r.date||'').slice(0,10); const sku=String(r.sku||'').trim(); if(!d||!sku) return;
+    const price=num(r.purchase);
+    const outQ=invBH[d+'|'+sku];                     // 库存明细里的「昨日出库商品件数」
+    if(!price || !outQ) return;                       // 缺出库则留空，不计入
+    const v=price*outQ/1.129; m[d]=(m[d]||0)+v; used=true;
+  });
+  if(used) return m;
+  // 回退：浮码数据表为空时，用库存表估算（库存金额 / 1.129）
+  B().inventory.forEach(r=>{ const d=r.date; if(!d) return;
+    const amt=(r.invAmount!==undefined && num(r.invAmount)>0)? num(r.invAmount) : (num(r.invQty)*num(r.purchase));
+    const v=amt/1.129; if(v) m[d]=(m[d]||0)+v; }); return m;
+}
+
+function renderInvThreePartHTML(tp){
+  const x=tp.cur;
+  const money=v=> (v==null||isNaN(v)||v===0)?'—':fmtMoney(v);
+  const num0=v=> (v==null||isNaN(v)||v===0)?'—':fmt(v,0);
+  const days=v=> (v==null||isNaN(v)||v<=0)?'—':v.toFixed(1);
+  const item=(label,value,cls='')=>`<div class="tp-item"><span class="tp-ilabel">${label}</span><span class="tp-ivalue ${cls}">${value}</span></div>`;
+  const row=(name,items)=>`<div class="tp-row-h"><div class="tp-section-name">${name}</div><div class="tp-metrics">${items.join('')}</div></div>`;
+  const r1=row('① 京仓',[
+    item('库存数量',num0(x.jcQty)),
+    item('库存金额',money(x.jcAmt),'blue'),
+    item('京仓真是在途金额',money(x.jcIntr)),
+    item('库存周转(天)',days(x.jcTurn)),
+    item('近7天销售金额',money(x.jc7)),
+    item('近14天销售金额',money(x.jc14)),
+  ]);
+  const r2=row('② 巢湖库存',[
+    item('库存数量',num0(x.chQty)),
+    item('库存金额',money(x.chAmt),'blue'),
+    item('品牌采购在途金额',money(x.chIntr)),
+  ]);
+  const r3=row('③ 全链路数据',[
+    item('全链路金额',money(x.fcAmt)),
+    item('全链路周转(天)',days(x.fcTurn)),
+    item('滞销金额',money(x.sluggish),num(x.sluggish)>0?'red':''),
+    item('长库龄金额',money(x.longAge),num(x.longAge)>0?'red':''),
+  ]);
+  return `<div class="tp-grid">${r1}${r2}${r3}</div>`;
+}
+
+function renderSales(){
+  // 销售 KPI 块已移除，仅保留「销售目标达成」（见 renderTargets）。
+  // 保留 computeSales 供目标达成使用。
+}
+
+function sampleAgingWarn(){return `日期\t60-90天长库龄预警金额\t90天以上长库龄金额\t60-90天长库龄预警金额（基调）\t60-90天长库龄预警金额（复调）\t90天以上长库龄金额（基调）\t90天以上长库龄金额（复调）
+2026-08-17\t180000\t95000\t120000\t60000\t60000\t35000
+2026-08-18\t175000\t92000\t115000\t60000\t58000\t34000
+2026-08-19\t168000\t90000\t110000\t58000\t56000\t34000
+2026-08-20\t160000\t88000\t108000\t52000\t55000\t33000`;}
+
+function sampleGantt(){
+  const t=new Date(); const y=t.getFullYear(), m=String(t.getMonth()+1).padStart(2,'0');
+  const d=n=>`${y}-${m}-${String(n).padStart(2,'0')}`;
+  return `模块\t日期\t结束日期\t任务\t负责人\t备注
+营销\t${d(1)}\t${d(5)}\t双11预热种草\t张三\t小红书/抖音投放
+营销\t${d(3)}\t${d(8)}\t达人直播排期\t李四\t待商务确认
+设计\t${d(2)}\t${d(6)}\t主图详情页改版\t王五\tAB测试
+设计\t${d(5)}\t\t首页Banner\t赵六\t运营提需
+数据\t${d(1)}\t${d(10)}\t月度经营分析看板\t钱七\tSQL+可视化
+数据\t${d(4)}\t\t竞品价格监控\t孙八\t爬虫已上线`;}
+
+function sampleJzt(){return `日期	营销场景	计划ID	推广计划	跟单SKU ID	跟单SKU名称	展现数	点击数	点击率(%)	花费	千次展现成本	平均点击成本	直接订单行	直接订单金额	间接订单行	间接订单金额	总订单行	总订单金额	直接加购数	间接加购数	总加购数	转化率(%)	平均订单成本	投产比	预售订单行	预售订单金额	下单新客数	下单新客数（去重）	预约数	领券数	商品关注数	店铺关注数	新客订单行	新客订单金额	成交用户数	成交用户成本
+2026-08-01	海投	P001	海投-蓝牙耳机	SKU-A01	蓝牙耳机A	120000	5400	4.5	3200	26.67	0.59	60	24000	26	9800	86	33800	120	50	170	1.59	37.21	10.56	4	1600	48	45	20	30	15	8	40	16000	80	40
+2026-08-01	快车	P002	快车-智能手表	SKU-B02	智能手表B	95000	4100	4.32	4500	47.37	1.1	40	48000	12	11800	52	59800	90	35	125	1.27	86.54	13.29	2	2400	30	28	12	18	10	5	25	32000	50	90
+2026-08-01	品牌聚效	P003	品牌聚效-筋膜枪	SKU-C03	筋膜枪C	88000	3900	4.43	2800	31.82	0.72	45	30000	15	9800	60	39800	80	30	110	1.54	46.67	14.21	3	1500	35	33	15	22	12	6	28	20000	60	46.67
+2026-08-02	海投	P001	海投-蓝牙耳机	SKU-A01	蓝牙耳机A	122000	5500	4.51	3300	27.05	0.6	62	24800	28	10200	90	35000	125	55	180	1.64	36.67	10.61	5	1800	50	47	22	33	16	9	42	16800	82	40.24
+2026-08-02	快车	P002	快车-智能手表	SKU-B02	智能手表B	96000	4200	4.38	4600	47.92	1.1	42	50400	14	12400	56	62800	95	38	133	1.33	82.14	13.65	2	2500	32	30	13	19	11	6	27	33600	52	88.46
+2026-08-02	品牌聚效	P003	品牌聚效-筋膜枪	SKU-C03	筋膜枪C	90000	4000	4.44	2900	32.22	0.73	48	31200	16	10200	64	41400	85	32	117	1.6	45.31	14.28	3	1600	37	35	16	24	13	7	30	20800	62	46.77`;}
+
+function sampleJzt2(){return `日期	商品计划名称	ID	投放类型	花费	全站投产比	全站交易额	全站订单行	全站订单成本	核心位置展现量	核心位置点击量	180天未购新客数	带券展现	带券点击	智能补贴券金额	智能补贴券助力订单行
+2026-08-01	海投-蓝牙耳机	PID-A01	通投	3200	10.56	33800	86	37.21	32000	5400	800	12000	900	1500	30
+2026-08-01	快车-智能手表	PID-B02	搜索	4500	13.29	59800	52	86.54	41000	4100	520	9000	700	2400	20
+2026-08-01	品牌聚效-筋膜枪	PID-C03	合约	2800	14.21	39800	60	46.67	39000	3900	410	8000	600	1600	25
+2026-08-02	海投-蓝牙耳机	PID-A01	通投	3300	10.61	35000	90	36.67	33000	5500	830	12500	950	1800	35
+2026-08-02	快车-智能手表	PID-B02	搜索	4600	13.65	62800	56	82.14	42000	4200	540	9200	720	2500	22
+2026-08-02	品牌聚效-筋膜枪	PID-C03	合约	2900	14.28	41400	64	45.31	40000	4000	430	8200	620	1700	28`;}
+
+function samplePurchase(){return `时间\tSKU\t浮码
+2026-08-17\tSKU-BE-01\t89.5
+2026-08-17\tSKU-SW-02\t235
+2026-08-17\tSKU-FG-03\t58
+2026-08-18\tSKU-BE-01\t89.5
+2026-08-18\tSKU-SW-02\t235
+2026-08-18\tSKU-FG-03\t58`;}
+
+function samplePurchaseOrder(){return `采购单号\t采购渠道\t合同主体\t供应商简码\t供应商名称\t商品编号\t商品名称\t订单属性\t配送中心\t京东仓库\t采购价格\t原始采购数量\t采购数量\t实收数量\t采购金额\t实收金额\t采购单位\t币种\t采购员\t建单人\t订单状态\t订购时间
+PO20260817001\t京东自营\tXX贸易有限公司\tS001\tXX食品供应商\tSKU-BE-01\t李锦记蒸鱼豉油610g\t普通\tRDC-华东\t京东上海仓\t18.50\t1000\t1000\t980\t18500.00\t18130.00\t瓶\tCNY\t张三\t李四\t已入库\t2026-08-17
+PO20260817002\t京东自营\tXX贸易有限公司\tS002\tXX调味供应商\tSKU-SW-02\t李锦记旧庄蚝油510g\t普通\tRDC-华南\t京东广州仓\t12.30\t800\t800\t800\t9840.00\t9840.00\t瓶\tCNY\t张三\t李四\t已入库\t2026-08-17
+PO20260818003\t京东POP\tXX商贸有限公司\tS003\tXX粮油供应商\tSKU-FG-03\t李锦记锦珍生抽1.6L\t普通\tRDC-华北\t京东北京仓\t22.80\t1500\t1500\t1450\t34200.00\t33060.00\t瓶\tCNY\t王五\t赵六\t部分入库\t2026-08-18`;}
+
+function sampleSpotRate(){return `日期\tPV现货率\t实库现货率
+2026-08-17\t0.96\t0.94
+2026-08-18\t0.95\t0.93
+2026-08-19\t0.97\t0.95
+2026-08-20\t0.96\t0.94`;}
+
+function sampleTargets(){return `类型\t粒度\t周期\t目标值
+品牌GMV\tmonth\t2026-08\t600000
+采销GMV\tmonth\t2026-08\t520000
+内部GMV\tmonth\t2026-08\t560000
+POS\tmonth\t2026-08\t420000
+京准通花费\tmonth\t2026-08\t30000
+品牌GMV\tday\t2026-08-01\t90000
+品牌GMV\tday\t2026-08-02\t90000
+品牌GMV\tday\t2026-08-03\t90000
+品牌GMV\tday\t2026-08-04\t90000
+品牌GMV\tday\t2026-08-05\t90000
+品牌GMV\tday\t2026-08-06\t90000
+品牌GMV\tday\t2026-08-07\t90000
+POS\tday\t2026-08-01\t65000
+POS\tday\t2026-08-02\t65000
+POS\tday\t2026-08-03\t65000
+POS\tday\t2026-08-04\t65000
+POS\tday\t2026-08-05\t65000
+POS\tday\t2026-08-06\t65000
+POS\tday\t2026-08-07\t65000`;}
+
+
+
+
+function showTip(html,x,y){ tip.innerHTML=html; tip.style.opacity=1; tip.style.left=(x+12)+'px'; tip.style.top=(y+12)+'px'; }
+
+
+
+
+
+function timeProgress(end){
+  if(!end || !/^\d{4}-\d{2}-\d{2}$/.test(end)) return null;
+  const ym=end.slice(0,7);
+  const day=parseInt(end.slice(8,10),10);
+  const dim=parseInt(lastDayOfMonth(ym).slice(8,10),10);
+  if(!day || !dim) return null;
+  return {frac:day/dim, day, dim, ym};
+}
+
+function updateTimeProgress(){
+  [['tvStart','tvEnd','tvTimeProgress'],['jztStart','jztEnd','jztTimeProgress']].forEach(([sid,eid,did])=>{
+    let start=$('#'+sid).value, end=$('#'+eid).value;
+    if(!start && !end){ const b=defaultRange(); start=b[0]; end=b[1]; }
+    else if(start && !end){ end=start; }
+    else if(!start && end){ start=end; }
+    const p=timeProgress(end); const el=$('#'+did); if(!el) return;
+    if(!p){ el.style.display='none'; el.innerHTML=''; return; }
+    el.style.display='flex';
+    el.innerHTML=`时间进度（${p.ym}）：<b>${fmtPct(p.frac)}</b><span class="muted">结束日 ${p.day} 天 / 当月 ${p.dim} 天</span><span class="bar"><i style="width:${(p.frac*100).toFixed(1)}%"></i></span>`;
+  });
+}
+
+function ymdAdd(str,n){ let [y,m,dd]=str.split('-').map(Number); const dt=new Date(y,m-1,dd); dt.setDate(dt.getDate()+n); return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`; }
+
+
 init();
 </script>
 <script>
