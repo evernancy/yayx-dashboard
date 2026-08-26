@@ -207,6 +207,19 @@
   </section>
 
   <!-- INVENTORY -->
+  <style>
+  .tp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:4px}
+  @media(max-width:900px){.tp-grid{grid-template-columns:1fr}}
+  .tp-card{background:var(--panel,#fff);border:1px solid var(--border,#e5e7eb);border-radius:10px;padding:12px 14px}
+  .tp-title{font-weight:700;font-size:14px;margin-bottom:8px;color:var(--blue,#2563eb);border-left:4px solid var(--blue,#2563eb);padding-left:8px}
+  .tp-row{display:flex;justify-content:space-between;align-items:baseline;padding:5px 0;border-bottom:1px dashed var(--border,#eee)}
+  .tp-row:last-child{border-bottom:none}
+  .tp-label{color:var(--muted,#666);font-size:13px}
+  .tp-value{font-weight:700;font-size:15px}
+  .tp-value.blue{color:var(--blue,#2563eb)}
+  .tp-value.red{color:#dc2626}
+  .tp-value.green{color:#16a34a}
+  </style>
   <section data-sub="inventory">
     <div class="panel">
       <h2>库存周转数据</h2>
@@ -218,6 +231,11 @@
         <span class="muted">选某天查看该日全量库存快照；默认显示最新一天</span>
       </div>
       <div class="kpis" id="invKpis"></div>
+    </div>
+    <div class="panel" id="invThreePartPanel" style="display:none;border-top:3px solid var(--blue,#2563eb)">
+      <h2>麦维他库存周转 · 三部分总览</h2>
+      <p class="hint">按「京仓 / 巢湖库存 / 全链路」三部分拆开展示库存周转核心指标。京仓真是在途金额、全链路金额取自「库存周转数据」录入列（缺列留空）；巢湖库存取自「2.4 巢湖库存数据」录入。</p>
+      <div class="tp-grid" id="invThreePart"></div>
     </div>
     <div class="panel"><div class="chart-title">事项（上周 / 本周）</div><div class="todo-grid" id="todo_inventory"></div></div>
     <div class="grid2">
@@ -662,7 +680,7 @@ const esc = s => String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt
 const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,''); const n=parseFloat(s); return isNaN(n)?0:n; };
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-26-fix33-chaohu-inv';
+const APP_VERSION = '2026-08-26-fix34-inv-three-part';
 /* 列名同义词映射 */
 const ALIAS = {
   date:['日期','时间','date','day','dt'],
@@ -745,6 +763,9 @@ const ALIAS = {
   realRate:['实库现货率','real_rate','实库现货率','real_avail'],
   chaohu:['巢湖库存','chaohu','chaohu_inv','巢湖'],
   fullChain:['全链路周转','full_chain','全链路'],
+  // —— 麦维他「库存周转·三部分」专用：京仓真是在途 / 全链路金额 ——
+  jcIntransit:['京仓真是在途金额','京仓真在途','京仓真实在途','京仓在途金额','京仓在途','真实在途金额','真实在途','京仓实际在途'],
+  fcAmount:['全链路金额','全链路库存金额','全链路总库存','全链路库存'],
   // —— 京准通推广专用 ——
   scene:['营销场景','场景','营销','投放类型','scene','marketing_scene'],
   planId:['计划id','计划编号','id','plan_id','planid'],
@@ -1050,14 +1071,14 @@ function sampleSalesPop(){return `时间	SKU	SKU名称	一级类目	二级类目
 2026-08-02	B07XMCV001	麦维他消化饼干400g	食品	饼干蛋糕	饼干	MCV-HG-001	13330	205	170	164	4.90%	79.46	65.40	3.98	12500	585	4.68%	8900	3350	2.66	37.9	450	395	430	20	7.94%	15800	14700	218	188	188	6.61%	5.66%	335	16	13
 2026-08-02	B07XMCV002	麦维他巧克力威化200g	食品	饼干蛋糕	威化	MCV-WF-002	11360	172	144	138	4.68%	78.47	67.85	3.85	10100	445	4.41%	7700	2950	2.61	40.8	372	330	354	18	8.26%	13400	12350	182	156	156	6.29%	5.39%	290	13	11`;}
 
-function sampleInv(){return `日期\t全国库存（件数）\t库存金额\t库存周转（天）\t近7天销售（件数）\t近7天销售（金额）\t近14天销售（件数）\t近14天销售（金额）\t日均销售（件数）\t日均销售（金额）\t60+长库龄金额\t60+长库龄金额（基调）\t60+长库龄金额（复调）\t滞销金额\t滞销金额（基调）\t滞销金额（复调）\tPV现货率\t实库现货率\t巢湖库存\t全链路周转
-2026-08-01\t12500\t2860000\t32.5\t2100\t485000\t4200\t968000\t300\t69200\t180000\t120000\t60000\t95000\t60000\t35000\t0.96\t0.94\t3200\t38.2
-2026-08-02\t12100\t2773000\t31.8\t2250\t520000\t4300\t991000\t322\t74200\t175000\t115000\t60000\t92000\t58000\t34000\t0.95\t0.93\t3100\t37.6
-2026-08-03\t11850\t2715000\t31.2\t2380\t549000\t4500\t1037000\t340\t78300\t168000\t110000\t58000\t90000\t56000\t34000\t0.95\t0.92\t3050\t37.1
-2026-08-04\t11600\t2658000\t30.6\t2450\t566000\t4700\t1083000\t350\t80600\t160000\t105000\t55000\t88000\t55000\t33000\t0.96\t0.93\t3000\t36.5
-2026-08-05\t11200\t2568000\t29.9\t2520\t582000\t4900\t1129000\t360\t82900\t155000\t100000\t55000\t85000\t53000\t32000\t0.97\t0.94\t2950\t35.9
-2026-08-06\t10850\t2486000\t29.3\t2610\t603000\t5100\t1175000\t373\t85900\t150000\t98000\t52000\t83000\t52000\t31000\t0.97\t0.95\t2900\t35.4
-2026-08-07\t10500\t2406000\t28.7\t2700\t624000\t5300\t1221000\t386\t88900\t145000\t95000\t50000\t80000\t50000\t30000\t0.98\t0.96\t2850\t34.8`;}
+function sampleInv(){return `日期\t全国库存（件数）\t库存金额\t库存周转（天）\t近7天销售（件数）\t近7天销售（金额）\t近14天销售（件数）\t近14天销售（金额）\t日均销售（件数）\t日均销售（金额）\t60+长库龄金额\t60+长库龄金额（基调）\t60+长库龄金额（复调）\t滞销金额\t滞销金额（基调）\t滞销金额（复调）\tPV现货率\t实库现货率\t巢湖库存\t全链路周转\t京仓真是在途金额\t全链路金额
+2026-08-01\t12500\t2860000\t32.5\t2100\t485000\t4200\t968000\t300\t69200\t180000\t120000\t60000\t95000\t60000\t35000\t0.96\t0.94\t3200\t38.2\t420000\t3120000
+2026-08-02\t12100\t2773000\t31.8\t2250\t520000\t4300\t991000\t322\t74200\t175000\t115000\t60000\t92000\t58000\t34000\t0.95\t0.93\t3100\t37.6\t405000\t3050000
+2026-08-03\t11850\t2715000\t31.2\t2380\t549000\t4500\t1037000\t340\t78300\t168000\t110000\t58000\t90000\t56000\t34000\t0.95\t0.92\t3050\t37.1\t398000\t2980000
+2026-08-04\t11600\t2658000\t30.6\t2450\t566000\t4700\t1083000\t350\t80600\t160000\t105000\t55000\t88000\t55000\t33000\t0.96\t0.93\t3000\t36.5\t385000\t2910000
+2026-08-05\t11200\t2568000\t29.9\t2520\t582000\t4900\t1129000\t360\t82900\t155000\t100000\t55000\t85000\t53000\t32000\t0.97\t0.94\t2950\t35.9\t372000\t2840000
+2026-08-06\t10850\t2486000\t29.3\t2610\t603000\t5100\t1175000\t373\t85900\t150000\t98000\t52000\t83000\t52000\t31000\t0.97\t0.95\t2900\t35.4\t360000\t2770000
+2026-08-07\t10500\t2406000\t28.7\t2700\t624000\t5300\t1221000\t386\t88900\t145000\t95000\t50000\t80000\t50000\t30000\t0.98\t0.96\t2850\t34.8\t348000\t2700000`;}
 
 function sampleJzt(){return `日期	营销场景	计划ID	推广计划	跟单SKU ID	跟单SKU名称	展现数	点击数	点击率(%)	花费	千次展现成本	平均点击成本	直接订单行	直接订单金额	间接订单行	间接订单金额	总订单行	总订单金额	直接加购数	间接加购数	总加购数	转化率(%)	平均订单成本	投产比	预售订单行	预售订单金额	下单新客数	下单新客数（去重）	预约数	领券数	商品关注数	店铺关注数	新客订单行	新客订单金额	成交用户数	成交用户成本
 2026-08-01	海投	P001	海投-蓝牙耳机	SKU-A01	蓝牙耳机A	120000	5400	4.5	3200	26.67	0.59	60	24000	26	9800	86	33800	120	50	170	1.59	37.21	10.56	4	1600	48	45	20	30	15	8	40	16000	80	40
@@ -1307,6 +1328,7 @@ function invRow(r){
     sluggish: g('sluggish'), sluggish_j: g('sluggish_j'), sluggish_f: g('sluggish_f'),
     pvRate: g('pvRate'), realRate: g('realRate'),
     chaohu: g('chaohu'), fullChain: g('fullChain'),
+    jcIntransit: g('jcIntransit'), fcAmount: g('fcAmount'),
   };
 }
 function computeInv(asOf){
@@ -1391,27 +1413,78 @@ function posDailyMap(){
     const amt=(r.invAmount!==undefined && num(r.invAmount)>0)? num(r.invAmount) : (num(r.invQty)*num(r.purchase));
     const v=amt/1.129; if(v) m[d]=(m[d]||0)+v; }); return m;
 }
+/* ---------- 麦维他「库存周转·三部分」专用 ---------- */
+function chGet(r,name){
+  if(r[name]!==undefined && r[name]!=='') return r[name];
+  const ek='ext_'+name.replace(/\s+/g,'');
+  if(r[ek]!==undefined && r[ek]!=='') return r[ek];
+  for(const k in r){ if(k && k.replace(/^ext_/,'').indexOf(name)>=0 && r[k]!=='') return r[k]; }
+  return undefined;
+}
+// 巢湖库存：按查看日期聚合「2.4 巢湖库存数据」当日全部行的 可发库存 / 可发金额 / 品牌采购在途
+function computeChaohuAgg(asOf){
+  const rows=(B().chaohu||[]);
+  if(!rows.length) return null;
+  const ds=[...new Set(rows.map(r=>String(r.date||'').slice(0,10)))].filter(Boolean).sort();
+  const target=asOf||ds[ds.length-1];
+  const day=rows.filter(r=>String(r.date||'').slice(0,10)===target);
+  let qty=0,amt=0,intr=0;
+  day.forEach(r=>{ qty+=num(chGet(r,'可发库存')); amt+=num(chGet(r,'可发金额')); intr+=num(chGet(r,'品牌采购在途')); });
+  return {date:target, qty, amt, intr, empty: day.length===0};
+}
+function renderInvThreePartHTML(x,ch){
+  const longAge=num(x.age60)+num(x.age90);
+  const card=(title,items)=>`<div class="tp-card"><div class="tp-title">${title}</div>${items.map(i=>`<div class="tp-row"><span class="tp-label">${i.label}</span><span class="tp-value ${i.cls||''}">${i.value}</span></div>`).join('')}</div>`;
+  const p1=card('① 京仓',[
+    {label:'库存数量', value: x.invQtyTotal?fmt(x.invQtyTotal,0):'—'},
+    {label:'库存金额', value: fmtMoney(x.invAmount), cls:'blue'},
+    {label:'京仓真是在途金额', value: fmtMoney(x.jcIntransit)},
+    {label:'库存周转(天)', value: x.turnDays?x.turnDays.toFixed(1):'—'},
+    {label:'近7天销售金额', value: fmtMoney(x.s7amt)},
+    {label:'近14天销售金额', value: fmtMoney(x.s14amt)},
+  ]);
+  const p2=card('② 巢湖库存',[
+    {label:'库存数量', value: ch&&!ch.empty?fmt(ch.qty,0):'—'},
+    {label:'库存金额', value: ch&&!ch.empty?fmtMoney(ch.amt):'—', cls:'blue'},
+    {label:'品牌采购在途金额', value: ch&&!ch.empty?fmtMoney(ch.intr):'—'},
+  ]);
+  const p3=card('③ 全链路数据',[
+    {label:'全链路金额', value: fmtMoney(x.fcAmount)},
+    {label:'全链路周转(天)', value: x.fullChain?x.fullChain.toFixed(1):'—'},
+    {label:'滞销金额', value: fmtMoney(x.sluggish), cls:num(x.sluggish)>0?'red':''},
+    {label:'长库龄金额', value: fmtMoney(longAge), cls:longAge>0?'red':''},
+  ]);
+  return `<div class="tp-grid">${p1}${p2}${p3}</div>`;
+}
 function renderInv(){
-  const c=computeInv(invAsOf); const el=$('#invKpis');
-  if(!c){ el.innerHTML='<div class="empty">请在「数据输入区 → 库存周转数据」粘贴供应链库存周转模板（含表头）</div>'; $('#invRate').innerHTML=$('#invDays').innerHTML=$('#invTable').innerHTML=''; return; }
+  const isThree=INV_THREE_PART_BRANDS.includes(STATE.currentBrand);
+  const c=computeInv(invAsOf); const el=$('#invKpis'); const panel=$('#invThreePartPanel');
+  if(!c){ el.style.display=''; panel.style.display='none'; el.innerHTML='<div class="empty">请在「数据输入区 → 库存周转数据」粘贴供应链库存周转模板（含表头）</div>'; $('#invRate').innerHTML=$('#invDays').innerHTML=$('#invTable').innerHTML=''; return; }
   const x=c.cur;
   const pctShow=v=>{ if(v===undefined||isNaN(v)||v===0) return '—'; const p=v>1? v : v*100; return p.toFixed(1)+'%'; };
   const pctCls=v=>{ if(v===undefined||isNaN(v)) return ''; const p=v>1? v : v*100; return p>=90?'green':(p>=70?'amber':'red'); };
-  el.innerHTML=kpiHTML([
-    {label:'库存金额',value:fmtMoney(x.invAmount),cls:'blue'},
-    {label:'库存周转(天)',value:x.turnDays?x.turnDays.toFixed(1):'—',sub:'库存周转（天）'},
-    {label:'近7天销售(金额)',value:fmtMoney(x.s7amt)},
-    {label:'近14天销售(金额)',value:fmtMoney(x.s14amt)},
-    {label:'日均销售(金额)',value:fmtMoney(x.damt)},
-    {label:'60-90天长库龄预警金额',value:fmtMoney(x.age60),cls:x.age60>0?'red':''},
-    {label:'90天以上长库龄金额',value:fmtMoney(x.age90),cls:x.age90>0?'red':''},
-    {label:'60-90天预警(基调)',value:fmtMoney(x.age60_j),cls:x.age60_j>0?'red':''},
-    {label:'60-90天预警(复调)',value:fmtMoney(x.age60_f),cls:x.age60_f>0?'red':''},
-    {label:'90天以上(基调)',value:fmtMoney(x.age90_j),cls:x.age90_j>0?'red':''},
-    {label:'90天以上(复调)',value:fmtMoney(x.age90_f),cls:x.age90_f>0?'red':''},
-    {label:'PV现货率',value:pctShow(x.pvRate),cls:pctCls(x.pvRate)},
-    {label:'实库现货率',value:pctShow(x.realRate),cls:pctCls(x.realRate)},
-  ]);
+  if(isThree){
+    el.style.display='none'; panel.style.display='';
+    const ch=computeChaohuAgg(invAsOf);
+    $('#invThreePart').innerHTML=renderInvThreePartHTML(x,ch);
+  } else {
+    el.style.display=''; panel.style.display='none'; $('#invThreePart').innerHTML='';
+    el.innerHTML=kpiHTML([
+      {label:'库存金额',value:fmtMoney(x.invAmount),cls:'blue'},
+      {label:'库存周转(天)',value:x.turnDays?x.turnDays.toFixed(1):'—',sub:'库存周转（天）'},
+      {label:'近7天销售(金额)',value:fmtMoney(x.s7amt)},
+      {label:'近14天销售(金额)',value:fmtMoney(x.s14amt)},
+      {label:'日均销售(金额)',value:fmtMoney(x.damt)},
+      {label:'60-90天长库龄预警金额',value:fmtMoney(x.age60),cls:x.age60>0?'red':''},
+      {label:'90天以上长库龄金额',value:fmtMoney(x.age90),cls:x.age90>0?'red':''},
+      {label:'60-90天预警(基调)',value:fmtMoney(x.age60_j),cls:x.age60_j>0?'red':''},
+      {label:'60-90天预警(复调)',value:fmtMoney(x.age60_f),cls:x.age60_f>0?'red':''},
+      {label:'90天以上(基调)',value:fmtMoney(x.age90_j),cls:x.age90_j>0?'red':''},
+      {label:'90天以上(复调)',value:fmtMoney(x.age90_f),cls:x.age90_f>0?'red':''},
+      {label:'PV现货率',value:pctShow(x.pvRate),cls:pctCls(x.pvRate)},
+      {label:'实库现货率',value:pctShow(x.realRate),cls:pctCls(x.realRate)},
+    ]);
+  }
   lineChart('#invRate',{labels:c.dates, series:[
     {name:'库存金额',data:c.all.map(x=>x.invAmount||null)},
     {name:'库存周转(天)',data:c.all.map(x=>x.turnDays||null)},
@@ -2587,6 +2660,8 @@ let currentView='overview';
 function setSubview(name){ lijxSub=name; $$('.subtab').forEach(t=>t.classList.toggle('active',t.dataset.view===name)); const root=document.querySelector('[data-section="lijx"]'); if(root) root.querySelectorAll('[data-sub]').forEach(s=>{ s.style.display=(s.dataset.sub===name)?'block':'none'; }); }
 // 临时隐藏「京准通推广」「库存周转」两个子视图的品牌（表格/代码保留，仅控制显隐，后续改此处数组即可放出）
 const JZT_INV_HIDDEN_BRANDS=['和路雪','家乐','联合利华'];
+// 库存周转「三部分总览」品牌白名单：仅这些品牌在库存周转视图展示「京仓 / 巢湖库存 / 全链路」三卡（其余品牌维持原 13 项 KPI）
+const INV_THREE_PART_BRANDS=['麦维他'];
 function applyBrandSubtabs(){
   const hide=JZT_INV_HIDDEN_BRANDS.includes(STATE.currentBrand);
   ['jzt','inventory'].forEach(v=>{
