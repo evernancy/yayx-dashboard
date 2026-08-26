@@ -616,7 +616,7 @@ const esc = s => String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt
 const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,''); const n=parseFloat(s); return isNaN(n)?0:n; };
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-25-fix27-brand-split-storage';
+const APP_VERSION = '2026-08-26-fix28-no-token-local-priority';
 /* 列名同义词映射 */
 const ALIAS = {
   date:['日期','时间','date','day','dt'],
@@ -3589,6 +3589,14 @@ function clearInputs(){ $('#salesInput').value=''; $('#invInput').value=''; $('#
 async function saveToService(){
   idbSet(STATE); // 浏览器本地主存储：容量大、离线可用
   if(window.__noCloudPushOnce){ return; } // 保险丝：示例初始化只存本地，不推云端
+  if(!ghToken()){
+    // 无令牌：云端/快照均不可写，数据只在本机浏览器。明确告警一次，避免同事以为已保存（fix28）
+    if(!window.__warnedNoToken){
+      window.__warnedNoToken=true;
+      toast('⚠️ 未配置 GitHub 令牌：刚录入的数据仅存本机浏览器，刷新/换设备/清缓存将丢失，且同事看不到。点右下角「未配置令牌」徽章粘贴令牌，即可云端保存并团队共享。', true);
+    }
+    return; // 无令牌不尝试云端，避免无谓 401 报错
+  }
   try{ await ghUpsertBoard(currentBoard.id, currentBoard.name, STATE); }
   catch(e){ /* 云端不可达：忽略，依赖本地缓存；下次保存会自动重试 */ }
   // 有令牌时同步公开快照（查看者免令牌只读）
@@ -3629,15 +3637,30 @@ async function boot(){
       if(loaded && raw){ try{ const o=JSON.parse(raw.content); if(!o.format||o.format!==SPLIT_FORMAT) migrateBoardToSplit(currentBoard.id, currentBoard.name, loaded); }catch(_){} }
     }catch(e){ loaded=null; }
   }
-  // 云端读不到时（无令牌，或 GitHub API 被本机网络拦截）：先试公开快照（github.io 域名，团队共享口径，始终为最新真源），再退回本地缓存
+  // 云端读不到时（无令牌，或 GitHub API 被本机网络拦截）
   if(!loaded){
-    try{ const snap=await fetchPublicSnapshot(); if(snap){ loaded=snap.state; fromWhere='公开快照'; if(snap.name) currentBoard={id:snap.id||currentBoard.id, name:snap.name}; } }catch(e){}
+    const snap=await fetchPublicSnapshot().catch(()=>null);
+    const local=await idbGet().catch(()=>null);
+    const snapOk=snap&&snap.state&&isUsableState(snap.state);
+    const localOk=local&&isUsableState(local);
+    if(ghToken()){
+      // 有令牌的录入同事：云端已优先；此处优先公开快照（共享真源），本地缓存兜底
+      if(snapOk){ loaded=snap.state; fromWhere='公开快照'; if(snap.name) currentBoard={id:snap.id||currentBoard.id, name:snap.name}; }
+      else if(localOk){ loaded=local; fromWhere='本地缓存'; }
+    } else {
+      // 无令牌的编辑同事：其本机 IndexedDB 才是自己录入的真源（云端写不进去）。
+      // 若本地有数据，按字段与公开快照做并集（本地非空优先、快照补缺），避免被只读快照覆盖掉刚上传却未存云端的 by-day 等数据（fix28）。
+      if(localOk && snapOk){
+        try{ loaded=mergeBoardState(local, snap.state); fromWhere='本地优先·与公开快照合并'; }
+        catch(_){ loaded=local; fromWhere='本地缓存'; }
+      } else if(localOk){ loaded=local; fromWhere='本地缓存'; }
+      else if(snapOk){ loaded=snap.state; fromWhere='公开快照'; if(snap.name) currentBoard={id:snap.id||currentBoard.id, name:snap.name}; }
+    }
   }
-  if(!loaded){ try{ const c=await idbGet(); if(isUsableState(c)){ loaded=c; fromWhere='本地缓存'; } }catch(e){} }
   if(loaded){
     hydrateFromState(loaded);
-    // 🔧 云端/公开快照加载成功后，强制把云端真值写回本地 IndexedDB，覆盖任何旧缓存残留，避免下次 fallback 到陈旧数据
-    if(fromWhere==='云端'||fromWhere==='公开快照'){ try{ idbSet(STATE); }catch(e){} }
+    // 🔧 云端/公开快照/本地合并加载成功后，强制把真值写回本地 IndexedDB，覆盖任何旧缓存残留，避免下次 fallback 到陈旧数据
+    if(fromWhere==='云端'||fromWhere==='公开快照'||fromWhere==='本地优先·与公开快照合并'){ try{ idbSet(STATE); }catch(e){} }
     const invN=(B().inventory||[]).length, salesN=(B().sales||[]).length, jztN=(B().jzt||[]).length, gN=(STATE.gantt||[]).length;
     ensureGanttIds();
     // 诊断：显示版本号 + 麦维他关键词花费（确认 reparseObj 自愈生效）
@@ -3649,8 +3672,9 @@ async function boot(){
       }catch(e){ return 'err'; }
     })();
     console.log('[dashboard] v2026-08-25-fix4 reparseObj='+!!window.reparseObj+' 麦维他关键词花费='+kwSpend+' jzt总行数='+jztN);
-    if(fromWhere==='云端'){ toast('已从云端加载数据 · v2026-08-25'); window.__hideCollabBadge=true; }
+    if(fromWhere==='云端'){ toast('已从云端加载数据 · v2026-08-26'); window.__hideCollabBadge=true; }
     else if(fromWhere==='公开快照'){ toast('已载入「'+currentBoard.name+'」最新数据（只读模式，由录入同事每日更新）'); }
+    else if(fromWhere==='本地优先·与公开快照合并'){ toast('已从本机恢复并合并公开快照（未配置令牌：数据仅存本机，点右下角徽章粘贴令牌即可云端共享）'); }
     else { toast('已从本地缓存恢复「'+currentBoard.name+'」（云端暂不可用，联网后将自动同步）'); }
   } else {
     // 真正的首次使用：本地与云端都无数据 → 载入示例（此分支才会写样例，不会覆盖已有数据）
