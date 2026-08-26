@@ -680,7 +680,7 @@ const esc = s => String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt
 const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,''); const n=parseFloat(s); return isNaN(n)?0:n; };
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-26-fix35-inv-three-part-logic';
+const APP_VERSION = '2026-08-26-fix36-inv-three-part-render-placeholder';
 /* 列名同义词映射 */
 const ALIAS = {
   date:['日期','时间','date','day','dt','订购时间','采购时间','下单时间'],
@@ -1434,7 +1434,6 @@ function chGet(r,name){
 //       滞销金额=90天以上长库龄金额；长库龄金额=60-90天长库龄预警金额
 function computeThreePart(asOf){
   const inv=B().inv_full||[];
-  if(!inv.length) return null;
   // 浮码价格索引：优先 日期|SKU，回退 SKU 最新价
   const ppBySku={}, ppByDS={};
   (B().purchase||[]).forEach(r=>{ const d=String(r.date||'').slice(0,10); const sku=String(r.sku||'').trim(); const p=num(r.purchase); if(isNaN(p)) return; if(sku) ppBySku[sku]=p; if(d&&sku) ppByDS[d+'|'+sku]=p; });
@@ -1450,6 +1449,10 @@ function computeThreePart(asOf){
   (B().aging_warn||[]).forEach(r=>{ const d=String(r.date||'').slice(0,10); if(!d) return; const g=k=>num(r[k]); awByDate[d]={ age60:g('age60')||num(r['60-90天长库龄预警金额']), age90:g('age90')||num(r['90天以上长库龄金额']) }; });
   const ds=[...new Set(inv.map(r=>String(r.date||'').slice(0,10)))].filter(Boolean).sort();
   const target=asOf||ds[ds.length-1];
+  if(!ds.length){
+    // 暂无库存明细数据：返回占位结构，三卡显示 -/0，便于先看布局
+    return {all:[], cur:{date:target||'—', jcQty:0,jcAmt:0,jcIntr:0,jc7:0,jc14:0,s30:0,jcTurn:null,chQty:0,chAmt:0,chIntr:0,fcAmt:0,fcTurn:null,sluggish:0,longAge:0}, dates:[], target:target||'', hasData:false};
+  }
   const all=ds.map(d=>{
     const day=inv.filter(r=>String(r.date||'').slice(0,10)===d);
     let jcQty=0,jcAmt=0,s7=0,s14=0,s30=0;
@@ -1497,9 +1500,8 @@ function renderInv(){
   const el=$('#invKpis'); const panel=$('#invThreePartPanel');
   if(isThree){
     const tp=computeThreePart(invAsOf);
-    if(!tp){ el.style.display=''; panel.style.display='none'; el.innerHTML='<div class="empty">请在「数据输入区 → 库存明细（全量列）」粘贴麦维他的全国/城市仓库存明细（含表头），并录入浮码 / 采购单 / 巢湖库存 / 长库龄预警数据</div>'; $('#invRate').innerHTML=$('#invDays').innerHTML=$('#invTable').innerHTML=''; return; }
     el.style.display='none'; panel.style.display='';
-    $('#invThreePart').innerHTML=renderInvThreePartHTML(tp);
+    $('#invThreePart').innerHTML=renderInvThreePartHTML(tp)+(tp.hasData?'':'<div class="tp-hint" style="margin-top:8px;color:#9ca3af;font-size:12px;">（占位视图：当前未录入数据，数值显示 —；在「数据输入区」录入库存明细(全量列)/浮码/采购单/巢湖/长库龄后将自动计算）</div>');
     lineChart('#invRate',{labels:tp.dates, series:[
       {name:'京仓库存金额',data:tp.all.map(x=>x.jcAmt||null)},
       {name:'京仓真实在途金额',data:tp.all.map(x=>x.jcIntr||null)},
@@ -1511,7 +1513,8 @@ function renderInv(){
       {name:'全链路周转(天)',data:tp.all.map(x=>x.fcTurn||null)},
     ], yFmt:v=>v==null?'—':v.toFixed(1)});
     let t='<table class="tpl" style="margin-top:8px"><tr><th>日期</th><th>京仓库存数量</th><th>京仓库存金额</th><th>京仓在途</th><th>近7天销(额)</th><th>近14天销(额)</th><th>京仓周转</th><th>巢湖数量</th><th>巢湖金额</th><th>巢湖在途</th><th>全链路金额</th><th>全链路周转</th><th>滞销金额</th><th>长库龄金额</th></tr>';
-    tp.all.forEach(x=>{ t+=`<tr><td>${esc(x.date)}</td><td>${x.jcQty?fmt(x.jcQty,0):'—'}</td><td>${x.jcAmt?fmtMoney(x.jcAmt):'—'}</td><td>${x.jcIntr?fmtMoney(x.jcIntr):'—'}</td><td>${x.jc7?fmtMoney(x.jc7):'—'}</td><td>${x.jc14?fmtMoney(x.jc14):'—'}</td><td>${x.jcTurn?x.jcTurn.toFixed(1):'—'}</td><td>${x.chQty?fmt(x.chQty,0):'—'}</td><td>${x.chAmt?fmtMoney(x.chAmt):'—'}</td><td>${x.chIntr?fmtMoney(x.chIntr):'—'}</td><td>${x.fcAmt?fmtMoney(x.fcAmt):'—'}</td><td>${x.fcTurn?x.fcTurn.toFixed(1):'—'}</td><td>${x.sluggish?fmtMoney(x.sluggish):'—'}</td><td>${x.longAge?fmtMoney(x.longAge):'—'}</td></tr>`; });
+    if(tp.all.length){ tp.all.forEach(x=>{ t+=`<tr><td>${esc(x.date)}</td><td>${x.jcQty?fmt(x.jcQty,0):'—'}</td><td>${x.jcAmt?fmtMoney(x.jcAmt):'—'}</td><td>${x.jcIntr?fmtMoney(x.jcIntr):'—'}</td><td>${x.jc7?fmtMoney(x.jc7):'—'}</td><td>${x.jc14?fmtMoney(x.jc14):'—'}</td><td>${x.jcTurn?x.jcTurn.toFixed(1):'—'}</td><td>${x.chQty?fmt(x.chQty,0):'—'}</td><td>${x.chAmt?fmtMoney(x.chAmt):'—'}</td><td>${x.chIntr?fmtMoney(x.chIntr):'—'}</td><td>${x.fcAmt?fmtMoney(x.fcAmt):'—'}</td><td>${x.fcTurn?x.fcTurn.toFixed(1):'—'}</td><td>${x.sluggish?fmtMoney(x.sluggish):'—'}</td><td>${x.longAge?fmtMoney(x.longAge):'—'}</td></tr>`; }); }
+    else t+='<tr><td colspan="14" class="empty">暂无数据，数值显示 —</td></tr>';
     t+='</table>'; $('#invTable').innerHTML=t;
     return;
   }
@@ -1520,13 +1523,8 @@ function renderInv(){
   const x=c.cur;
   const pctShow=v=>{ if(v===undefined||isNaN(v)||v===0) return '—'; const p=v>1? v : v*100; return p.toFixed(1)+'%'; };
   const pctCls=v=>{ if(v===undefined||isNaN(v)) return ''; const p=v>1? v : v*100; return p>=90?'green':(p>=70?'amber':'red'); };
-  if(isThree){
-    el.style.display='none'; panel.style.display='';
-    const ch=computeChaohuAgg(invAsOf);
-    $('#invThreePart').innerHTML=renderInvThreePartHTML(x,ch);
-  } else {
-    el.style.display=''; panel.style.display='none'; $('#invThreePart').innerHTML='';
-    el.innerHTML=kpiHTML([
+  el.style.display=''; panel.style.display='none'; $('#invThreePart').innerHTML='';
+  el.innerHTML=kpiHTML([
       {label:'库存金额',value:fmtMoney(x.invAmount),cls:'blue'},
       {label:'库存周转(天)',value:x.turnDays?x.turnDays.toFixed(1):'—',sub:'库存周转（天）'},
       {label:'近7天销售(金额)',value:fmtMoney(x.s7amt)},
@@ -1541,7 +1539,6 @@ function renderInv(){
       {label:'PV现货率',value:pctShow(x.pvRate),cls:pctCls(x.pvRate)},
       {label:'实库现货率',value:pctShow(x.realRate),cls:pctCls(x.realRate)},
     ]);
-  }
   lineChart('#invRate',{labels:c.dates, series:[
     {name:'库存金额',data:c.all.map(x=>x.invAmount||null)},
     {name:'库存周转(天)',data:c.all.map(x=>x.turnDays||null)},
