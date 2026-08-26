@@ -234,7 +234,7 @@
     </div>
     <div class="panel" id="invThreePartPanel" style="display:none;border-top:3px solid var(--blue,#2563eb)">
       <h2>麦维他库存周转 · 三部分总览</h2>
-      <p class="hint">按「京仓 / 巢湖库存 / 全链路」三部分拆开展示库存周转核心指标。京仓真是在途金额、全链路金额取自「库存周转数据」录入列（缺列留空）；巢湖库存取自「2.4 巢湖库存数据」录入。</p>
+      <p class="hint">按「京仓 / 巢湖库存 / 全链路」三部分拆开展示库存周转核心指标。京仓真是在途金额、全链路金额取自「库存明细（麦维他）」录入列（缺列留空）；巢湖库存取自「2.4 巢湖库存数据」录入。</p>
       <div class="tp-grid" id="invThreePart"></div>
     </div>
     <div class="panel"><div class="chart-title">事项（上周 / 本周）</div><div class="todo-grid" id="todo_inventory"></div></div>
@@ -351,8 +351,8 @@
         <div class="diag" id="diagSales"></div>
       </details>
 
-      <details>
-        <summary>2.1 · 库存周转数据</summary>
+<details>
+        <summary>2.1 · 库存明细（李锦记）</summary>
         <div class="row">
           <span class="muted" style="font-size:12px">品牌</span>
           <select id="brand_inventory" class="secBrand" data-sec="inventory" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px">
@@ -373,12 +373,12 @@
         <div class="diag" id="diagInv"></div>
       </details>
 
-      <details>
-        <summary>2.2 · 浮码数据</summary>
-        <p class="hint">浮码数据与库存周转数据相互独立，本框单独录入、单独存储。表头：<b>时间 / SKU / 浮码</b>（无需录入出库件数）。「全国昨日出库商品件数」<b>自动取自「库存周转数据」明细中的「昨日出库商品件数」列，按时间 + SKU 匹配</b>；公式为 <b>Σ（浮码 × 昨日出库商品件数）÷ 1.129</b>，用于计算 POS 实际数据。库存明细缺该 SKU/日期的昨日出库时该项留空（不计入 POS）。同一「时间 + SKU」重复录入即覆盖更新。</p>
+<details>
+        <summary>2.2 · 库存明细（麦维他）</summary>
+        <p class="hint">本模板为供应链「库存明细·全量列」导出：含 时间 / 商品名称 / SKU / 品牌 / 一级~三级类目 / 店铺名称 / 供应商 / 全国采购价 … 前缀列，外加「全国」与各城市/仓（上海、北京、成都…林芝等约 80 个）的库存·出入库·厂直·VMI·采购·退供应商等指标块。<b>列名自动识别，缺列留空</b>；每行 = 某天某个 SKU 的全量快照。<b>该数据独立录入、独立存储</b>（与 2.1 库存明细（李锦记）互不覆盖）；粘贴含表头的数据后点「应用并更新看板」即保存。点击「填入模板」可自动生成完整表头，点「下载填写模板」可导出 .xlsx。</p>
         <div class="row">
           <span class="muted" style="font-size:12px">品牌</span>
-          <select id="brand_purchase" class="secBrand" data-sec="purchase" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px">
+          <select id="brand_inv_full" class="secBrand" data-sec="inv_full" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px">
             <option value="李锦记">李锦记</option>
             <option value="麦维他自营">麦维他自营</option>
             <option value="麦维他POP">麦维他POP</option>
@@ -387,21 +387,21 @@
             <option value="家乐">家乐</option>
             <option value="联合利华">联合利华</option>
           </select>
-          <label class="filelabel">上传文件<input type="file" id="ppFile" accept=".csv,.xlsx,.xls" hidden></label>
-          <button class="btn2 ghost" data-fill="purchase">填入模板</button>
-          <button class="btn2 ghost" id="ppTplBtn">下载填写模板</button>
-          <button class="btn2 ghost clearBtn" data-which="purchase">清除历史</button>
+          <label class="filelabel">上传文件<input type="file" id="invFullFile" accept=".csv,.xlsx,.xls" hidden></label>
+          <button class="btn2 ghost" data-fill="inv_full">填入模板</button>
+          <button class="btn2 ghost" id="invFullTplBtn">下载填写模板</button>
+          <button class="btn2 ghost clearBtn" data-which="inv_full">清除历史</button>
         </div>
-        <textarea id="ppInput" placeholder="时间&#9;SKU&#9;浮码（浮码单独录入；全国昨日出库件数自动取自库存明细的「昨日出库商品件数」列，按时间+SKU匹配）"></textarea>
-        <div class="diag" id="diagPp"></div>
+        <textarea id="invFullInput" placeholder="粘贴供应链库存明细·全量列（含表头，列名自动识别）；点击「填入模板」可自动生成完整表头。数据独立存储，与 2.1 库存明细（李锦记）互不覆盖。" style="min-height:140px"></textarea>
+        <div class="diag" id="diagInvFull"></div>
       </details>
 
-      <details>
-        <summary>2.3 · 采购单数据</summary>
-        <p class="hint">采购单数据与库存周转数据相互独立，本框单独录入、单独存储。表头：采购单号 / 采购渠道 / 合同主体 / 供应商简码 / 供应商名称 / 商品编号 / 商品名称 / 订单属性 / 配送中心 / 京东仓库 / 京东库房地址 / 京东站点 / 京东站点地址 / 收货负责人 / 收货电话 / 采购价格 / 原始采购数量 / 采购数量 / 实收数量 / 贴码建议 / 京东贴码数量 / 溯源贴码 / 重码UPC / UPC码 / 采购金额 / 实收金额 / 采购单位 / 币种 / 采购员 / 建单人 / 订单状态 / 订购时间 等全量列（列名自动识别，缺列留空）。<b>当前仅做录入与存储，计算口径稍后由你确认后再接入。</b></p>
+<details>
+        <summary>2.3 · 库存明细（丝蕴）</summary>
+        <p class="hint">表头（共 69 列）：<b>时间 / 商品名称 / SKU / 品牌 / 一级类目 / 二级类目 / 三级类目 / 店铺名称 / 供应商简码 / 供应商名称 / 是否售完即止 / 是否厂直 / 是否影分身 / 是否虚拟组套 / 是否虚拟品类 / 上柜时间 / 是否平行库存 / 是否赠品 / SPU编码 / 条形码 / 保质期 / RDC / 配送中心 / 仓网选品打标 / 上级B配送中心编码 / 上级B配送中心名称 / 上下柜状态 / 商品价格 / 全国采购价 / 长度 / 宽度 / 高度 / 重量 / 现货库存 / 内配在途 / 可订购库存 / B仓(商)京东自营渠道采购在途库存 / B仓(商)京东自营渠道现货库存 / 采购在途数量 / 滞销库存件数 / 不动销库存件数 / 长库龄数量 / 91-120天库存数量 / 121-150天库存数量 / 151-180天库存数量 / 181-360天库存数量 / 1年以上库存数量 / 昨日出库商品件数 / 近7日出库商品件数 / 近14日出库商品件数 / 近28日出库商品件数 / 近30日出库商品件数 / 近60日出库商品件数 / 近90日出库商品件数 / 月至今出库商品件数 / 昨日收货地商品件数 / 近7日收货地商品件数 / 近14日收货地商品件数 / 近28日收货地商品件数 / 近30日收货地商品件数 / 近60日收货地商品件数 / 近90日收货地商品件数 / 月至今收货地商品件数 / 昨日采购入库件数 / 近7日采购入库件数 / 近14日采购入库件数 / 近28日采购入库件数 / 近30日采购入库件数 / 月至今采购入库件数</b>。每行=某天某 SKU 的库存快照。<b>该数据独立录入、独立存储</b>，与 2.2 库存明细（麦维他）互不覆盖；粘贴含表头的数据后点「应用并更新看板」即保存。点击「填入模板」可自动生成完整表头。列名自动识别，缺列留空。<br>看板「丝蕴」库存周转视图取值：<b>库存数量</b>（兼容「现货库存/可用库存」）、<b>近7天出库件数</b>、<b>近14天出库件数</b>（兼容「近N日出库商品件数」）；<b>在途数量</b>=采购单「采购数量」(R列) 合计；<b>PV现货率/实库现货率</b>取自 2.7 现货率数据（按天匹配）。</p>
         <div class="row">
           <span class="muted" style="font-size:12px">品牌</span>
-          <select id="brand_purchase_order" class="secBrand" data-sec="purchase_order" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px">
+          <select id="brand_inv_siyun" class="secBrand" data-sec="inv_siyun" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px">
             <option value="李锦记">李锦记</option>
             <option value="麦维他自营">麦维他自营</option>
             <option value="麦维他POP">麦维他POP</option>
@@ -410,18 +410,18 @@
             <option value="家乐">家乐</option>
             <option value="联合利华">联合利华</option>
           </select>
-          <label class="filelabel">上传文件<input type="file" id="poFile" accept=".csv,.xlsx,.xls" hidden></label>
-          <button class="btn2 ghost" data-fill="purchase_order">填入模板</button>
-          <button class="btn2 ghost" id="poTplBtn">下载填写模板</button>
-          <button class="btn2 ghost clearBtn" data-which="purchase_order">清除历史</button>
+          <label class="filelabel">上传文件<input type="file" id="invSiyunFile" accept=".csv,.xlsx,.xls" hidden></label>
+          <button class="btn2 ghost" data-fill="inv_siyun">填入模板</button>
+          <button class="btn2 ghost" id="invSiyunTplBtn">下载填写模板</button>
+          <button class="btn2 ghost clearBtn" data-which="inv_siyun">清除历史</button>
         </div>
-        <textarea id="poInput" placeholder="采购单号&#9;采购渠道&#9;合同主体&#9;供应商简码&#9;供应商名称&#9;商品编号&#9;商品名称&#9;订单属性&#9;配送中心&#9;京东仓库&#9;采购价格&#9;原始采购数量&#9;采购数量&#9;实收数量&#9;采购金额&#9;实收金额&#9;采购员&#9;建单人&#9;订单状态&#9;订购时间&#9;（模板2·采购单·全量列；缺列留空，列名自动识别）"></textarea>
-        <div class="diag" id="diagPo"></div>
+        <textarea id="invSiyunInput" placeholder="粘贴丝蕴库存明细（含表头，列名自动识别）；点击「填入模板」可自动生成完整表头。数据独立存储，与 2.2 库存明细（麦维他）互不覆盖。" style="min-height:140px"></textarea>
+        <div class="diag" id="diagInvSiyun"></div>
       </details>
 
-      <details>
+<details>
         <summary>2.4 · 巢湖库存数据</summary>
-        <p class="hint">表头：<b>时间&#9;仓库&#9;货主&#9;商家编码&#9;货品名称&#9;条形码&#9;品牌&#9;生产日期&#9;保质期&#9;有效期&#9;距离到期天数&#9;是否正品&#9;可发库存&#9;黄/红/黑/绿货&#9;临期预警&#9;采购价&#9;可发金额&#9;1/2效期&#9;库内周转45天允收期&#9;紧急临期时间&#9;最后入仓时间&#9;品牌采购在途</b>。逐行录入（每行一个货品在某仓的快照），列名自动识别，缺列留空。<b>该数据独立录入、独立存储</b>，与 2.1 库存周转数据互不覆盖；粘贴含表头的数据后点「应用并更新看板」即保存。点击「填入模板」可自动生成完整表头，点「下载填写模板」可导出 .xlsx。</p>
+        <p class="hint">表头：<b>时间&#9;仓库&#9;货主&#9;商家编码&#9;货品名称&#9;条形码&#9;品牌&#9;生产日期&#9;保质期&#9;有效期&#9;距离到期天数&#9;是否正品&#9;可发库存&#9;黄/红/黑/绿货&#9;临期预警&#9;采购价&#9;可发金额&#9;1/2效期&#9;库内周转45天允收期&#9;紧急临期时间&#9;最后入仓时间&#9;品牌采购在途</b>。逐行录入（每行一个货品在某仓的快照），列名自动识别，缺列留空。<b>该数据独立录入、独立存储</b>，与 2.1 库存明细（李锦记）互不覆盖；粘贴含表头的数据后点「应用并更新看板」即保存。点击「填入模板」可自动生成完整表头，点「下载填写模板」可导出 .xlsx。</p>
         <div class="row">
           <span class="muted" style="font-size:12px">品牌</span>
           <select id="brand_chaohu" class="secBrand" data-sec="chaohu" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px">
@@ -442,8 +442,54 @@
         <div class="diag" id="diagChaohu"></div>
       </details>
 
-      <details>
-        <summary>2.5 · 现货率数据</summary>
+<details>
+        <summary>2.5 · 采购单数据</summary>
+        <p class="hint">采购单数据与库存明细（李锦记）相互独立，本框单独录入、单独存储。表头：采购单号 / 采购渠道 / 合同主体 / 供应商简码 / 供应商名称 / 商品编号 / 商品名称 / 订单属性 / 配送中心 / 京东仓库 / 京东库房地址 / 京东站点 / 京东站点地址 / 收货负责人 / 收货电话 / 采购价格 / 原始采购数量 / 采购数量 / 实收数量 / 贴码建议 / 京东贴码数量 / 溯源贴码 / 重码UPC / UPC码 / 采购金额 / 实收金额 / 采购单位 / 币种 / 采购员 / 建单人 / 订单状态 / 订购时间 等全量列（列名自动识别，缺列留空）。<b>当前仅做录入与存储，计算口径稍后由你确认后再接入。</b></p>
+        <div class="row">
+          <span class="muted" style="font-size:12px">品牌</span>
+          <select id="brand_purchase_order" class="secBrand" data-sec="purchase_order" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px">
+            <option value="李锦记">李锦记</option>
+            <option value="麦维他自营">麦维他自营</option>
+            <option value="麦维他POP">麦维他POP</option>
+            <option value="丝蕴">丝蕴</option>
+            <option value="和路雪">和路雪</option>
+            <option value="家乐">家乐</option>
+            <option value="联合利华">联合利华</option>
+          </select>
+          <label class="filelabel">上传文件<input type="file" id="poFile" accept=".csv,.xlsx,.xls" hidden></label>
+          <button class="btn2 ghost" data-fill="purchase_order">填入模板</button>
+          <button class="btn2 ghost" id="poTplBtn">下载填写模板</button>
+          <button class="btn2 ghost clearBtn" data-which="purchase_order">清除历史</button>
+        </div>
+        <textarea id="poInput" placeholder="采购单号&#9;采购渠道&#9;合同主体&#9;供应商简码&#9;供应商名称&#9;商品编号&#9;商品名称&#9;订单属性&#9;配送中心&#9;京东仓库&#9;采购价格&#9;原始采购数量&#9;采购数量&#9;实收数量&#9;采购金额&#9;实收金额&#9;采购员&#9;建单人&#9;订单状态&#9;订购时间&#9;（模板2·采购单·全量列；缺列留空，列名自动识别）"></textarea>
+        <div class="diag" id="diagPo"></div>
+      </details>
+
+<details>
+        <summary>2.6 · 浮码数据</summary>
+        <p class="hint">浮码数据与库存明细（李锦记）相互独立，本框单独录入、单独存储。表头：<b>时间 / SKU / 浮码</b>（无需录入出库件数）。「全国昨日出库商品件数」<b>自动取自「库存明细（李锦记）」明细中的「昨日出库商品件数」列，按时间 + SKU 匹配</b>；公式为 <b>Σ（浮码 × 昨日出库商品件数）÷ 1.129</b>，用于计算 POS 实际数据。库存明细缺该 SKU/日期的昨日出库时该项留空（不计入 POS）。同一「时间 + SKU」重复录入即覆盖更新。</p>
+        <div class="row">
+          <span class="muted" style="font-size:12px">品牌</span>
+          <select id="brand_purchase" class="secBrand" data-sec="purchase" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px">
+            <option value="李锦记">李锦记</option>
+            <option value="麦维他自营">麦维他自营</option>
+            <option value="麦维他POP">麦维他POP</option>
+            <option value="丝蕴">丝蕴</option>
+            <option value="和路雪">和路雪</option>
+            <option value="家乐">家乐</option>
+            <option value="联合利华">联合利华</option>
+          </select>
+          <label class="filelabel">上传文件<input type="file" id="ppFile" accept=".csv,.xlsx,.xls" hidden></label>
+          <button class="btn2 ghost" data-fill="purchase">填入模板</button>
+          <button class="btn2 ghost" id="ppTplBtn">下载填写模板</button>
+          <button class="btn2 ghost clearBtn" data-which="purchase">清除历史</button>
+        </div>
+        <textarea id="ppInput" placeholder="时间&#9;SKU&#9;浮码（浮码单独录入；全国昨日出库件数自动取自库存明细的「昨日出库商品件数」列，按时间+SKU匹配）"></textarea>
+        <div class="diag" id="diagPp"></div>
+      </details>
+
+<details>
+        <summary>2.7 · 现货率数据</summary>
         <p class="hint">表头：<b>PV现货率&#9;实库现货率</b>。每日一行（日期 + 两列比率，0~1 小数或百分比均可，列名自动识别，缺列留空）。<b>该数据独立录入、独立存储，前台按天展示；优先于库存明细里的同名列。</b>同一「日期」重复录入即覆盖更新。</p>
         <div class="row">
           <span class="muted" style="font-size:12px">品牌</span>
@@ -465,8 +511,8 @@
         <div class="diag" id="diagSr"></div>
       </details>
 
-      <details>
-        <summary>2.6 · 长库龄预警金额数据</summary>
+<details>
+        <summary>2.8 · 长库龄预警金额数据</summary>
         <p class="hint">表头：<b>60-90天长库龄预警金额&#9;90天以上长库龄金额&#9;60-90天长库龄预警金额（基调）&#9;60-90天长库龄预警金额（复调）&#9;90天以上长库龄金额（基调）&#9;90天以上长库龄金额（复调）</b>。每日一行，列名自动识别，缺列留空。<b>该数据独立录入、独立存储，前台按天展示；优先于库存明细里的同名列。</b>同一「日期」重复录入即覆盖更新。</p>
         <div class="row">
           <span class="muted" style="font-size:12px">品牌</span>
@@ -486,52 +532,6 @@
         </div>
         <textarea id="awInput" placeholder="日期&#9;60-90天长库龄预警金额&#9;90天以上长库龄金额&#9;60-90天长库龄预警金额（基调）&#9;60-90天长库龄预警金额（复调）&#9;90天以上长库龄金额（基调）&#9;90天以上长库龄金额（复调）&#9;（每日一行；缺列留空，列名自动识别）"></textarea>
         <div class="diag" id="diagAw"></div>
-      </details>
-
-      <details>
-        <summary>2.7 · 库存明细（全量列·含全国及城市仓）</summary>
-        <p class="hint">本模板为供应链「库存明细·全量列」导出：含 时间 / 商品名称 / SKU / 品牌 / 一级~三级类目 / 店铺名称 / 供应商 / 全国采购价 … 前缀列，外加「全国」与各城市/仓（上海、北京、成都…林芝等约 80 个）的库存·出入库·厂直·VMI·采购·退供应商等指标块。<b>列名自动识别，缺列留空</b>；每行 = 某天某个 SKU 的全量快照。<b>该数据独立录入、独立存储</b>（与 2.1 库存周转数据互不覆盖）；粘贴含表头的数据后点「应用并更新看板」即保存。点击「填入模板」可自动生成完整表头，点「下载填写模板」可导出 .xlsx。</p>
-        <div class="row">
-          <span class="muted" style="font-size:12px">品牌</span>
-          <select id="brand_inv_full" class="secBrand" data-sec="inv_full" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px">
-            <option value="李锦记">李锦记</option>
-            <option value="麦维他自营">麦维他自营</option>
-            <option value="麦维他POP">麦维他POP</option>
-            <option value="丝蕴">丝蕴</option>
-            <option value="和路雪">和路雪</option>
-            <option value="家乐">家乐</option>
-            <option value="联合利华">联合利华</option>
-          </select>
-          <label class="filelabel">上传文件<input type="file" id="invFullFile" accept=".csv,.xlsx,.xls" hidden></label>
-          <button class="btn2 ghost" data-fill="inv_full">填入模板</button>
-          <button class="btn2 ghost" id="invFullTplBtn">下载填写模板</button>
-          <button class="btn2 ghost clearBtn" data-which="inv_full">清除历史</button>
-        </div>
-        <textarea id="invFullInput" placeholder="粘贴供应链库存明细·全量列（含表头，列名自动识别）；点击「填入模板」可自动生成完整表头。数据独立存储，与 2.1 库存周转数据互不覆盖。" style="min-height:140px"></textarea>
-        <div class="diag" id="diagInvFull"></div>
-      </details>
-
-      <details>
-        <summary>2.8 · 库存明细（丝蕴）</summary>
-        <p class="hint">表头（共 69 列）：<b>时间 / 商品名称 / SKU / 品牌 / 一级类目 / 二级类目 / 三级类目 / 店铺名称 / 供应商简码 / 供应商名称 / 是否售完即止 / 是否厂直 / 是否影分身 / 是否虚拟组套 / 是否虚拟品类 / 上柜时间 / 是否平行库存 / 是否赠品 / SPU编码 / 条形码 / 保质期 / RDC / 配送中心 / 仓网选品打标 / 上级B配送中心编码 / 上级B配送中心名称 / 上下柜状态 / 商品价格 / 全国采购价 / 长度 / 宽度 / 高度 / 重量 / 现货库存 / 内配在途 / 可订购库存 / B仓(商)京东自营渠道采购在途库存 / B仓(商)京东自营渠道现货库存 / 采购在途数量 / 滞销库存件数 / 不动销库存件数 / 长库龄数量 / 91-120天库存数量 / 121-150天库存数量 / 151-180天库存数量 / 181-360天库存数量 / 1年以上库存数量 / 昨日出库商品件数 / 近7日出库商品件数 / 近14日出库商品件数 / 近28日出库商品件数 / 近30日出库商品件数 / 近60日出库商品件数 / 近90日出库商品件数 / 月至今出库商品件数 / 昨日收货地商品件数 / 近7日收货地商品件数 / 近14日收货地商品件数 / 近28日收货地商品件数 / 近30日收货地商品件数 / 近60日收货地商品件数 / 近90日收货地商品件数 / 月至今收货地商品件数 / 昨日采购入库件数 / 近7日采购入库件数 / 近14日采购入库件数 / 近28日采购入库件数 / 近30日采购入库件数 / 月至今采购入库件数</b>。每行=某天某 SKU 的库存快照。<b>该数据独立录入、独立存储</b>，与 2.7 库存明细(全量列)互不覆盖；粘贴含表头的数据后点「应用并更新看板」即保存。点击「填入模板」可自动生成完整表头。列名自动识别，缺列留空。<br>看板「丝蕴」库存周转视图取值：<b>库存数量</b>（兼容「现货库存/可用库存」）、<b>近7天出库件数</b>、<b>近14天出库件数</b>（兼容「近N日出库商品件数」）；<b>在途数量</b>=采购单「采购数量」(R列) 合计；<b>PV现货率/实库现货率</b>取自 2.5 现货率数据（按天匹配）。</p>
-        <div class="row">
-          <span class="muted" style="font-size:12px">品牌</span>
-          <select id="brand_inv_siyun" class="secBrand" data-sec="inv_siyun" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px">
-            <option value="李锦记">李锦记</option>
-            <option value="麦维他自营">麦维他自营</option>
-            <option value="麦维他POP">麦维他POP</option>
-            <option value="丝蕴">丝蕴</option>
-            <option value="和路雪">和路雪</option>
-            <option value="家乐">家乐</option>
-            <option value="联合利华">联合利华</option>
-          </select>
-          <label class="filelabel">上传文件<input type="file" id="invSiyunFile" accept=".csv,.xlsx,.xls" hidden></label>
-          <button class="btn2 ghost" data-fill="inv_siyun">填入模板</button>
-          <button class="btn2 ghost" id="invSiyunTplBtn">下载填写模板</button>
-          <button class="btn2 ghost clearBtn" data-which="inv_siyun">清除历史</button>
-        </div>
-        <textarea id="invSiyunInput" placeholder="粘贴丝蕴库存明细（含表头，列名自动识别）；点击「填入模板」可自动生成完整表头。数据独立存储，与 2.7 库存明细(全量列)互不覆盖。" style="min-height:140px"></textarea>
-        <div class="diag" id="diagInvSiyun"></div>
       </details>
 
       <details>
@@ -602,7 +602,7 @@
           <tr><th>模块</th><th>推荐列（顺序不限，系统自动识别）</th></tr>
           <tr><td>销售</td><td>时间 / 商品名称 / SKU / 品牌 / 类目(一二三级) / 店铺名称 / 经营模式 / 浏览量 / 访客数 / 成交人数 / 成交单量 / 成交商品件数 / 成交金额 / 加购人数 …</td></tr>
           <tr><td>库存周转</td><td>日期 / 全国库存（件数） / 库存金额 / 库存周转（天） / 近7天销售（件数） / 近7天销售（金额） / 近14天销售（件数） / 近14天销售（金额） / 日均销售（件数） / 日均销售（金额） / 60+长库龄金额 / 60+长库龄金额（基调） / 60+长库龄金额（复调） / 滞销金额 / 滞销金额（基调） / 滞销金额（复调） / PV现货率 / 实库现货率 / 巢湖库存 / 全链路周转 —— 供应链库存周转模板（每日一行聚合），缺列留空不影响其余</td></tr>
-          <tr><td>浮码数据<br>(独立录入)</td><td>时间 / SKU / 浮码 —— <b>单独录入、单独存储</b>，不并入库存周转数据；「全国昨日出库商品件数」自动取自库存明细的「昨日出库商品件数」列（按时间+SKU匹配）；「浮码 × 昨日出库件数 ÷ 1.129」用于计算 POS 实际；同「时间+SKU」覆盖更新，缺列留空</td></tr>
+          <tr><td>浮码数据<br>(独立录入)</td><td>时间 / SKU / 浮码 —— <b>单独录入、单独存储</b>，不并入库存明细（李锦记）；「全国昨日出库商品件数」自动取自库存明细的「昨日出库商品件数」列（按时间+SKU匹配）；「浮码 × 昨日出库件数 ÷ 1.129」用于计算 POS 实际；同「时间+SKU」覆盖更新，缺列留空</td></tr>
           <tr><td>京准通<br>(点击「填入模板」)</td><td>日期 / 营销场景 / 计划ID / 推广计划 / 跟单SKU ID·名称 / 展现数 / 点击数 / 花费 / 直接·间接·总订单行与金额 / 加购数 / 转化率(%) / 平均订单成本 / 投产比 / 预售·新客·关注·成交用户 等（共 36 列）</td></tr>
           <tr><td>京准通<br>(点击「填入模板(全站口径)」)</td><td>日期 / 商品计划名称 / ID / 投放类型 / 花费 / 全站投产比 / 全站交易额 / 全站订单行 / 全站订单成本 / 核心位置展现量 / 核心位置点击量 / 180天未购新客数 / 带券展现 / 带券点击 / 智能补贴券金额 / 智能补贴券助力订单行（京东商智·京准通全站视角导出列，核心指标自动识别，后5列作辅助信息记录）</td></tr>
           <tr><td>目标</td><td>类型(品牌GMV/采销GMV/内部GMV/POS/京准通花费即投放花费) / 粒度(day/month/year) / 周期(2026-08-01或2026-08或2026) / 目标值</td></tr>
@@ -703,7 +703,7 @@ const esc = s => String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt
 const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,''); const n=parseFloat(s); return isNaN(n)?0:n; };
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-27-fix40-siyun-inv-turnover';
+const APP_VERSION = '2026-08-26-fix41-reorder-inv-sections';
 /* 列名同义词映射 */
 const ALIAS = {
   date:['日期','时间','date','day','dt','订购时间','采购时间','下单时间'],
@@ -1523,7 +1523,7 @@ function renderInvThreePartHTML(tp){
 /* ---------- 计算：丝蕴库存周转（库存明细(丝蕴) + 采购单在途 + 现货率）---------- */
 // 库存数量 = 库存明细(丝蕴) 库存数量列（兼容「现货库存/可用库存」）；在途数量 = 采购单「采购数量」合计（R列）
 // 7天周转 = 库存数量/近7天出库件数*7；14天周转 = 库存数量/近14天出库件数*14
-// PV现货率 / 实库现货率 取自「2.5 现货率数据」录入（按天匹配）
+// PV现货率 / 实库现货率 取自「2.7 现货率数据」录入（按天匹配）
 function computeSiyunTurnover(asOf){
   const inv=B().inv_siyun||[];
   const resKey=name=>{ const lk=String(name).trim().toLowerCase(); for(const f in ALIAS){ if(ALIAS[f].includes(lk)) return f; } return 'ext_'+lk.replace(/\s+/g,''); };
@@ -1547,7 +1547,7 @@ function computeSiyunTurnover(asOf){
   // 在途数量 = 丝蕴采购单「采购数量」(R列) 合计
   let intr=0; (B().purchase_order||[]).forEach(r=>{ intr+=num(r.ppQty); });
   all.forEach(a=>{ a.intr=intr; });
-  // PV现货率 / 实库现货率：按天匹配（来自 2.5 现货率数据录入）
+  // PV现货率 / 实库现货率：按天匹配（来自 2.7 现货率数据录入）
   const srByDate={}; (B().spot_rate||[]).forEach(r=>{ const d=String(r.date||'').slice(0,10); if(d) srByDate[d]=r; });
   all.forEach(x=>{ const sr=srByDate[x.date]; if(sr){ const pv=num(sr.pvRate!==undefined?sr.pvRate:sr.PV现货率), rr=num(sr.realRate!==undefined?sr.realRate:sr.实库现货率); if(pv||rr){ x.pvRate=pv; x.realRate=rr; } } });
   const cur=all.find(x=>x.date===target)||all[all.length-1];
@@ -1615,7 +1615,7 @@ function renderInv(){
       {label:'全链路金额',value:money(x.fcAmt),cls:'blue'},{label:'全链路周转(天)',value:days(x.fcTurn)},
       {label:'滞销金额',value:money(x.sluggish),cls:num(x.sluggish)>0?'red':''},
       {label:'长库龄金额',value:money(x.longAge),cls:num(x.longAge)>0?'red':''},
-    ])+(tp.hasData?'':'<div style="color:#9ca3af;font-size:12px;margin-top:4px;">（占位视图：当前未录入数据，数值显示 —；在「数据输入区」录入库存明细(全量列)/浮码/采购单/巢湖/长库龄后将自动计算）</div>');
+    ])+(tp.hasData?'':'<div style="color:#9ca3af;font-size:12px;margin-top:4px;">（占位视图：当前未录入数据，数值显示 —；在「数据输入区」录入库存明细（麦维他）/浮码/采购单/巢湖/长库龄后将自动计算）</div>');
     lineChart('#invRate',{labels:tp.dates, series:[
       {name:'京仓库存金额',data:tp.all.map(x=>x.jcAmt||null)},
       {name:'京仓真实在途金额',data:tp.all.map(x=>x.jcIntr||null)},
@@ -3275,7 +3275,7 @@ const chaohuTplBtn=$('#chaohuTplBtn'); if(chaohuTplBtn) chaohuTplBtn.addEventLis
     ['紧急临期时间','紧急临期时间','2026-07-20'],
     ['最后入仓时间','最后入仓时间','2026-07-20'],
     ['品牌采购在途','品牌采购在途数量','500'],
-    ['说明','逐行录入，列名自动识别，缺列留空；该数据独立录入、独立存储，与库存周转数据互不覆盖。','—']
+    ['说明','逐行录入，列名自动识别，缺列留空；该数据独立录入、独立存储，与库存明细（李锦记）互不覆盖。','—']
   ]);
   wsHelp['!cols']=[{wch:18},{wch:50},{wch:24}];
   const wb=XLSX.utils.book_new();
@@ -3319,7 +3319,7 @@ const invSiyunTplBtn=$('#invSiyunTplBtn'); if(invSiyunTplBtn) invSiyunTplBtn.add
     ['近7/14/30日出库商品件数','近N日出库商品件数','1200 / 2400 / 5100'],
     ['采购在途数量','采购在途数量',1200],
     ['长库龄数量 / 滞销库存件数','长库龄件数 / 滞销件数','60 / 120'],
-    ['说明','逐行录入，列名自动识别，缺列不报错；该数据独立录入、独立存储，与 2.7 库存明细(全量列)互不覆盖。','—']
+    ['说明','逐行录入，列名自动识别，缺列不报错；该数据独立录入、独立存储，与 2.2 库存明细（麦维他）互不覆盖。','—']
   ]);
   wsHelp['!cols']=[{wch:20},{wch:52},{wch:22}];
   const wb=XLSX.utils.book_new();
@@ -3449,7 +3449,7 @@ const ppTplBtn=$('#ppTplBtn'); if(ppTplBtn) ppTplBtn.addEventListener('click',()
     ['时间','数据日期（每日一行×SKU）','2026-08-01'],
     ['SKU','商品编码（纯数字或字母均可）','SKU-BE-01'],
     ['浮码','商品浮码（单价）','89.5'],
-    ['昨日出库商品件数','自动取自「库存周转数据」明细的「昨日出库商品件数」列（按时间+SKU匹配），本表无需填','—'],
+    ['昨日出库商品件数','自动取自「库存明细（李锦记）」明细的「昨日出库商品件数」列（按时间+SKU匹配），本表无需填','—'],
     ['POS 计算','浮码 × 昨日出库商品件数 ÷ 1.129，按日加总 = POS 实际','89.5 × 1200 ÷ 1.129 ≈ 95129.3']
   ]);
   wsHelp['!cols']=[{wch:12},{wch:52},{wch:26}];
