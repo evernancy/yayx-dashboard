@@ -208,17 +208,16 @@
 
   <!-- INVENTORY -->
   <style>
-  .tp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:4px}
-  @media(max-width:900px){.tp-grid{grid-template-columns:1fr}}
-  .tp-card{background:var(--panel,#fff);border:1px solid var(--border,#e5e7eb);border-radius:10px;padding:12px 14px}
-  .tp-title{font-weight:700;font-size:14px;margin-bottom:8px;color:var(--blue,#2563eb);border-left:4px solid var(--blue,#2563eb);padding-left:8px}
-  .tp-row{display:flex;justify-content:space-between;align-items:baseline;padding:5px 0;border-bottom:1px dashed var(--border,#eee)}
-  .tp-row:last-child{border-bottom:none}
-  .tp-label{color:var(--muted,#666);font-size:13px}
-  .tp-value{font-weight:700;font-size:15px}
-  .tp-value.blue{color:var(--blue,#2563eb)}
-  .tp-value.red{color:#dc2626}
-  .tp-value.green{color:#16a34a}
+  .tp-grid{display:flex;flex-direction:column;gap:10px;margin-top:4px}
+  .tp-row-h{display:flex;align-items:center;gap:16px;background:var(--panel,#fff);border:1px solid var(--border,#e5e7eb);border-radius:10px;padding:10px 14px;overflow-x:auto}
+  .tp-section-name{font-weight:700;font-size:14px;color:var(--blue,#2563eb);white-space:nowrap;border-left:4px solid var(--blue,#2563eb);padding-left:8px;min-width:90px;flex-shrink:0}
+  .tp-metrics{display:flex;gap:20px;flex-wrap:nowrap}
+  .tp-item{text-align:center;flex-shrink:0;min-width:80px}
+  .tp-ilabel{color:var(--muted,#666);font-size:12px;line-height:1.4;display:block;margin-bottom:2px}
+  .tp-ivalue{font-weight:700;font-size:15px;white-space:nowrap}
+  .tp-ivalue.blue{color:var(--blue,#2563eb)}
+  .tp-ivalue.red{color:#dc2626}
+  .tp-ivalue.green{color:#16a34a}
   </style>
   <section data-sub="inventory">
     <div class="panel">
@@ -680,7 +679,7 @@ const esc = s => String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt
 const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,''); const n=parseFloat(s); return isNaN(n)?0:n; };
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-26-fix36-inv-three-part-render-placeholder';
+const APP_VERSION = '2026-08-26-fix37-inv-three-part-horizontal';
 /* 列名同义词映射 */
 const ALIAS = {
   date:['日期','时间','date','day','dt','订购时间','采购时间','下单时间'],
@@ -1473,27 +1472,28 @@ function renderInvThreePartHTML(tp){
   const money=v=> (v==null||isNaN(v)||v===0)?'—':fmtMoney(v);
   const num0=v=> (v==null||isNaN(v)||v===0)?'—':fmt(v,0);
   const days=v=> (v==null||isNaN(v)||v<=0)?'—':v.toFixed(1);
-  const card=(title,items)=>`<div class="tp-card"><div class="tp-title">${title}</div>${items.map(i=>`<div class="tp-row"><span class="tp-label">${i.label}</span><span class="tp-value ${i.cls||''}">${i.value}</span></div>`).join('')}</div>`;
-  const p1=card('① 京仓',[
-    {label:'库存数量', value: num0(x.jcQty)},
-    {label:'库存金额', value: money(x.jcAmt), cls:'blue'},
-    {label:'京仓真是在途金额', value: money(x.jcIntr)},
-    {label:'库存周转(天)', value: days(x.jcTurn)},
-    {label:'近7天销售金额', value: money(x.jc7)},
-    {label:'近14天销售金额', value: money(x.jc14)},
+  const item=(label,value,cls='')=>`<div class="tp-item"><span class="tp-ilabel">${label}</span><span class="tp-ivalue ${cls}">${value}</span></div>`;
+  const row=(name,items)=>`<div class="tp-row-h"><div class="tp-section-name">${name}</div><div class="tp-metrics">${items.join('')}</div></div>`;
+  const r1=row('① 京仓',[
+    item('库存数量',num0(x.jcQty)),
+    item('库存金额',money(x.jcAmt),'blue'),
+    item('京仓真是在途金额',money(x.jcIntr)),
+    item('库存周转(天)',days(x.jcTurn)),
+    item('近7天销售金额',money(x.jc7)),
+    item('近14天销售金额',money(x.jc14)),
   ]);
-  const p2=card('② 巢湖库存',[
-    {label:'库存数量', value: num0(x.chQty)},
-    {label:'库存金额', value: money(x.chAmt), cls:'blue'},
-    {label:'品牌采购在途金额', value: money(x.chIntr)},
+  const r2=row('② 巢湖库存',[
+    item('库存数量',num0(x.chQty)),
+    item('库存金额',money(x.chAmt),'blue'),
+    item('品牌采购在途金额',money(x.chIntr)),
   ]);
-  const p3=card('③ 全链路数据',[
-    {label:'全链路金额', value: money(x.fcAmt)},
-    {label:'全链路周转(天)', value: days(x.fcTurn)},
-    {label:'滞销金额', value: money(x.sluggish), cls:num(x.sluggish)>0?'red':''},
-    {label:'长库龄金额', value: money(x.longAge), cls:num(x.longAge)>0?'red':''},
+  const r3=row('③ 全链路数据',[
+    item('全链路金额',money(x.fcAmt)),
+    item('全链路周转(天)',days(x.fcTurn)),
+    item('滞销金额',money(x.sluggish),num(x.sluggish)>0?'red':''),
+    item('长库龄金额',money(x.longAge),num(x.longAge)>0?'red':''),
   ]);
-  return `<div class="tp-grid">${p1}${p2}${p3}</div>`;
+  return `<div class="tp-grid">${r1}${r2}${r3}</div>`;
 }
 function renderInv(){
   const isThree=INV_THREE_PART_BRANDS.includes(STATE.currentBrand);
