@@ -43,6 +43,7 @@
   .diag.err{display:block;color:#b91c1c;background:#fef2f2;border:1px solid #fecaca}
   .diag b{font-weight:600}
   .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:6px}
+  .kpi-sep{grid-column:1/-1;font-weight:700;font-size:14px;color:var(--blue,#2563eb);border-left:4px solid var(--blue,#2563eb);padding-left:8px;margin-top:6px}
   .kpi{background:linear-gradient(180deg,#fff,#fafbff);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
   .kpi .label{color:var(--muted);font-size:12px}
   .kpi .value{font-size:20px;font-weight:700;margin-top:3px}
@@ -679,7 +680,7 @@ const esc = s => String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt
 const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,''); const n=parseFloat(s); return isNaN(n)?0:n; };
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-26-fix37-inv-three-part-horizontal';
+const APP_VERSION = '2026-08-26-fix38-inv-three-part-kpi-cards';
 /* 列名同义词映射 */
 const ALIAS = {
   date:['日期','时间','date','day','dt','订购时间','采购时间','下单时间'],
@@ -1500,8 +1501,24 @@ function renderInv(){
   const el=$('#invKpis'); const panel=$('#invThreePartPanel');
   if(isThree){
     const tp=computeThreePart(invAsOf);
-    el.style.display='none'; panel.style.display='';
-    $('#invThreePart').innerHTML=renderInvThreePartHTML(tp)+(tp.hasData?'':'<div class="tp-hint" style="margin-top:8px;color:#9ca3af;font-size:12px;">（占位视图：当前未录入数据，数值显示 —；在「数据输入区」录入库存明细(全量列)/浮码/采购单/巢湖/长库龄后将自动计算）</div>');
+    const x=tp.cur;
+    const money=v=> (v==null||isNaN(v)||v===0)?'—':fmtMoney(v);
+    const num0=v=> (v==null||isNaN(v)||v===0)?'—':fmt(v,0);
+    const days=v=> (v==null||isNaN(v)||v<=0)?'—':v.toFixed(1);
+    const sep=t=>`<div class="kpi-sep">${t}</div>`;
+    el.style.display=''; panel.style.display='none'; $('#invThreePart').innerHTML='';
+    el.innerHTML=sep('① 京仓')+kpiHTML([
+      {label:'库存数量',value:num0(x.jcQty)},{label:'库存金额',value:money(x.jcAmt),cls:'blue'},
+      {label:'京仓真是在途金额',value:money(x.jcIntr)},{label:'库存周转(天)',value:days(x.jcTurn)},
+      {label:'近7天销售金额',value:money(x.jc7)},{label:'近14天销售金额',value:money(x.jc14)},
+    ])+sep('② 巢湖库存')+kpiHTML([
+      {label:'库存数量',value:num0(x.chQty)},{label:'库存金额',value:money(x.chAmt),cls:'blue'},
+      {label:'品牌采购在途金额',value:money(x.chIntr)},
+    ])+sep('③ 全链路数据')+kpiHTML([
+      {label:'全链路金额',value:money(x.fcAmt),cls:'blue'},{label:'全链路周转(天)',value:days(x.fcTurn)},
+      {label:'滞销金额',value:money(x.sluggish),cls:num(x.sluggish)>0?'red':''},
+      {label:'长库龄金额',value:money(x.longAge),cls:num(x.longAge)>0?'red':''},
+    ])+(tp.hasData?'':'<div style="color:#9ca3af;font-size:12px;margin-top:4px;">（占位视图：当前未录入数据，数值显示 —；在「数据输入区」录入库存明细(全量列)/浮码/采购单/巢湖/长库龄后将自动计算）</div>');
     lineChart('#invRate',{labels:tp.dates, series:[
       {name:'京仓库存金额',data:tp.all.map(x=>x.jcAmt||null)},
       {name:'京仓真实在途金额',data:tp.all.map(x=>x.jcIntr||null)},
