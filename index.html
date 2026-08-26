@@ -616,7 +616,7 @@ const esc = s => String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt
 const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,''); const n=parseFloat(s); return isNaN(n)?0:n; };
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-26-fix28-no-token-local-priority';
+const APP_VERSION = '2026-08-26-fix29-notoken-poll-keep-local';
 /* 列名同义词映射 */
 const ALIAS = {
   date:['日期','时间','date','day','dt'],
@@ -3777,7 +3777,18 @@ init();
       if(modalOpen()){ syncing=false; return; } // 编辑弹窗打开时不回灌
       var snap=await fetchPublicSnapshot();
       if(snap){
-        if(JSON.stringify(dataOnly(STATE))!==JSON.stringify(dataOnly(snap.state))){
+        // fix29：无令牌编辑同事的本机数据才是权威（含未存云端的 by-day 目标）。
+        // 只读公开快照不含其未上传数据，若直接回灌会覆盖本机、导致「刷新后 by-day 消失」。
+        // 因此：仅当本机【无任何真实数据】时才以公开快照为准（纯查看者）；否则一律保留本机，绝不被快照覆盖。
+        // （编辑者想看团队更新，硬刷新即可——boot 已按「本机优先·与公开快照并集」合并补缺）
+        var lb=STATE.brands||{}, localHas=0;
+        for(var bk in lb){ var bb=lb[bk];
+          if(bb.targets&&bb.targets.length) localHas+=bb.targets.length;
+          if(bb._raw&&bb._raw.jzt) localHas+=Math.floor((bb._raw.jzt.length||0)/1000);
+          if(bb.posInput) localHas+=Object.keys(bb.posInput).length;
+          if(bb.sales&&bb.sales.length) localHas+=bb.sales.length;
+        }
+        if(localHas===0 && JSON.stringify(dataOnly(STATE))!==JSON.stringify(dataOnly(snap.state))){
           currentBoard={id:snap.id||currentBoard.id, name:snap.name||currentBoard.name};
           hydrateFromState(snap.state); renderAll(); setupTodoAll();
         }
