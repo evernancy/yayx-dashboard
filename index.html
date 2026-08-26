@@ -616,7 +616,7 @@ const esc = s => String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt
 const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,''); const n=parseFloat(s); return isNaN(n)?0:n; };
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-26-fix29-notoken-poll-keep-local';
+const APP_VERSION = '2026-08-26-fix30-upsert-lock';
 /* 列名同义词映射 */
 const ALIAS = {
   date:['日期','时间','date','day','dt'],
@@ -3489,7 +3489,10 @@ async function ghGetBoard(id){
     return null;
   }catch(_){ return null; }
 }
+// 全局写入串行锁：所有云端看板写入排队执行，杜绝「恢复备份」与自动保存/导入并发各自读到旧 SHA、互相 409 覆盖（李锦记 15MB 大文件上传期间尤甚）
+var __upsertChain=Promise.resolve();
 async function ghUpsertBoard(id,name,state){
+  var run=__upsertChain.then(async ()=>{
   var path='dashboards/'+id+'.json';
   // 脏集合非空 → 只传脏品牌；为空（如仅改甘特图/初始种子）→ 兜底传全部品牌，绝不丢数据
   var dirty = __dirtyBrands.size ? Array.from(__dirtyBrands) : Object.keys(state.brands);
@@ -3497,21 +3500,27 @@ async function ghUpsertBoard(id,name,state){
     var f=await ghGetFile(path);
     var prev=null; if(f){ try{ prev=JSON.parse(f.content); }catch(_){} }
     var isSplit = prev && prev.format===SPLIT_FORMAT;
-    // 1) 逐个写脏品牌文件（每品牌与云端做深并集，防覆盖）
+    // 1) 逐个写脏品牌文件（每品牌与云端做深并集，防覆盖）。遇 409/422（并发或跨标签页写入）重取云端版本重新合并再试，绝不覆盖他人改动
     for(var i=0;i<dirty.length;i++){
       var b=dirty[i];
       var bpath=brandFilePath(id,b);
-      var data=extractBrandData(state.brands[b]);
-      var bf=await ghGetFile(bpath);
-      if(bf){ try{ var cloudB=JSON.parse(bf.content).data; data=mergeBrandData(data, cloudB); }catch(_){} }
-      var bbody=JSON.stringify({brand:b, data:data, updated_at:new Date().toISOString()});
-      await ghPutFile(bpath, bbody, bf?bf.sha:null);
+      for(var rb=0; rb<4; rb++){
+        var data=extractBrandData(state.brands[b]);
+        var bf=await ghGetFile(bpath);
+        if(bf){ try{ var cloudB=JSON.parse(bf.content).data; data=mergeBrandData(data, cloudB); }catch(_){} }
+        var bbody=JSON.stringify({brand:b, data:data, updated_at:new Date().toISOString()});
+        try{ await ghPutFile(bpath, bbody, bf?bf.sha:null); break; }
+        catch(e){ if((e.status===409||e.status===422) && rb<3){ continue; } throw e; }
+      }
     }
     // 2) 写/合并清单（含共享字段 gantt/brandOrder/memo，防覆盖）
     var manifest=buildManifest(id,name,state, isSplit?prev:null);
     try{ await ghPutFile(path, JSON.stringify(manifest), f?f.sha:null); __dirtyBrands.clear(); return; }
     catch(e){ if(e.status===409 && attempt<3){ continue; } throw e; }
   }
+  });
+  __upsertChain=run.catch(function(){ return null; });
+  return run;
 }
 // 旧版整份格式自动迁移为拆分（首次加载旧格式时后台执行一次）
 async function migrateBoardToSplit(id,name,state){ markAllDirty(); try{ await ghUpsertBoard(id,name,state); }catch(e){ console.warn('[migrate] 拆分迁移失败', e.message); } }
