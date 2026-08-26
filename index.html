@@ -680,13 +680,13 @@ const esc = s => String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt
 const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,''); const n=parseFloat(s); return isNaN(n)?0:n; };
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-26-fix34-inv-three-part';
+const APP_VERSION = '2026-08-26-fix35-inv-three-part-logic';
 /* 列名同义词映射 */
 const ALIAS = {
-  date:['日期','时间','date','day','dt'],
+  date:['日期','时间','date','day','dt','订购时间','采购时间','下单时间'],
   channel:['渠道','平台','来源','店铺名称','店铺','store','channel'],
   product:['商品','产品','商品名称','sku名','名称','product','item','goods','spu','sku名称'],
-  sku:['sku','sku编码','编码','货号','item_code','商品id','商品id'],
+  sku:['sku','sku编码','编码','货号','item_code','商品id','商品id','商品编码','商品编号'],
   brand:['品牌','brand','brand_name'],
   cat1:['一级类目','类目1','cat1','level1','cate1'],
   cat2:['二级类目','类目2','cat2','level2','cate2'],
@@ -766,6 +766,11 @@ const ALIAS = {
   // —— 麦维他「库存周转·三部分」专用：京仓真是在途 / 全链路金额 ——
   jcIntransit:['京仓真是在途金额','京仓真在途','京仓真实在途','京仓在途金额','京仓在途','真实在途金额','真实在途','京仓实际在途'],
   fcAmount:['全链路金额','全链路库存金额','全链路总库存','全链路库存'],
+  // —— 麦维他「库存周转·三部分」专用：inv_full 全国口径列（AM/AY/AZ/BB 等）——
+  nationAvail:['全国可用库存','全国可发库存','全国可用','nation_avail','nation_available'],
+  nation7Out:['全国近7日出库商品件数','全国7日出库商品件数','全国近7日出库','nation_7d_out','nation_7d_outbound'],
+  nation14Out:['全国近14日出库商品件数','全国14日出库商品件数','全国近14日出库','nation_14d_out','nation_14d_outbound'],
+  nation30Out:['全国近30日出库商品件数','全国30日出库商品件数','全国近30出库','nation_30d_out','nation_30d_outbound'],
   // —— 京准通推广专用 ——
   scene:['营销场景','场景','营销','投放类型','scene','marketing_scene'],
   planId:['计划id','计划编号','id','plan_id','planid'],
@@ -1421,44 +1426,96 @@ function chGet(r,name){
   for(const k in r){ if(k && k.replace(/^ext_/,'').indexOf(name)>=0 && r[k]!=='') return r[k]; }
   return undefined;
 }
-// 巢湖库存：按查看日期聚合「2.4 巢湖库存数据」当日全部行的 可发库存 / 可发金额 / 品牌采购在途
-function computeChaohuAgg(asOf){
-  const rows=(B().chaohu||[]);
-  if(!rows.length) return null;
-  const ds=[...new Set(rows.map(r=>String(r.date||'').slice(0,10)))].filter(Boolean).sort();
+// 麦维他「库存周转·三部分」：基于 库存明细(全量列) 全国口径列 + 浮码价格 + 采购单 + 巢湖 + 长库龄 联合计算
+// 京仓：库存数量=Σ全国可用库存；库存金额=Σ(全国可用库存×浮码价格)；在途=Σ(采购数量×浮码价格)
+//       近7/14天销额=Σ(全国近7/14日出库件数×浮码价格)；周转=库存金额/(Σ(全国近30日出库件数×浮码价格))×30
+// 巢湖：数量=Σ可发库存；金额=Σ可发金额；在途=Σ品牌采购在途
+// 全链路：金额=京仓库存+京仓在途+巢湖库存+巢湖在途；周转=全链路金额/(Σ近30出库×浮码)×30
+//       滞销金额=90天以上长库龄金额；长库龄金额=60-90天长库龄预警金额
+function computeThreePart(asOf){
+  const inv=B().inv_full||[];
+  if(!inv.length) return null;
+  // 浮码价格索引：优先 日期|SKU，回退 SKU 最新价
+  const ppBySku={}, ppByDS={};
+  (B().purchase||[]).forEach(r=>{ const d=String(r.date||'').slice(0,10); const sku=String(r.sku||'').trim(); const p=num(r.purchase); if(isNaN(p)) return; if(sku) ppBySku[sku]=p; if(d&&sku) ppByDS[d+'|'+sku]=p; });
+  const priceOf=(d,sku)=>{ const k=d+'|'+sku; if(ppByDS[k]!==undefined) return ppByDS[k]; if(ppBySku[sku]!==undefined) return ppBySku[sku]; return undefined; };
+  const poSku=r=>String(r.sku||r['商品编号']||r['ext_商品编号']||'').trim();
+  const poQty=r=>num(r.ppQty!==undefined?r.ppQty:(r['采购数量']!==undefined?r['采购数量']:r['ext_采购数量']));
+  const poDate=r=>String(r.date||r['订购时间']||r['ext_订购时间']||'').slice(0,10);
+  // 巢湖按日聚合
+  const chByDate={};
+  (B().chaohu||[]).forEach(r=>{ const d=String(r.date||'').slice(0,10); if(!d) return; chByDate[d]=chByDate[d]||{qty:0,amt:0,intr:0}; chByDate[d].qty+=num(chGet(r,'可发库存')); chByDate[d].amt+=num(chGet(r,'可发金额')); chByDate[d].intr+=num(chGet(r,'品牌采购在途')); });
+  // 长库龄预警按日
+  const awByDate={};
+  (B().aging_warn||[]).forEach(r=>{ const d=String(r.date||'').slice(0,10); if(!d) return; const g=k=>num(r[k]); awByDate[d]={ age60:g('age60')||num(r['60-90天长库龄预警金额']), age90:g('age90')||num(r['90天以上长库龄金额']) }; });
+  const ds=[...new Set(inv.map(r=>String(r.date||'').slice(0,10)))].filter(Boolean).sort();
   const target=asOf||ds[ds.length-1];
-  const day=rows.filter(r=>String(r.date||'').slice(0,10)===target);
-  let qty=0,amt=0,intr=0;
-  day.forEach(r=>{ qty+=num(chGet(r,'可发库存')); amt+=num(chGet(r,'可发金额')); intr+=num(chGet(r,'品牌采购在途')); });
-  return {date:target, qty, amt, intr, empty: day.length===0};
+  const all=ds.map(d=>{
+    const day=inv.filter(r=>String(r.date||'').slice(0,10)===d);
+    let jcQty=0,jcAmt=0,s7=0,s14=0,s30=0;
+    day.forEach(r=>{ const sku=String(r.sku||'').trim(); const p=priceOf(d,sku); const avail=num(r.nationAvail); jcQty+=avail; if(p!==undefined){ jcAmt+=avail*p; s7+=num(r.nation7Out)*p; s14+=num(r.nation14Out)*p; s30+=num(r.nation30Out)*p; } });
+    let jcIntr=0; (B().purchase_order||[]).forEach(r=>{ if(poDate(r)!==d) return; const p=priceOf(d,poSku(r)); const q=poQty(r); if(p!==undefined) jcIntr+=q*p; });
+    const ch=chByDate[d]||{qty:0,amt:0,intr:0};
+    const fcAmt=jcAmt+jcIntr+ch.amt+ch.intr;
+    const jcTurn=s30>0? jcAmt/s30*30 : null;
+    const fcTurn=s30>0? fcAmt/s30*30 : null;
+    const aw=awByDate[d]||{age60:0,age90:0};
+    return {date:d, jcQty, jcAmt, jcIntr, jc7:s7, jc14:s14, s30, jcTurn, chQty:ch.qty, chAmt:ch.amt, chIntr:ch.intr, fcAmt, fcTurn, sluggish:aw.age90, longAge:aw.age60};
+  });
+  const cur=all.find(x=>x.date===target)||all[all.length-1];
+  return {all, cur, dates:ds, target, hasData:true};
 }
-function renderInvThreePartHTML(x,ch){
-  const longAge=num(x.age60)+num(x.age90);
+function renderInvThreePartHTML(tp){
+  const x=tp.cur;
+  const money=v=> (v==null||isNaN(v)||v===0)?'—':fmtMoney(v);
+  const num0=v=> (v==null||isNaN(v)||v===0)?'—':fmt(v,0);
+  const days=v=> (v==null||isNaN(v)||v<=0)?'—':v.toFixed(1);
   const card=(title,items)=>`<div class="tp-card"><div class="tp-title">${title}</div>${items.map(i=>`<div class="tp-row"><span class="tp-label">${i.label}</span><span class="tp-value ${i.cls||''}">${i.value}</span></div>`).join('')}</div>`;
   const p1=card('① 京仓',[
-    {label:'库存数量', value: x.invQtyTotal?fmt(x.invQtyTotal,0):'—'},
-    {label:'库存金额', value: fmtMoney(x.invAmount), cls:'blue'},
-    {label:'京仓真是在途金额', value: fmtMoney(x.jcIntransit)},
-    {label:'库存周转(天)', value: x.turnDays?x.turnDays.toFixed(1):'—'},
-    {label:'近7天销售金额', value: fmtMoney(x.s7amt)},
-    {label:'近14天销售金额', value: fmtMoney(x.s14amt)},
+    {label:'库存数量', value: num0(x.jcQty)},
+    {label:'库存金额', value: money(x.jcAmt), cls:'blue'},
+    {label:'京仓真是在途金额', value: money(x.jcIntr)},
+    {label:'库存周转(天)', value: days(x.jcTurn)},
+    {label:'近7天销售金额', value: money(x.jc7)},
+    {label:'近14天销售金额', value: money(x.jc14)},
   ]);
   const p2=card('② 巢湖库存',[
-    {label:'库存数量', value: ch&&!ch.empty?fmt(ch.qty,0):'—'},
-    {label:'库存金额', value: ch&&!ch.empty?fmtMoney(ch.amt):'—', cls:'blue'},
-    {label:'品牌采购在途金额', value: ch&&!ch.empty?fmtMoney(ch.intr):'—'},
+    {label:'库存数量', value: num0(x.chQty)},
+    {label:'库存金额', value: money(x.chAmt), cls:'blue'},
+    {label:'品牌采购在途金额', value: money(x.chIntr)},
   ]);
   const p3=card('③ 全链路数据',[
-    {label:'全链路金额', value: fmtMoney(x.fcAmount)},
-    {label:'全链路周转(天)', value: x.fullChain?x.fullChain.toFixed(1):'—'},
-    {label:'滞销金额', value: fmtMoney(x.sluggish), cls:num(x.sluggish)>0?'red':''},
-    {label:'长库龄金额', value: fmtMoney(longAge), cls:longAge>0?'red':''},
+    {label:'全链路金额', value: money(x.fcAmt)},
+    {label:'全链路周转(天)', value: days(x.fcTurn)},
+    {label:'滞销金额', value: money(x.sluggish), cls:num(x.sluggish)>0?'red':''},
+    {label:'长库龄金额', value: money(x.longAge), cls:num(x.longAge)>0?'red':''},
   ]);
   return `<div class="tp-grid">${p1}${p2}${p3}</div>`;
 }
 function renderInv(){
   const isThree=INV_THREE_PART_BRANDS.includes(STATE.currentBrand);
-  const c=computeInv(invAsOf); const el=$('#invKpis'); const panel=$('#invThreePartPanel');
+  const el=$('#invKpis'); const panel=$('#invThreePartPanel');
+  if(isThree){
+    const tp=computeThreePart(invAsOf);
+    if(!tp){ el.style.display=''; panel.style.display='none'; el.innerHTML='<div class="empty">请在「数据输入区 → 库存明细（全量列）」粘贴麦维他的全国/城市仓库存明细（含表头），并录入浮码 / 采购单 / 巢湖库存 / 长库龄预警数据</div>'; $('#invRate').innerHTML=$('#invDays').innerHTML=$('#invTable').innerHTML=''; return; }
+    el.style.display='none'; panel.style.display='';
+    $('#invThreePart').innerHTML=renderInvThreePartHTML(tp);
+    lineChart('#invRate',{labels:tp.dates, series:[
+      {name:'京仓库存金额',data:tp.all.map(x=>x.jcAmt||null)},
+      {name:'京仓真实在途金额',data:tp.all.map(x=>x.jcIntr||null)},
+      {name:'巢湖库存金额',data:tp.all.map(x=>x.chAmt||null)},
+      {name:'全链路金额',data:tp.all.map(x=>x.fcAmt||null)},
+    ], yFmt:v=>v==null?'—':fmt(v,0)});
+    lineChart('#invDays',{labels:tp.dates, series:[
+      {name:'京仓周转(天)',data:tp.all.map(x=>x.jcTurn||null)},
+      {name:'全链路周转(天)',data:tp.all.map(x=>x.fcTurn||null)},
+    ], yFmt:v=>v==null?'—':v.toFixed(1)});
+    let t='<table class="tpl" style="margin-top:8px"><tr><th>日期</th><th>京仓库存数量</th><th>京仓库存金额</th><th>京仓在途</th><th>近7天销(额)</th><th>近14天销(额)</th><th>京仓周转</th><th>巢湖数量</th><th>巢湖金额</th><th>巢湖在途</th><th>全链路金额</th><th>全链路周转</th><th>滞销金额</th><th>长库龄金额</th></tr>';
+    tp.all.forEach(x=>{ t+=`<tr><td>${esc(x.date)}</td><td>${x.jcQty?fmt(x.jcQty,0):'—'}</td><td>${x.jcAmt?fmtMoney(x.jcAmt):'—'}</td><td>${x.jcIntr?fmtMoney(x.jcIntr):'—'}</td><td>${x.jc7?fmtMoney(x.jc7):'—'}</td><td>${x.jc14?fmtMoney(x.jc14):'—'}</td><td>${x.jcTurn?x.jcTurn.toFixed(1):'—'}</td><td>${x.chQty?fmt(x.chQty,0):'—'}</td><td>${x.chAmt?fmtMoney(x.chAmt):'—'}</td><td>${x.chIntr?fmtMoney(x.chIntr):'—'}</td><td>${x.fcAmt?fmtMoney(x.fcAmt):'—'}</td><td>${x.fcTurn?x.fcTurn.toFixed(1):'—'}</td><td>${x.sluggish?fmtMoney(x.sluggish):'—'}</td><td>${x.longAge?fmtMoney(x.longAge):'—'}</td></tr>`; });
+    t+='</table>'; $('#invTable').innerHTML=t;
+    return;
+  }
+  const c=computeInv(invAsOf);
   if(!c){ el.style.display=''; panel.style.display='none'; el.innerHTML='<div class="empty">请在「数据输入区 → 库存周转数据」粘贴供应链库存周转模板（含表头）</div>'; $('#invRate').innerHTML=$('#invDays').innerHTML=$('#invTable').innerHTML=''; return; }
   const x=c.cur;
   const pctShow=v=>{ if(v===undefined||isNaN(v)||v===0) return '—'; const p=v>1? v : v*100; return p.toFixed(1)+'%'; };
@@ -2661,7 +2718,7 @@ function setSubview(name){ lijxSub=name; $$('.subtab').forEach(t=>t.classList.to
 // 临时隐藏「京准通推广」「库存周转」两个子视图的品牌（表格/代码保留，仅控制显隐，后续改此处数组即可放出）
 const JZT_INV_HIDDEN_BRANDS=['和路雪','家乐','联合利华'];
 // 库存周转「三部分总览」品牌白名单：仅这些品牌在库存周转视图展示「京仓 / 巢湖库存 / 全链路」三卡（其余品牌维持原 13 项 KPI）
-const INV_THREE_PART_BRANDS=['麦维他'];
+const INV_THREE_PART_BRANDS=['麦维他自营','麦维他POP'];
 function applyBrandSubtabs(){
   const hide=JZT_INV_HIDDEN_BRANDS.includes(STATE.currentBrand);
   ['jzt','inventory'].forEach(v=>{
@@ -3024,6 +3081,9 @@ function invFullSampleRows(){
   if((i=invFullColIndex('全国','现货库存'))>=0) r1[i]=12000;
   if((i=invFullColIndex('全国','可用库存'))>=0) r1[i]=11800;
   if((i=invFullColIndex('全国','昨日出库商品件数'))>=0) r1[i]=980;
+  if((i=invFullColIndex('全国','近7日出库商品件数'))>=0) r1[i]=420;
+  if((i=invFullColIndex('全国','近14日出库商品件数'))>=0) r1[i]=820;
+  if((i=invFullColIndex('全国','近30日出库商品件数'))>=0) r1[i]=1750;
   if((i=invFullColIndex('全国','月至今出库商品件数'))>=0) r1[i]=3200;
   if((i=invFullColIndex('上海','库存件数'))>=0) r1[i]=3200;
   if((i=invFullColIndex('上海','现货库存'))>=0) r1[i]=3000;
@@ -3033,6 +3093,9 @@ function invFullSampleRows(){
   if((i=invFullColIndex('全国','库存件数'))>=0) r2[i]=8600;
   if((i=invFullColIndex('全国','现货库存'))>=0) r2[i]=8200;
   if((i=invFullColIndex('全国','昨日出库商品件数'))>=0) r2[i]=700;
+  if((i=invFullColIndex('全国','近7日出库商品件数'))>=0) r2[i]=300;
+  if((i=invFullColIndex('全国','近14日出库商品件数'))>=0) r2[i]=600;
+  if((i=invFullColIndex('全国','近30日出库商品件数'))>=0) r2[i]=1280;
   return {H:H, rows:[r1,r2]};
 }
 function sampleInvFull(){ var s=invFullSampleRows(); return [s.H.join('\t')].concat(s.rows.map(function(r){ return r.join('\t'); })).join('\n'); }
