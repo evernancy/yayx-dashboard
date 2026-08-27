@@ -702,7 +702,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-27-fix66b-badge-token-prompt';
+const APP_VERSION = '2026-08-27-fix66c-boot-diag';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -4140,8 +4140,12 @@ async function boot(){
         fromWhere = local ? '本地优先·与云端合并' : '云端';
         // 旧版整份格式 → 后台迁移为拆分（仅当已成功解析出旧数据，避免误覆盖空 STATE）
         if(raw){ try{ const o=JSON.parse(raw.content); if(!o.format||o.format!==SPLIT_FORMAT) migrateBoardToSplit(currentBoard.id, currentBoard.name, loaded); }catch(_){} }
+      } else {
+        console.warn('[boot] 云端文件可读但数据不可用: row=', !!row, 'state=', !!(row&&row.state), 'usable=', !!(row&&row.state&&isUsableState(row.state)));
       }
-    }catch(e){ loaded=null; }
+    }catch(e){ loaded=null; console.error('[boot] 云端加载异常:', e.message||e, '| status=', e.status, '| url=', (e.url||'').slice(0,120)); }
+  } else {
+    console.warn('[boot] cloudOk=false, 跳过云端加载. listErr=', listErr ? (listErr.message||listErr).slice(0,100) : '-');
   }
   // 云端读不到时（无令牌，或 GitHub API 被本机网络拦截）
   if(!loaded){
