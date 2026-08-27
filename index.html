@@ -702,7 +702,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-27-fix65c-mawei-channel-toggle';
+const APP_VERSION = '2026-08-27-fix65d-snapshot-fallback-cloudstudio';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -3624,6 +3624,12 @@ const GH_PUB_REPO='yayx-dashboard';
 const GH_PUB_BASE=GH_API+'/repos/'+GH_OWNER+'/'+GH_PUB_REPO+'/contents';
 const SNAPSHOT_PATH='data.json';
 const SNAPSHOT_URL='https://'+GH_OWNER+'.github.io/'+GH_PUB_REPO+'/'+SNAPSHOT_PATH;
+// fix65d：CloudStudio 国内备用地址。当 github.io（GitHub Pages）在同事网络不可达时自动回退，
+// 确保国内无 VPN 的同事也能拉到公开快照数据（而非退到陈旧的本地缓存）。
+const SNAPSHOT_FALLBACK_URLS=[
+  'https://0f17c1d49bbe4622b57f923efbbc3e7c.bj3.agentos-app.net/'+SNAPSHOT_PATH,
+  // 可在此追加更多镜像地址
+];
 // fix63：共享看板 ID 常量（云端 index.json 里唯一看板）。断网/从快照恢复时作为权威 fallback，
 // 防止被公开快照里被误写的 snap.id（如 7870295143410 幽灵看板）带偏，导致保存到同事加载不到的看板。
 const SHARED_BOARD_ID='b_17870295143410';
@@ -3674,27 +3680,38 @@ async function ghPutFile(path, content, sha, _depth){
     throw e;
   }
 }
-// 拉取公开快照（无需令牌；同源 github.io 或任何静态托管均可）。返回 {id,name,state,updated_at} 或 null
+// 拉取公开快照（无需令牌；github.io 或 CloudStudio 等静态托管均可）。
+// fix65d：多源自动回退——主源 github.io 不可达时自动尝试 CloudStudio 国内地址，
+// 解决国内同事无 VPN 时「云端暂不可用→只能读本地陈旧缓存」的问题。
+// 返回 {id,name,state,updated_at} 或 null
 const SNAPSHOT_BASE_URL=SNAPSHOT_URL.replace(SNAPSHOT_PATH,''); // https://evernancy.github.io/yayx-dashboard/
 async function fetchPublicSnapshot(){
-  try{
-    var r=await fetch(SNAPSHOT_URL,{cache:'no-cache'}); // no-cache=带 ETag 校验，快照未变时 304 秒回
-    if(!r.ok) return null;
-    var snap=await r.json();
-    if(snap && snap.format===SPLIT_FORMAT){
-      // 拆分快照：读各品牌文件组装
-      var brands={};
-      for(var i=0;i<snap.brands.length;i++){
-        var b=snap.brands[i];
-        try{ var br=await fetch(SNAPSHOT_BASE_URL+'data__'+encodeURIComponent(b)+'.json',{cache:'no-cache'}); if(br.ok){ var bj=await br.json(); brands[b]=bj.data||{}; } }catch(_){}
-        if(!brands[b]) brands[b]={};
+  // 构建候选清单：主源 + 回退源
+  var candidates=[SNAPSHOT_URL].concat(SNAPSHOT_FALLBACK_URLS||[]);
+  for(var ci=0;ci<candidates.length;ci++){
+    try{
+      var url=candidates[ci];
+      var r=await fetch(url,{cache:'no-cache'});
+      if(!r.ok) continue;
+      var snap=await r.json();
+      // 从成功 URL 推导 base（用于拉取各品牌文件）
+      var base=url.replace(/[^/]*$/,'');
+      if(snap && snap.format===SPLIT_FORMAT){
+        // 拆分快照：从同一 base 读各品牌文件组装
+        var brands={};
+        for(var i=0;i<snap.brands.length;i++){
+          var b=snap.brands[i];
+          try{ var br=await fetch(base+'data__'+encodeURIComponent(b)+'.json',{cache:'no-cache'}); if(br.ok){ var bj=await br.json(); brands[b]=bj.data||{}; } }catch(_){}
+          if(!brands[b]) brands[b]={};
+        }
+        var state={ brands:brands, currentBrand:snap.currentBrand||'李锦记', brandOrder:snap.brandOrder||BRANDS.slice(), gantt:snap.gantt||[], ganttRaw:snap.ganttRaw||'', memo:snap.memo||{} };
+        if(isUsableState(state)) return {id:snap.id,name:snap.name,state:state,updated_at:snap.updated_at};
       }
-      var state={ brands:brands, currentBrand:snap.currentBrand||'李锦记', brandOrder:snap.brandOrder||BRANDS.slice(), gantt:snap.gantt||[], ganttRaw:snap.ganttRaw||'', memo:snap.memo||{} };
-      return isUsableState(state)? {id:snap.id,name:snap.name,state:state,updated_at:snap.updated_at} : null;
-    }
-    if(snap && snap.state && isUsableState(snap.state)) return snap; // 旧版整份格式（向后兼容）
-    return null;
-  }catch(e){ return null; }
+      // 旧版整份格式（向后兼容）
+      if(snap && snap.state && isUsableState(snap.state)) return snap;
+    }catch(e){ /* 继续试下一个候选 */ }
+  }
+  return null; // 所有候选均失败
 }
 // 推送公开快照（按品牌拆分，仅上传脏品牌 + 小清单；需令牌；查看者免令牌只读）
 async function ghPutPublicSnapshot(_depth){
