@@ -692,7 +692,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-27-fix53-bulk-upload-nohang';
+const APP_VERSION = '2026-08-27-fix54-upload-diagnostics';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -3273,7 +3273,23 @@ function setupFile(id,key){ const inp=$(id); const ta=()=>{ const t=$('#'+key+'I
         await new Promise(r=>setTimeout(r,40));
         readInputs();
       }
-      toast('Excel 解析完成：'+(text.split('\n').length-1)+' 行已导入并存储');
+      // fix54：上传完成后显示关键诊断（行数 + 金额校验），方便快速判断数据完整性
+      const rows=text.split('\n').length-1;
+      let diag='';
+      if(key==='inv'){
+        const b=B(); const invRows=b.inventory||[];
+        let spotSum=0,outBoSum=0,biSum=0,bjSum=0;
+        invRows.forEach(r=>{ const p=num(r.purPrice!==undefined?r.purPrice:r.purchase); if(p){ spotSum+=num(r.spotQty!==undefined?r.spotQty:r.end)*p; outBoSum+=num(r.outBO)*p; biSum+=num(r.outBI)*p; bjSum+=num(r.outBJ)*p; } });
+        diag=' | 库存现货×采购价≈'+fmtMoney(spotSum)+' | 近7天≈'+fmtMoney(biSum)+' | 近14天≈'+fmtMoney(bjSum);
+      }
+      if(key==='po'){
+        const b=B(); const poRows=b.purchase_order||[];
+        let poSum=0; poRows.forEach(r=>{ poSum+=num(r.poAmt!==undefined?r.poAmt:r.采购金额); });
+        const byMonth={}; poRows.forEach(r=>{ const d=String(r.date||r.订购时间||'').slice(0,7); if(d) byMonth[d]=(byMonth[d]||0)+num(r.poAmt!==undefined?r.poAmt:r.采购金额); });
+        const months=Object.keys(byMonth).sort();
+        diag=' | 采购金额合计≈'+fmtMoney(poSum)+(months.length?' | '+months.map(m=>m+'月='+fmtMoney(byMonth[m])).join(' '):'');
+      }
+      toast('Excel 解析完成：'+rows+' 行已导入并存储'+diag);
     }
   }catch(err){ toast('Excel解析失败：'+(err.name||'Error')+' - '+err.message+'｜若已改过代码，请重新打开本页(Cmd+Shift+R)后再试', true); }
 }); }
