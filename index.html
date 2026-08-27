@@ -2093,7 +2093,7 @@ function renderGantt(module, elId, ym){
       const sBarX=x0+csi*dayW, sBarW=(cei-csi+1)*dayW;
       if(sBarW<=0) return;
       const prog=Math.max(0,Math.min(100,num(r.progress)||0));
-      const oc=ownerColor(r.owner);
+      const oc=modColor; // fix50: 甘特图条形按模块着色（不再按负责人哈希），确保 营销=橙 设计=青 数据=紫 视觉一致
       const bx=sBarX+2, by=y+5, bw=Math.max(sBarW-4,8), bh=rowH-10;
       // 底色矩形（提高不透明度确保即使 0% 进度也可见）
       g+=`<rect x="${bx}" y="${by}" width="${bw}" height="${bh}" rx="5" fill="${oc}" fill-opacity="0.35" stroke="${oc}" stroke-width="1" stroke-opacity="0.6"/>`;
