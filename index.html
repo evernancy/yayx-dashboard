@@ -692,7 +692,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-27-fix59-refresh-persist';
+const APP_VERSION = '2026-08-27-fix60-target-persist-and-score';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -3309,7 +3309,7 @@ function setupFile(id,key){ const inp=$(id); const ta=()=>{ const t=$('#'+key+'I
            b) 库存类数据（inv/invFull/invSiyun）不使用 aggregateRows/mergeRows——同一 SKU 在不同配送中心各有一行，
               聚合会把多仓库的现货/出库累加导致数值膨胀 30~40 倍，去重则会丢失非首仓库数据。
               改为直接存储全量 objRows（computeInv 已在遍历时按行求和，无需存储层预聚合）。 */
-        toast('Excel 解析完成，正在写入数据（'+objRows+' 行）…', true);
+        toast('Excel 解析完成，正在写入数据（'+objRows.length+' 行）…', true);
         await new Promise(r=>setTimeout(r,40));
         // 将对象按 key 写入当前品牌对应字段
         const b=B();
@@ -3355,6 +3355,13 @@ function setupFile(id,key){ const inp=$(id); const ta=()=>{ const t=$('#'+key+'I
         const byMonth={}; poRows.forEach(r=>{ const d=String(r.date||r.订购时间||'').slice(0,7); if(d) byMonth[d]=(byMonth[d]||0)+num(r.poAmt!==undefined?r.poAmt:r.采购金额); });
         const months=Object.keys(byMonth).sort();
         diag=' | 采购金额合计≈'+fmtMoney(poSum)+(months.length?' | '+months.map(m=>m+'月='+fmtMoney(byMonth[m])).join(' '):'');
+      }
+      if(key==='tgt'){
+        const tsel=document.getElementById('brand_targets');
+        const tv=(tsel&&tsel.value)||STATE.currentBrand;
+        const tb=STATE.brands[tv]?tv:STATE.currentBrand;
+        const tgtN=(STATE.brands[tb]&&STATE.brands[tb].targets)||[];
+        diag=' | 已解析 '+tgtN.length+' 条目标 → '+tv;
       }
       toast('Excel 解析完成：'+parsedCount+' 行已导入并存储'+diag);
     }
@@ -4370,9 +4377,11 @@ init();
     return false;
   }
   function fmtTime(d){ try{ return d.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',second:'2-digit'}); }catch(e){ return ''; } }
-  // 数据量评分：跨品牌累计 目标条数 + 京准通字符数/1000 + POS 天数 + 销售条数。用于判断「哪一份 STATE 数据更全」，防止被旧版空数据回灌覆盖。
+  // 数据量评分：跨品牌累计 目标条数 + 库存行数 + 京准通字符数/1000 + POS 天数 + 销售条数。
+  // 用于判断「哪一份 STATE 数据更全」，防止被旧版空数据回灌覆盖。
+  // 注意：入参是原始 STATE 对象（{brands:{...}}），不是包装对象（{state:{brands:{...}}}）——与 pollSync 调用点 dataScore(STATE) / dataScore(row.state) 保持一致。
   function dataScore(st){
-    try{ var b=(st&&st.state&&st.state.brands)||{}; var s=0;
+    try{ var b=(st&&st.brands)||{}; var s=0;
       for(var k in b){ var br=b[k];
         if(br.targets) s+=br.targets.length;
         if(br.inventory) s+=br.inventory.length;                 // fix59：补计库存行数（此前未计，导致纯库存更新时 localScore=0）
