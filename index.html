@@ -692,7 +692,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-27-fix54-upload-diagnostics';
+const APP_VERSION = '2026-08-27-fix55-direct-sheet-to-json';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -864,6 +864,29 @@ function parseTable(text){
   const lines=text.replace(/\r/g,'').split('\n').filter(l=>l.trim().length);
   if(!lines.length) return [];
   const headers=lines[0].split(delim).map(h=>h.trim());
+  return _parseRows(headers, lines, delim);
+}
+
+/* fix55：直接从 SheetJS Worksheet 构建对象数组（与 parseTable 输出格式完全一致）。
+   绕过 TSV 文本中转，避免大文件时浏览器端 sheetToTsv→textarea→parseTable 链路丢行
+   （6.57MB xlsx / 12558行 在部分浏览器环境仅解析出 12150 行，原因疑为 XLSX.read 内存模式差异
+   导致部分 cell 定义丢失；sheet_to_json 为 SheetJS 官方推荐的高层 API，更可靠）。 */
+function sheetToObjects(ws){
+  if(!ws||!ws['!ref']) return [];
+  const range=XLSX.utils.decode_range(ws['!ref']);
+  const nRows=(range.e.r-range.s.r+1);
+  if(nRows>300000) throw new Error('工作表行数过多（超过 30 万行）');
+  // 用 sheet_to_json 取原始值（{header:1} 返回二维数组，header:1 表示第一行是表头）
+  const raw=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+  if(!raw.length||!raw[0].length) return [];
+  const headers=raw[0].map(h=>String(h||'').trim());
+  // 将二维数组转成 parseTable 期望的 lines 格式（每行 tab 分隔），复用 _parseRows
+  const lines=raw.map(row=>row.map(c=>c!==undefined&&c!==null?String(c):'').join('\t'));
+  return _parseRows(headers, lines, '\t');
+}
+
+/* parseTable 和 sheetToObjects 共用的行解析核心：表头映射 + 过滤 + 对象构建 */
+function _parseRows(headers, lines, delim){
   const rows=[];
   for(let i=1;i<lines.length;i++){
     const cells=lines[i].split(delim);
@@ -3255,11 +3278,13 @@ function setupFile(id,key){ const inp=$(id); const ta=()=>{ const t=$('#'+key+'I
       const dataSheet=wb.SheetNames.find(n=>/[模板数据gantt数据sheet]/i.test(n))||wb.SheetNames.find(n=>!/[说明帮助指引readme注]/i.test(n));
       if(dataSheet&&wb.Sheets[dataSheet]) ws=wb.Sheets[dataSheet];
       trimSheet(ws);
-      toast('已读取工作簿，正在逐行转换（大表分步处理，页面保持响应）…', true);
-      await new Promise(r=>setTimeout(r,40));
-      const text=await sheetToTsv(ws); // fix53：异步分块，避免一次性同步解析卡死
-      if(!text.trim()) throw new Error('工作表为空或无法解析，请确认首个工作表包含数据');
-      ta().value=text;
+      /* fix55：用 sheetToObjects 直接出对象数组（基于 sheet_to_json），绕过 TSV 文本中转
+         消除大文件时浏览器端 sheetToTsv→textarea→parseTable 链路丢行问题 */
+      const objRows = sheetToObjects(ws);
+      if(!objRows.length) throw new Error('工作表为空或无法解析，请确认首个工作表包含数据');
+      // 同时生成 TSV 存入 textarea（供用户查看/编辑/复制粘贴，也作为 _raw 原文存档）
+      const text = await sheetToTsv(ws);
+      ta().value = text;
       /* 甘特图上传：只替换甘特图数据（不影响销售/库存等其他段，防止误清空） */
       if(key==='gantt'){
         STATE.ganttRaw=text;
@@ -3269,27 +3294,42 @@ function setupFile(id,key){ const inp=$(id); const ta=()=>{ const t=$('#'+key+'I
         updateDiag(STATE.ganttRaw, STATE.gantt.length, 'Gantt', ganttParsed.length);
         saveState(); renderAll(); saveToService();
       } else {
-        toast('Excel 转换完成，正在计算并保存（数据量较大，请稍候）…', true);
+        /* fix55：直接将对象写入对应数据段（不再依赖 readInputs 从 textarea 重解析）
+           路径：inventory/purchase_order/jzt/sales 等 → merge 追加 → saveState/render/saveToService */
+        toast('Excel 解析完成，正在写入数据（'+objRows+' 行）…', true);
         await new Promise(r=>setTimeout(r,40));
-        readInputs();
+        // 将对象按 key 写入当前品牌对应字段
+        const b=B();
+        if(key==='inv'){ b.inventory=aggregateRows(objRows); b._raw.inventory=text; }
+        else if(key==='po'){ b.purchase_order=aggregateRows(objRows); b._raw.purchase_order=text; }
+        else if(key==='jzt'){ b.jzt=objRows; b._raw.jzt=text; }  // jzt 不 aggregate（有独立合并逻辑）
+        else if(key==='sales'){ b.sales=aggregateRows(objRows); b._raw.sales=text; }
+        else if(key==='pp'){ b.purchase=aggregateRows(objRows); b._raw.purchase=text; }
+        else if(key==='sr'){ b.spot_rate=aggregateRows(objRows); b._raw.spot_rate=text; }
+        else if(key==='aw'){ b.aging_warn=aggregateRows(objRows); b._raw.aging_warn=text; }
+        else if(key==='invFull'){ b.inv_full=aggregateRows(objRows); b._raw.inv_full=text; }
+        else if(key==='invSiyun'){ b.inv_siyun=aggregateRows(objRows); b._raw.inv_siyun=text; }
+        else if(key==='chaohu'){ b.chaohu=aggregateRows(objRows); b._raw.chaohu=text; }
+        markDirty(STATE.currentBrand);
+        saveState(); renderAll(); saveToService();
       }
-      // fix54：上传完成后显示关键诊断（行数 + 金额校验），方便快速判断数据完整性
-      const rows=text.split('\n').length-1;
+      // fix55：上传完成后显示关键诊断（行数 + 金额校验），方便快速判断数据完整性
+      const parsedCount = objRows.length;
       let diag='';
       if(key==='inv'){
-        const b=B(); const invRows=b.inventory||[];
-        let spotSum=0,outBoSum=0,biSum=0,bjSum=0;
-        invRows.forEach(r=>{ const p=num(r.purPrice!==undefined?r.purPrice:r.purchase); if(p){ spotSum+=num(r.spotQty!==undefined?r.spotQty:r.end)*p; outBoSum+=num(r.outBO)*p; biSum+=num(r.outBI)*p; bjSum+=num(r.outBJ)*p; } });
+        const invRows=B().inventory||[];
+        let spotSum=0,biSum=0,bjSum=0;
+        invRows.forEach(r=>{ const p=num(r.purPrice!==undefined?r.purPrice:r.purchase); if(p){ spotSum+=num(r.spotQty!==undefined?r.spotQty:r.end)*p; biSum+=num(r.outBI)*p; bjSum+=num(r.outBJ)*p; } });
         diag=' | 库存现货×采购价≈'+fmtMoney(spotSum)+' | 近7天≈'+fmtMoney(biSum)+' | 近14天≈'+fmtMoney(bjSum);
       }
       if(key==='po'){
-        const b=B(); const poRows=b.purchase_order||[];
+        const poRows=B().purchase_order||[];
         let poSum=0; poRows.forEach(r=>{ poSum+=num(r.poAmt!==undefined?r.poAmt:r.采购金额); });
         const byMonth={}; poRows.forEach(r=>{ const d=String(r.date||r.订购时间||'').slice(0,7); if(d) byMonth[d]=(byMonth[d]||0)+num(r.poAmt!==undefined?r.poAmt:r.采购金额); });
         const months=Object.keys(byMonth).sort();
         diag=' | 采购金额合计≈'+fmtMoney(poSum)+(months.length?' | '+months.map(m=>m+'月='+fmtMoney(byMonth[m])).join(' '):'');
       }
-      toast('Excel 解析完成：'+rows+' 行已导入并存储'+diag);
+      toast('Excel 解析完成：'+parsedCount+' 行已导入并存储'+diag);
     }
   }catch(err){ toast('Excel解析失败：'+(err.name||'Error')+' - '+err.message+'｜若已改过代码，请重新打开本页(Cmd+Shift+R)后再试', true); }
 }); }
