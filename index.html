@@ -702,7 +702,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-27-fix66j-boot-diag-full';
+const APP_VERSION = '2026-08-27-fix66j2-readfile-diag';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -3737,16 +3737,22 @@ async function ghReadFile(base, path){
     if(!d || d.sha===undefined) return null;
     var content=d.content||'';
     var decodedLen=(function(){ try{ return b64dec(content).length; }catch(_){ return 0; } })();
+    console.log('[ghReadFile] '+path+' | api.size='+(d.size||0)+' | contentsDecoded='+decodedLen+' | needBlob='+(decodedLen < (d.size||0) || !content));
     if(d.sha && (decodedLen < (d.size||0) || !content)){
       try{
         var blobBase = (BACKEND_TYPE==='gitee')
           ? base.replace('/contents','/git/blobs')
           : GH_API+'/repos/'+GH_OWNER+'/'+GH_REPO+'/git/blobs';
+        console.log('[ghReadFile] '+path+' -> blob fallback: '+blobBase+'/'+d.sha.slice(0,8)+'..');
         var br=await fetch(blobBase+'/'+d.sha, {headers:ghHeaders()});
-        if(br.ok){ var b=await br.json(); if(b && b.content) content=b.content; }
-      }catch(_){}
+        console.log('[ghReadFile] '+path+' -> blob status='+br.status);
+        if(br.ok){ var b=await br.json(); if(b && b.content){ content=b.content; console.log('[ghReadFile] '+path+' -> blob content len='+b.content.length); } }
+        else { console.warn('[ghReadFile] '+path+' -> blob FAILED status='+br.status); }
+      }catch(_){ console.warn('[ghReadFile] '+path+' -> blob EXCEPTION', _); }
     }
-    return {content: content?b64dec(content):'', sha:d.sha};
+    var finalContent=content?b64dec(content):'';
+    console.log('[ghReadFile] '+path+' -> FINAL decoded len='+finalContent.length);
+    return {content: finalContent, sha:d.sha};
   }
   catch(e){ if(e && e.status===404) return null; throw e; }
 }
@@ -4267,7 +4273,7 @@ async function boot(){
         return rows.reduce((s,r)=>s+(Number(r.spend)||0),0).toFixed(2);
       }catch(e){ return 'err'; }
     })();
-    console.log('[dashboard] '+APP_VERSION+' reparseObj='+!!window.reparseObj+' 麦维他关键词花费='+kwSpend+' jzt总行数='+jztN);
+    console.log('[dashboard] '+APP_VERSION+' reparseObj='+!!window.reparseObj+' 麦维他关键词花费='+kwSpend+' jzt总行数='+jztN+' || fromWhere='+fromWhere+' cloudOk='+cloudOk);
     if(fromWhere==='云端'){ toast('已从云端加载数据 · '+APP_VERSION); window.__hideCollabBadge=true; }
     else if(fromWhere==='公开快照'){ toast('已载入「'+currentBoard.name+'」最新数据（只读模式，由录入同事每日更新）'); }
     else if(fromWhere==='本地优先·与公开快照合并'){ toast('已从本机恢复并合并公开快照（未配置令牌：数据仅存本机，点右下角徽章粘贴令牌即可云端共享）'); }
