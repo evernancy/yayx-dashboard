@@ -692,7 +692,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-27-fix56-aging-shows-latest';
+const APP_VERSION = '2026-08-27-fix57-inventory-no-aggregation';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -3210,7 +3210,8 @@ function trimSheet(ws){
     const m=/^([A-Z]+)(\d+)$/.exec(k); if(!m) continue;
     const r=parseInt(m[2],10), col=m[1];
     let c=0; for(const ch of col) c=c*26+(ch.charCodeAt(0)-64);
-    if(r>maxR){ maxR=r; maxC=Math.max(maxC,c); }
+    if(r>maxR) maxR=r;    // fix57: 拆成独立语句，避免「按列优先存储时 maxC 只在首列被更新」的 bug
+    if(c>maxC) maxC=c;    // maxC 必须独立跟踪，不依赖 r>maxR 条件
   }
   if(maxR===0) return ws;
   const range=XLSX.utils.decode_range(ws['!ref']);
@@ -3301,21 +3302,26 @@ function setupFile(id,key){ const inp=$(id); const ta=()=>{ const t=$('#'+key+'I
         updateDiag(STATE.ganttRaw, STATE.gantt.length, 'Gantt', ganttParsed.length);
         saveState(); renderAll(); saveToService();
       } else {
-        /* fix55：直接将对象写入对应数据段（不再依赖 readInputs 从 textarea 重解析）
-           路径：inventory/purchase_order/jzt/sales 等 → merge 追加 → saveState/render/saveToService */
+        /* fix55→fix57：直接将对象写入对应数据段（不再依赖 readInputs 从 textarea 重解析）
+           路径：inventory/purchase_order/jzt/sales 等 → 写入 → saveState/render/saveToService
+           fix57 关键修正：
+           a) trimSheet 的 maxC 跟踪改为独立计算（不再依赖 r>maxR 条件），修复宽表列数被截断的隐患；
+           b) 库存类数据（inv/invFull/invSiyun）不使用 aggregateRows/mergeRows——同一 SKU 在不同配送中心各有一行，
+              聚合会把多仓库的现货/出库累加导致数值膨胀 30~40 倍，去重则会丢失非首仓库数据。
+              改为直接存储全量 objRows（computeInv 已在遍历时按行求和，无需存储层预聚合）。 */
         toast('Excel 解析完成，正在写入数据（'+objRows+' 行）…', true);
         await new Promise(r=>setTimeout(r,40));
         // 将对象按 key 写入当前品牌对应字段
         const b=B();
-        if(key==='inv'){ b.inventory=aggregateRows(objRows); b._raw.inventory=text; }
+        if(key==='inv'){ b.inventory=objRows; b._raw.inventory=text; }
         else if(key==='po'){ b.purchase_order=aggregateRows(objRows); b._raw.purchase_order=text; }
         else if(key==='jzt'){ b.jzt=objRows; b._raw.jzt=text; }  // jzt 不 aggregate（有独立合并逻辑）
         else if(key==='sales'){ b.sales=aggregateRows(objRows); b._raw.sales=text; }
         else if(key==='pp'){ b.purchase=aggregateRows(objRows); b._raw.purchase=text; }
         else if(key==='sr'){ b.spot_rate=aggregateRows(objRows); b._raw.spot_rate=text; }
         else if(key==='aw'){ b.aging_warn=aggregateRows(objRows); b._raw.aging_warn=text; }
-        else if(key==='invFull'){ b.inv_full=aggregateRows(objRows); b._raw.inv_full=text; }
-        else if(key==='invSiyun'){ b.inv_siyun=aggregateRows(objRows); b._raw.inv_siyun=text; }
+        else if(key==='invFull'){ b.inv_full=objRows; b._raw.inv_full=text; }
+        else if(key==='invSiyun'){ b.inv_siyun=objRows; b._raw.inv_siyun=text; }
         else if(key==='chaohu'){ b.chaohu=aggregateRows(objRows); b._raw.chaohu=text; }
         markDirty(STATE.currentBrand);
         saveState(); renderAll(); saveToService();
