@@ -692,7 +692,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-27-fix55-direct-sheet-to-json';
+const APP_VERSION = '2026-08-27-fix56-aging-shows-latest';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -1243,6 +1243,9 @@ function computeThreePart(asOf){
   // 长库龄预警按日
   const awByDate={};
   (B().aging_warn||[]).forEach(r=>{ const d=String(r.date||'').slice(0,10); if(!d) return; const g=k=>num(r[k]); awByDate[d]={ age60:g('age60')||num(r['60-90天长库龄预警金额']), age90:g('age90')||num(r['90天以上长库龄金额']) }; });
+  // fix56：长库龄预警按「最新值」展示（同 computeInv）——无对应日期时回退最新快照
+  let latestAwKey=null, latestAw={age60:0,age90:0};
+  (B().aging_warn||[]).forEach(r=>{ const d=String(r.date||'').slice(0,10); if(!d) return; const g=k=>num(r[k]); const o={age60:g('age60')||num(r['60-90天长库龄预警金额']), age90:g('age90')||num(r['90天以上长库龄金额'])}; if(!latestAwKey || d>latestAwKey){ latestAwKey=d; latestAw=o; } });
   const ds=[...new Set(inv.map(r=>String(r.date||'').slice(0,10)))].filter(Boolean).sort();
   const target=asOf||ds[ds.length-1];
   if(!ds.length){
@@ -1258,7 +1261,7 @@ function computeThreePart(asOf){
     const fcAmt=jcAmt+jcIntr+ch.amt+ch.intr;
     const jcTurn=s30>0? jcAmt/s30*30 : null;
     const fcTurn=s30>0? fcAmt/s30*30 : null;
-    const aw=awByDate[d]||{age60:0,age90:0};
+    const aw=awByDate[d]||latestAw;
     return {date:d, jcQty, jcAmt, jcIntr, jc7:s7, jc14:s14, s30, jcTurn, chQty:ch.qty, chAmt:ch.amt, chIntr:ch.intr, fcAmt, fcTurn, sluggish:aw.age90, longAge:aw.age60};
   });
   const cur=all.find(x=>x.date===target)||all[all.length-1];
@@ -1285,6 +1288,10 @@ function computeInv(asOf){
   // 独立录入区（直接录入、按天展示）：优先取这两张表；缺则回退库存明细读列
   const srByDate={}; (B().spot_rate||[]).forEach(r=>{ const d=String(r.date||'').slice(0,10); if(d) srByDate[d]=r; });
   const awByDate={}; (B().aging_warn||[]).forEach(r=>{ const d=String(r.date||'').slice(0,10); if(d) awByDate[d]=r; });
+  // fix56：长库龄预警按「最新值」展示——长库龄为周期性报告，录入日通常滞后于库存快照日；
+  // 当所查看日期无独立长库龄录入时，回退到最新一条长库龄快照，确保 KPI 始终显示最新值而非 0/空白。
+  let latestAwKey=null, latestAw=null;
+  (B().aging_warn||[]).forEach(r=>{ const d=String(r.date||'').slice(0,10); if(d && (!latestAwKey || d>latestAwKey)){ latestAwKey=d; latestAw=r; } });
   // 每个日期：派生 13 项指标（库存金额/周转天/各销售金额按公式计算，库龄/现货率优先独立录入区）
   // 采购金额是「月至今」口径的月度总额，只需并入该月【最新快照日】一次；否则逐日重复累加会虚高库存金额
   const monthMaxDate={}; dates.forEach(d=>{ const m=d.slice(0,7); if(!monthMaxDate[m]||d>monthMaxDate[m]) monthMaxDate[m]=d; });
@@ -1304,7 +1311,7 @@ function computeInv(asOf){
     x.turnDays = (T1>0 && mtdOutAmt>0)? invAmt/mtdOutAmt*T1 : null;  // 周转(天) = 库存金额 / 月至今出库额 × T-1天
     // 现货率 / 长库龄预警：优先独立录入区，按天覆盖；缺则保留库存明细读列（x 已读列）
     const sr=srByDate[d]; if(sr){ const pv=num(sr.pvRate!==undefined?sr.pvRate:sr.PV现货率), rr=num(sr.realRate!==undefined?sr.realRate:sr.实库现货率); if(pv||rr){ x.pvRate=pv; x.realRate=rr; } }
-    const aw=awByDate[d]; if(aw){
+    const aw=awByDate[d]||latestAw; if(aw){
       const g=k=>num(aw[k]);
       x.age60=g('age60')||num(aw['60-90天长库龄预警金额']);
       x.age60_j=g('age60_j')||num(aw['60-90天长库龄预警金额（基调）']);
