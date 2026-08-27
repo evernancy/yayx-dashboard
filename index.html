@@ -118,7 +118,7 @@
   .ganttTask:hover{stroke:#111827;stroke-width:2}
   .ganttAddBtn{margin-left:10px}
 </style>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="xlsx.full.min.js"></script>
 <!-- GitHub 存储后端使用浏览器原生 fetch，无需额外 SDK 脚本 -->
 <!--SHEETJS_INLINE-->
 </head>
@@ -692,7 +692,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-27-fix44-remove-fill-template-btns';
+const APP_VERSION = '2026-08-27-fix45-selfhost-xlsx';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 /* 列名同义词映射 */
