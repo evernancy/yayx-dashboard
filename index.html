@@ -131,6 +131,7 @@
   <div class="actions">
     <span class="muted" id="lastUpdate" style="color:rgba(255,255,255,.85);font-size:12px"></span>
     <button class="btn" id="refreshBtn">从云端刷新</button>
+    <button class="btn" id="syncCloudBtn">强制同步到云端</button>
     <button class="btn" id="resetBtn">恢复示例数据</button>
     <button class="btn primary" id="exportBtn">导出数据包</button>
     <label class="btn" id="importBtnLabel">导入数据包<input type="file" id="importBtn" accept=".json,application/json" hidden></label>
@@ -692,7 +693,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-27-fix62-recover-race-and-resilient-upsert';
+const APP_VERSION = '2026-08-27-fix63-align-board-id-and-force-sync';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -3586,6 +3587,11 @@ const GH_PUB_REPO='yayx-dashboard';
 const GH_PUB_BASE=GH_API+'/repos/'+GH_OWNER+'/'+GH_PUB_REPO+'/contents';
 const SNAPSHOT_PATH='data.json';
 const SNAPSHOT_URL='https://'+GH_OWNER+'.github.io/'+GH_PUB_REPO+'/'+SNAPSHOT_PATH;
+// fix63：共享看板 ID 常量（云端 index.json 里唯一看板）。断网/从快照恢复时作为权威 fallback，
+// 防止被公开快照里被误写的 snap.id（如 7870295143410 幽灵看板）带偏，导致保存到同事加载不到的看板。
+const SHARED_BOARD_ID='b_17870295143410';
+function __boardIdCacheGet(){ try{ return localStorage.getItem('__BOARD_ID_CACHE')||''; }catch(_){ return ''; } }
+function __boardIdCacheSet(id){ try{ if(id) localStorage.setItem('__BOARD_ID_CACHE', id); }catch(_){} }
 
 function ghHeaders(extra){
   var h={'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28','Authorization':'Bearer '+ghToken()};
@@ -3924,6 +3930,20 @@ $('#refreshBtn').addEventListener('click',async()=>{
   try{ const row=await ghGetBoard(currentBoard.id); if(row&&row.state&&isUsableState(row.state)){ hydrateFromState(row.state); renderAll(); setupTodoAll(); toast('已从云端刷新「'+currentBoard.name+'」'); } else toast('云端暂无更新'); }
   catch(e){ toast('云端连接失败，请检查网络'); }
 });
+// fix63：强制把本地全量数据推送到云端共享看板（断网恢复/换网络后主动 flush 一次，确保同事可见）
+$('#syncCloudBtn').addEventListener('click',async()=>{
+  if(!ghToken()){ toast('⚠️ 请先配置 GitHub 令牌（点右下角徽章粘贴）才能同步到云端', true); return; }
+  toast('🔄 正在把本地数据同步到云端共享看板「'+currentBoard.name+'」('+currentBoard.id+')…');
+  try{
+    if(typeof markAllDirty==='function') markAllDirty(); // 全品牌推送，确保完全一致
+    await ghUpsertBoard(currentBoard.id, currentBoard.name, STATE);
+    try{ if(ghToken()) await ghPutPublicSnapshot(); }catch(_){}
+    if(typeof window.clearLocalUnsynced==='function') window.clearLocalUnsynced();
+    toast('✅ 已同步到云端！同事刷新页面即可看到你的数据（看板：'+currentBoard.id+'）');
+  }catch(e){
+    toast('❌ 同步失败：'+(errMsg(e)||'网络无法访问 api.github.com')+'。请确认浏览器能连上 GitHub（VPN/代理/换网络）后重试', true);
+  }
+});
 
 /* ---------- 初始化 ---------- */
 function init(){
@@ -3938,8 +3958,11 @@ async function boot(){
   let cloudOk=false, listErr=null, boards=[];
   if(!ghToken()){ listErr=new Error('未配置访问令牌'); }
   else { try{ boards=await ghListBoards(); cloudOk=true; }catch(e){ boards=[]; listErr=e; window.__lastCloudErr=e; console.error('[GitHub] 连接/列表失败:', e); } }
+  // fix63：云端可达时缓存权威看板 ID；断网 fallback 用「缓存 ID → 共享看板常量 → lijx」三级优先级，绝不被快照里的错误 snap.id 带偏
+  if(cloudOk && boards && boards[0]) __boardIdCacheSet(boards[0].id);
+  var _knownId = __boardIdCacheGet() || SHARED_BOARD_ID;
   // 以云端第一个看板为当前看板（不再硬编码 lijx）；若云端暂无看板，种子逻辑已在 ghListBoards 内保证至少一个
-  currentBoard = (boards && boards[0]) ? boards[0] : {id:'lijx',name:'李锦记'};
+  currentBoard = (boards && boards[0]) ? boards[0] : {id:_knownId, name:currentBoard.name||'李锦记'};
   window.__cloudOk=cloudOk; // 供第二个脚本块的徽标/诊断参考
   renderBoardBar();
 
@@ -3973,7 +3996,7 @@ async function boot(){
       if(localOk && snapOk){
         try{ loaded=mergeBoardState(local, snap.state); fromWhere='本地优先·与公开快照合并'; }
         catch(_){ loaded=local; fromWhere='本地缓存'; }
-      } else if(snapOk){ loaded=snap.state; fromWhere='公开快照'; if(snap.name) currentBoard={id:snap.id||currentBoard.id, name:snap.name}; }
+      } else if(snapOk){ loaded=snap.state; fromWhere='公开快照'; if(snap.name){ var _bid=__boardIdCacheGet()||SHARED_BOARD_ID; currentBoard={id:_bid, name:snap.name}; } }
       else if(localOk){ loaded=local; fromWhere='本地缓存'; }
     } else {
       // 无令牌的编辑同事：其本机 IndexedDB 才是自己录入的真源（云端写不进去）。
@@ -3982,7 +4005,7 @@ async function boot(){
         try{ loaded=mergeBoardState(local, snap.state); fromWhere='本地优先·与公开快照合并'; }
         catch(_){ loaded=local; fromWhere='本地缓存'; }
       } else if(localOk){ loaded=local; fromWhere='本地缓存'; }
-      else if(snapOk){ loaded=snap.state; fromWhere='公开快照'; if(snap.name) currentBoard={id:snap.id||currentBoard.id, name:snap.name}; }
+      else if(snapOk){ loaded=snap.state; fromWhere='公开快照'; if(snap.name){ var _bid=__boardIdCacheGet()||SHARED_BOARD_ID; currentBoard={id:_bid, name:snap.name}; } }
     }
   }
   if(loaded){
