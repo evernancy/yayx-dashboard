@@ -34,6 +34,8 @@
   .subtab{padding:7px 15px;border-radius:999px;background:#fff;border:1px solid var(--line);cursor:pointer;font-weight:600;color:var(--muted);font-size:13px}
   .subtab.active{background:var(--blue);color:#fff;border-color:var(--blue)}
   .subtab.hidden-subtab{display:none!important}
+  .mwCh{border:1px solid var(--line);background:#fff;color:var(--muted);cursor:pointer;font-weight:600;border-radius:8px}
+  .mwCh.active{background:var(--blue);color:#fff;border-color:var(--blue)}
   .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:18px;margin-bottom:16px}
   .panel h2{margin:0 0 4px;font-size:16px}
   .panel .hint{color:var(--muted);font-size:12px;margin:0 0 12px}
@@ -329,6 +331,14 @@
     <div class="panel">
       <h2>数据输入区</h2>
       <p class="hint">三种方式任选：① 从 Excel 复制后直接粘贴（含表头）② 粘贴 CSV 文本 ③ 上传 .csv / .xlsx 文件。<b>所有上传（无论全量还是增量）均按「增量更新」处理</b>：新数据与已有数据按业务键合并（同键更新、新键追加），<b>重复的数据自动忽略</b>，历史数据保留不清空；如需清空某一数据集请用各区「清除历史」按钮。修改后图表自动实时更新，并自动保存在本机浏览器中。</p>
+
+      <!-- fix65c：麦维他双渠道（自营 / POP）显式切换条。根治「麦维他POP 的 by day 目标反复丢失」：之前用户录入 POP 目标时，当前渠道仍停留在 麦维他自营，导致目标被静默存到自营、刷新后 POP 显示为空。切换条让当前渠道始终可见、一键切换，且录入一律按当前渠道保存。 -->
+      <div id="mwChannelBar" style="display:none;align-items:center;gap:10px;margin:2px 0 14px;padding:9px 14px;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;font-size:13px">
+        <b style="color:#9a3412">麦维他渠道</b>
+        <button type="button" class="btn2 mwCh" data-mwch="麦维他自营" style="padding:5px 14px">自营</button>
+        <button type="button" class="btn2 mwCh" data-mwch="麦维他POP" style="padding:5px 14px">POP</button>
+        <span class="muted">当前编辑渠道：<b id="mwChCur" style="color:#9a3412"></b> —— 下方各分区（销售/目标/库存…）的数据均按此渠道保存</span>
+      </div>
 
       <details open>
         <summary>1 · 销售数据</summary>
@@ -692,7 +702,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-27-fix65b-sync-result-prompt';
+const APP_VERSION = '2026-08-27-fix65c-mawei-channel-toggle';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -2591,6 +2601,7 @@ function setView(v){
   currentView=v;
   // 先执行 section 切换（确保即使后续报错，视图也能切换）
   $$('section[data-section]').forEach(s=>s.style.display=s.dataset.section===v?'block':'none');
+  try{ updateMwChannelBar(); }catch(_){}
   $$('.tab').forEach(t=>{
     try {
       if(t.dataset.view==='lijx' && t.dataset.brand){
@@ -2627,6 +2638,16 @@ function syncBrandUI(){
   // 输入区选择器：麦维他渠道保持当前渠道（自营/POP），其余品牌选自身
   ['sales','inventory','inv_full','inv_siyun','chaohu','purchase','purchase_order','spot_rate','aging_warn','jzt','targets'].forEach(w=>{ const sel=document.getElementById('brand_'+w); if(sel) sel.value=STATE.currentBrand; });
 }
+// fix65c：麦维他双渠道切换条；当前渠道始终可见、一键切换，避免 POP 目标误存到自营
+function updateMwChannelBar(){
+  const bar=document.getElementById('mwChannelBar'); if(!bar) return;
+  const isMw=STATE.currentBrand==='麦维他自营'||STATE.currentBrand==='麦维他POP';
+  bar.style.display=isMw?'flex':'none';
+  if(isMw){
+    bar.querySelectorAll('.mwCh').forEach(btn=>btn.classList.toggle('active', btn.dataset.mwch===STATE.currentBrand));
+    const cur=document.getElementById('mwChCur'); if(cur) cur.textContent=STATE.currentBrand;
+  }
+}
 function switchBrand(name){
   // 「麦维他」为顶层品牌 tab，实际数据按渠道存于「麦维他自营」（默认渠道）
   const displayName=name;
@@ -2635,7 +2656,7 @@ function switchBrand(name){
   STATE.currentBrand=name;
   syncBrandUI();
   applyBrandSubtabs();
-  fillInputsForCurrentBrand();
+  fillInputsForCurrentBrand(); updateMwChannelBar();
   renderAll(); setupTodoAll(); saveState();
   toast('已切换到品牌「'+displayName+'」');
 }
@@ -2651,6 +2672,8 @@ $$('.secBrand').forEach(sel=>sel.addEventListener('change',()=>{
   $('#'+TA_ID[w]).value=b._raw[w]||'';
   updateDiag(b._raw[w]||'', w==='targets'?parseTargets(b._raw[w]||'').length:(b[w]||[]).length, DIAG_KEY[w]);
 }));
+// fix65c：麦维他渠道切换条按钮（自营 / POP）→ 等价于切换当前渠道并粘住，录入按此渠道保存
+$$('#mwChannelBar .mwCh').forEach(btn=>btn.addEventListener('click',()=>{ switchBrand(btn.dataset.mwch); }));
 function applyTvDates(){ renderTargets(); updateTimeProgress(); }
 ['tvStart','tvEnd'].forEach(id=>{ const el=$(id); if(el) el.addEventListener('change',applyTvDates); });
 const tvApplyBtn=$('#tvApplyBtn'); if(tvApplyBtn) tvApplyBtn.addEventListener('click',applyTvDates);
@@ -2722,7 +2745,18 @@ async function readInputs(mode, silent){
   const DIAG={sales:'Sales',inventory:'Inv',inv_full:'InvFull',inv_siyun:'InvSiyun',chaohu:'Chaohu',jzt:'Jzt',targets:'Targets',purchase:'Pp',purchase_order:'Po',spot_rate:'Sr',aging_warn:'Aw'};
   // 每个输入框所属品牌：取对应 <select id="brand_xxx"> 的当前值（无效则回退当前查看品牌）
   const brandOf={}; const edited=new Set();
-  SECTIONS.forEach(w=>{ const sel=document.getElementById('brand_'+w); const v=(sel&&sel.value)||STATE.currentBrand; brandOf[w]=(STATE.brands[v]?v:STATE.currentBrand); edited.add(brandOf[w]); });
+  const curIsMw=STATE.currentBrand==='麦维他自营'||STATE.currentBrand==='麦维他POP';
+  SECTIONS.forEach(w=>{
+    let v;
+    if(w==='targets' && curIsMw){
+      // fix65c：麦维他渠道下，目标数据一律按「当前查看渠道」(currentBrand) 保存，
+      // 杜绝下拉框停留在自营时把 POP 的 by day 目标误存到自营（这是麦维他POP 目标反复丢失的根因）
+      v=STATE.currentBrand;
+    } else {
+      const sel=document.getElementById('brand_'+w); v=(sel&&sel.value)||STATE.currentBrand;
+    }
+    brandOf[w]=(STATE.brands[v]?v:STATE.currentBrand); edited.add(brandOf[w]);
+  });
   // 1) 把文本框内容合并进对应品牌的 _raw；销售/京准通/浮码 按数据内「品牌」列自动归户（下拉仅兜底）
   SECTIONS.forEach(w=>{ const fb=brandOf[w]; const cur=$('#'+TA[w]).value;
     if(w==='targets'){ const b=STATE.brands[fb]; b._raw[w]=(mode==='replace')?cur:mergeTargetsText(b._raw[w]||'',cur); edited.add(fb); }
@@ -3911,7 +3945,7 @@ function fillInputsForCurrentBrand(){
   $('#invFullInput').value=b._raw.inv_full||''; $('#invSiyunInput').value=b._raw.inv_siyun||''; $('#salesInput').value=b._raw.sales||''; $('#invInput').value=b._raw.inventory||''; $('#jztInput').value=b._raw.jzt||'';
   $('#tgtInput').value=(b._raw.targets&&b._raw.targets.trim())?b._raw.targets:targetRowsToText(b.targets||[]); $('#ppInput').value=b._raw.purchase||''; $('#poInput').value=b._raw.purchase_order||''; $('#srInput').value=b._raw.spot_rate||''; $('#awInput').value=b._raw.aging_warn||''; $('#chaohuInput').value=b._raw.chaohu||''; $('#ganttInput').value=STATE.ganttRaw||'';
   // 同步品牌栏与各输入区品牌选择器为当前品牌
-  syncBrandUI();
+  syncBrandUI(); updateMwChannelBar();
 }
 function clearInputs(){ $('#salesInput').value=''; $('#invInput').value=''; $('#invFullInput').value=''; $('#chaohuInput').value=''; $('#jztInput').value=''; $('#tgtInput').value=''; $('#ganttInput').value=''; $('#ppInput').value=''; $('#poInput').value=''; $('#srInput').value=''; $('#awInput').value=''; readInputs('replace', true); }
 
@@ -4060,6 +4094,7 @@ async function boot(){
   renderAll();
   todoInit(); migrateMemoToTodo(); setupTodoAll();
   syncBrandUI(); // 确保品牌栏与输入区选择器高亮当前品牌
+  updateMwChannelBar(); // fix65c：麦维他渠道切换条按恢复后的当前品牌显示
   applyBrandSubtabs(); // 家乐/联合利华/和路雪：临时隐藏京准通推广/库存周转子视图（保留代码，后续改 JZT_INV_HIDDEN_BRANDS 即可放出）
 }
 
