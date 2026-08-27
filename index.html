@@ -692,7 +692,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-27-fix49-module-colors';
+const APP_VERSION = '2026-08-27-fix50-swap-gantt-colors';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -1974,7 +1974,7 @@ function getGanttMonths(module){
 }
 // 甘特图：已应用月份 / 可见周(周一) 记忆；点「应用日期」才切换月份
 const GANTT_EL={'营销':'#ganttMkt','设计':'#ganttDesign','数据':'#ganttData'};
-const MODULE_COLORS={'营销':'#f59e0b','设计':'#8b5cf6','数据':'#06b6d4'}; // fix49: 甘特图模块主题色（原声明在 fix41/42 批量编辑中丢失）
+const MODULE_COLORS={'营销':'#f59e0b','设计':'#06b6d4','数据':'#8b5cf6'}; // fix49: 甘特图模块主题色（原声明在 fix41/42 批量编辑中丢失）；设计=青色 数据=紫罗兰
 const ganttMonthSel={}; // module -> 已应用的 YYYY-MM
 const ganttWeekStart={}; // module -> 可见周的周一 YYYY-MM-DD
 const ganttViewMode={};  // module -> 'week'(默认) | 'month'（整月视图）
