@@ -702,7 +702,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-27-fix66g-sr-diag';
+const APP_VERSION = '2026-08-27-fix66h-siyun-sr-union';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -1158,7 +1158,10 @@ function computeSiyunTurnover(asOf){
   const QTY=['库存数量','现货库存','可用库存','库存件数'];
   const O7=['近7天出库件数','近7日出库商品件数','近7日出库','近7日收货地商品件数'];
   const O14=['近14天出库件数','近14日出库商品件数','近14日出库','近14日收货地商品件数'];
-  const dates=[...new Set(inv.map(r=>String(r.date||'').slice(0,10)))].filter(Boolean).sort();
+  // fix66h: 日期集合合并 库存明细(丝蕴) + 现货率，使仅录入现货率（无对应库存明细行）的日期也能在库存周转中显示
+  const dateSet=new Set(inv.map(r=>String(r.date||'').slice(0,10)));
+  (B().spot_rate||[]).forEach(r=>{ const d=String(r.date||'').slice(0,10); if(d) dateSet.add(d); });
+  const dates=[...dateSet].filter(Boolean).sort();
   const target=asOf||dates[dates.length-1];
   if(!dates.length){
     return {all:[], cur:{date:target||'—', qty:0, intr:0, turn7:null, turn14:null, o7:0, o14:0, pvRate:undefined, realRate:undefined}, dates:[], target:target||'', hasData:false};
