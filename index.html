@@ -3833,6 +3833,7 @@ async function ghGetBoard(id){
 // 全局写入串行锁：所有云端看板写入排队执行，杜绝「恢复备份」与自动保存/导入并发各自读到旧 SHA、互相 409 覆盖（李锦记 15MB 大文件上传期间尤甚）
 var __upsertChain=Promise.resolve();
 // fix65b：ghUpsertBoard 返回真实结果对象 {ok, failedBrands, manifestOk}，供调用方据以提示「是否真同步成功」（原来单品牌失败被静默跳过，导致假成功）
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
 async function ghUpsertBoard(id,name,state){
   var run=__upsertChain.then(async ()=>{
   var path='dashboards/'+id+'.json';
@@ -3850,14 +3851,19 @@ async function ghUpsertBoard(id,name,state){
       var b=dirty[i];
       var bpath=brandFilePath(id,b);
       var brandOk=false;
-      for(var rb=0; rb<4; rb++){
+      for(var rb=0; rb<6; rb++){
         try{
           var data=extractBrandData(state.brands[b]);
           var bf=await ghGetFile(bpath);
           if(bf){ try{ var cloudB=JSON.parse(bf.content).data; data=mergeBrandData(data, cloudB); }catch(_){} }
           var bbody=JSON.stringify({brand:b, data:data, updated_at:new Date().toISOString()});
           await ghPutFile(bpath, bbody, bf?bf.sha:null); brandOk=true; break;
-        }catch(e){ if((e.status===409||e.status===422) && rb<3){ continue; } console.warn('[ghUpsertBoard] 品牌写入失败已跳过:', b, e.message); break; }
+        }catch(e){
+          // fix65c：403/429=GitHub 限流（一次同步对 7 品牌发出十几条请求，后排品牌易被限流而静默丢弃 → POP 的 by-day 反复丢失）。
+          // 必须退避重试而非跳过，否则数据永不落盘。
+          if((e.status===409||e.status===422||e.status===403||e.status===429) && rb<5){ await sleep(900*(rb+1)); continue; }
+          console.warn('[ghUpsertBoard] 品牌写入失败已跳过:', b, e.message); break;
+        }
       }
       if(!brandOk) failedBrands.push(b);
     }
@@ -3867,7 +3873,7 @@ async function ghUpsertBoard(id,name,state){
     try{ await ghPutFile(path, JSON.stringify(manifest), f?f.sha:null); __dirtyBrands.clear();
          return {ok: failedBrands.length===0, failedBrands: failedBrands.slice(), manifestOk:true}; }
     catch(e){ lastFailed=failedBrands.slice(); lastManifestOk=false;
-         if(e.status===409 && attempt<3){ continue; }
+         if((e.status===409||e.status===403||e.status===429) && attempt<3){ await sleep(900*(attempt+1)); continue; }
          return {ok:false, failedBrands: failedBrands.slice(), manifestOk:false}; }
   }
   return {ok:false, failedBrands: lastFailed.slice(), manifestOk: lastManifestOk};
@@ -3906,6 +3912,12 @@ function mergeBoardState(incoming, cloud){
       __JZT_FIELDS.forEach(function(k){
         if(isEmptyVal(ob._raw[k]) && !isEmptyVal(cb._raw[k])) ob._raw[k]=cb._raw[k];
       });
+    }
+    // fix65c：目标(targets) 做【并集】而非「空才填」——本地若只有月度目标（非空），云端更全的 by-day 目标不会被忽略，根治麦维他POP by-day 加载后丢失
+    ob.targets = mergeTargetRows(ob.targets||[], cb.targets||[]);
+    if(cb._raw && cb._raw.targets){
+      ob._raw=ob._raw||{};
+      ob._raw.targets = mergeTargetsText(ob._raw.targets||'', cb._raw.targets||'');
     }
     // posInput（POS 按天录入）：按 key 并集，incoming 覆盖 cloud
     if(cb.posInput){
