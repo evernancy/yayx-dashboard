@@ -693,7 +693,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-27-fix63-align-board-id-and-force-sync';
+const APP_VERSION = '2026-08-27-fix64-mawei-pop-channel-routing';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -2642,7 +2642,11 @@ function switchBrand(name){
 }
 // 数据输入区：某个 section 切换品牌 → 仅将该 section 的文本框填充为目标品牌的原始输入（不影响其他 section）
 $$('.secBrand').forEach(sel=>sel.addEventListener('change',()=>{
-  const w=sel.dataset.sec, b=STATE.brands[sel.value]; if(!b) return;
+  const w=sel.dataset.sec, v=sel.value, b=STATE.brands[v]; if(!b) return;
+  // fix64：麦维他双渠道（自营 / POP）修复 —— 在任意「品牌」下拉里选 麦维他自营 / 麦维他POP，
+  // 即视为切换当前渠道（与点击品牌 tab 等价），否则「目标数据」框会一直落在默认的 麦维他自营，
+  // 导致 POP 的 by day 目标被误存到 麦维他自营、刷新后 麦维他POP 显示为空（只有麦维他POP 会丢数据的根因）。
+  if(v==='麦维他自营'||v==='麦维他POP'){ switchBrand(v); return; }
   const TA_ID={sales:'salesInput',inventory:'invInput',inv_full:'invFullInput',inv_siyun:'invSiyunInput',chaohu:'chaohuInput',purchase:'ppInput',purchase_order:'poInput',spot_rate:'srInput',aging_warn:'awInput',jzt:'jztInput',targets:'tgtInput'};
   const DIAG_KEY={sales:'Sales',inventory:'Inv',inv_full:'InvFull',inv_siyun:'InvSiyun',chaohu:'Chaohu',purchase:'Pp',purchase_order:'Po',spot_rate:'Sr',aging_warn:'Aw',jzt:'Jzt',targets:'Targets'};
   $('#'+TA_ID[w]).value=b._raw[w]||'';
