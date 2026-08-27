@@ -692,7 +692,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-27-fix50-swap-gantt-colors';
+const APP_VERSION = '2026-08-27-fix51-inv-po-mtd';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -1255,9 +1255,10 @@ function computeInv(asOf){
   const dates=[...dateSet].filter(Boolean).sort();
   const maxDate=dates[dates.length-1];
   const target=asOf||maxDate;                              // 选定查看日（默认最新）
-  // 采购单：按「订购时间」归到对应日期（列名自动识别，缺日期则跳过）
-  const poByDate={};
-  (B().purchase_order||[]).forEach(r=>{ const d=String(r.date||r.订购时间||'').slice(0,10); if(!d) return; poByDate[d]=(poByDate[d]||0)+num(r.poAmt!==undefined?r.poAmt:r.采购金额); });
+  // 采购单：按「订购时间」归到对应【月份】(月至今口径)，与库存金额/周转的月至今逻辑一致。
+  // fix51：原按「订购日期精确匹配」库存快照日，但采购单日期与库存快照日(如8-25)通常不同 → poByDate[快照日]=0 → 采购金额整体漏加，库存金额偏低。改为同月聚合。
+  const poByMonth={};
+  (B().purchase_order||[]).forEach(r=>{ const d=String(r.date||r.订购时间||'').slice(0,10); if(!d||d.length<7) return; const m=d.slice(0,7); poByMonth[m]=(poByMonth[m]||0)+num(r.poAmt!==undefined?r.poAmt:r.采购金额); });
   // 独立录入区（直接录入、按天展示）：优先取这两张表；缺则回退库存明细读列
   const srByDate={}; (B().spot_rate||[]).forEach(r=>{ const d=String(r.date||'').slice(0,10); if(d) srByDate[d]=r; });
   const awByDate={}; (B().aging_warn||[]).forEach(r=>{ const d=String(r.date||'').slice(0,10); if(d) awByDate[d]=r; });
@@ -1268,7 +1269,7 @@ function computeInv(asOf){
     // 库存金额 = Σ(现货库存×全国采购价) + 当日采购单采购金额
     let sumSpot=0, mtdOutAmt=0, biAmt=0, bjAmt=0;
     dr.forEach(r=>{ const p=num(r.purPrice!==undefined?r.purPrice:r.purchase); if(p){ const sq=num(r.spotQty!==undefined?r.spotQty:r.end); sumSpot+=sq*p; mtdOutAmt+=num(r.outBO)*p; biAmt+=num(r.outBI)*p; bjAmt+=num(r.outBJ)*p; } });
-    const invAmt = sumSpot + (poByDate[d]||0);
+    const invAmt = sumSpot + (poByMonth[d.slice(0,7)]||0);
     // 月至今 T-1 天 = 当月已过天数（不含当天）
     const dt=new Date(d+'T00:00:00'); const T1=dt.getDate()-1;
     x.invAmount = invAmt;
