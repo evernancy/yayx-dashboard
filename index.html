@@ -692,7 +692,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-27-fix52-inv-data-loss-guard';
+const APP_VERSION = '2026-08-27-fix53-bulk-upload-nohang';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -3190,12 +3190,15 @@ function trimSheet(ws){
   return ws;
 }
 
-function sheetToTsv(ws){
+async function sheetToTsv(ws){
   if(!ws || !ws['!ref']) return '';
   const range=XLSX.utils.decode_range(ws['!ref']);
   // 安全上限：单表超过 30 万行直接报错，避免浏览器卡死/崩溃
-  if((range.e.r-range.s.r+1)>300000) throw new Error('工作表行数过多（超过 30 万行），请先在 Excel 中删除空白行或用「复制粘贴」方式录入');
+  const nRows=(range.e.r-range.s.r+1);
+  if(nRows>300000) throw new Error('工作表行数过多（超过 30 万行），请先在 Excel 中删除空白行或用「复制粘贴」方式录入');
   const out=[];
+  // fix53：分块异步处理，每处理 CHUNK 行让出主线程一帧，避免 1.2万行×117列（≈1.47M 单元格）一次性同步解析导致页面「卡死」假死
+  const CHUNK=2000; let last=Date.now();
   for(let r=range.s.r;r<=range.e.r;++r){
     const row=[];
     for(let c=range.s.c;c<=range.e.c;++c){
@@ -3225,6 +3228,12 @@ function sheetToTsv(ws){
       row.push(val);
     }
     out.push(row.join('\t'));
+    // 每 CHUNK 行让出一次主线程（约 10ms 级），让浏览器绘制进度、保持页面可响应
+    if((r-range.s.r)%CHUNK===0){
+      const now=Date.now();
+      if(now-last>120){ /* 仅周期性刷新提示，避免频繁 toast 抖动 */ last=now; }
+      await new Promise(res=>setTimeout(res,0));
+    }
   }
   return out.join('\n');
 }
@@ -3236,8 +3245,8 @@ function setupFile(id,key){ const inp=$(id); const ta=()=>{ const t=$('#'+key+'I
     else {
       if(typeof XLSX==='undefined') throw new Error('表格解析库未加载，请改用「复制粘贴」方式');
       // 先提示常显，并让浏览器绘制一帧，避免大文件同步解析时误以为卡死
-      toast('正在解析 Excel（约需 20-40 秒，请勿关闭本标签页、保持页面在前台）…', true);
-      await new Promise(r=>setTimeout(r,60));
+      toast('正在解析 Excel（约需 20-60 秒，请勿关闭本标签页、保持页面在前台）…', true);
+      await new Promise(r=>setTimeout(r,80));
       const ab=await f.arrayBuffer();
       const u8=new Uint8Array(ab); // 关键：浏览器 arrayBuffer 是 ArrayBuffer，必须转 Uint8Array，否则 XLSX.read 抛 Invalid array length
       const wb=XLSX.read(u8,{type:'array',cellDates:true,cellStyles:false,cellNF:false,cellHTML:false,cellFormula:false});
@@ -3246,7 +3255,9 @@ function setupFile(id,key){ const inp=$(id); const ta=()=>{ const t=$('#'+key+'I
       const dataSheet=wb.SheetNames.find(n=>/[模板数据gantt数据sheet]/i.test(n))||wb.SheetNames.find(n=>!/[说明帮助指引readme注]/i.test(n));
       if(dataSheet&&wb.Sheets[dataSheet]) ws=wb.Sheets[dataSheet];
       trimSheet(ws);
-      const text=sheetToTsv(ws);
+      toast('已读取工作簿，正在逐行转换（大表分步处理，页面保持响应）…', true);
+      await new Promise(r=>setTimeout(r,40));
+      const text=await sheetToTsv(ws); // fix53：异步分块，避免一次性同步解析卡死
       if(!text.trim()) throw new Error('工作表为空或无法解析，请确认首个工作表包含数据');
       ta().value=text;
       /* 甘特图上传：只替换甘特图数据（不影响销售/库存等其他段，防止误清空） */
@@ -3258,6 +3269,8 @@ function setupFile(id,key){ const inp=$(id); const ta=()=>{ const t=$('#'+key+'I
         updateDiag(STATE.ganttRaw, STATE.gantt.length, 'Gantt', ganttParsed.length);
         saveState(); renderAll(); saveToService();
       } else {
+        toast('Excel 转换完成，正在计算并保存（数据量较大，请稍候）…', true);
+        await new Promise(r=>setTimeout(r,40));
         readInputs();
       }
       toast('Excel 解析完成：'+(text.split('\n').length-1)+' 行已导入并存储');
@@ -3624,13 +3637,26 @@ function mergeBrandData(inc, cloud){
 }
 function extractBrandData(b){
   if(!b) return freshBrand();
+  const raw=Object.assign({sales:'',inventory:'',inv_full:'',inv_siyun:'',chaohu:'',jzt:'',targets:'',purchase:'',purchase_order:'',spot_rate:'',aging_warn:''}, b._raw||{});
+  // fix53：超大明细（库存明细·李锦记 全量导出 1.2万行×117列 ≈ 16MB；库存明细全量列 inv_full 同理）不推云端。
+  // 原因：GitHub Contents API 对多 MB 文件会超时挂起，导致保存时页面「卡住」无法恢复。
+  // 改为仅存本机 IndexedDB（本地持久化、刷新不丢），云端/公开快照只保留轻量字段，避免上传卡死。
+  // 启动加载时 boot() 已改为「本机优先·云端只补缺」合并，故本机这份全量数据在刷新后依旧保留。
+  const invRawLen=(raw.inventory||'').length;
+  const stripInventory = invRawLen>1500000; // ≈>1.5MB 视为全量大表（正常人工录入的库存明细仅数百行，远小于此）
   return {
-    sales:Array.isArray(b.sales)?b.sales:[], inventory:Array.isArray(b.inventory)?b.inventory:[],
-    inv_full:Array.isArray(b.inv_full)?b.inv_full:[], inv_siyun:Array.isArray(b.inv_siyun)?b.inv_siyun:[],
+    sales:Array.isArray(b.sales)?b.sales:[],
+    inventory: stripInventory? [] : (Array.isArray(b.inventory)?b.inventory:[]),
+    inv_full: [], // 全量库存明细始终不推云端（体积最大，且仅供本机计算使用）
+    inv_siyun:Array.isArray(b.inv_siyun)?b.inv_siyun:[],
     purchase:Array.isArray(b.purchase)?b.purchase:[], purchase_order:Array.isArray(b.purchase_order)?b.purchase_order:[],
     spot_rate:Array.isArray(b.spot_rate)?b.spot_rate:[], aging_warn:Array.isArray(b.aging_warn)?b.aging_warn:[], chaohu:Array.isArray(b.chaohu)?b.chaohu:[],
     jzt:Array.isArray(b.jzt)?b.jzt:[], targets:Array.isArray(b.targets)?b.targets:[],
-    _raw:Object.assign({sales:'',inventory:'',inv_full:'',inv_siyun:'',chaohu:'',jzt:'',targets:'',purchase:'',purchase_order:'',spot_rate:'',aging_warn:''}, b._raw||{}),
+    _raw:{
+      sales:raw.sales||'', inventory: stripInventory?'':raw.inventory, inv_full:'', inv_siyun:raw.inv_siyun||'',
+      chaohu:raw.chaohu||'', jzt:raw.jzt||'', targets:raw.targets||'', purchase:raw.purchase||'',
+      purchase_order:raw.purchase_order||'', spot_rate:raw.spot_rate||'', aging_warn:raw.aging_warn||''
+    },
     posInput:Object.assign({}, b.posInput||{}),
     todo:b.todo||freshBrand().todo
   };
@@ -3826,9 +3852,15 @@ async function boot(){
     try{
       const raw=await ghGetFile('dashboards/'+currentBoard.id+'.json');
       const row=await loadBoardState(currentBoard.id);
-      if(row&&row.state&&isUsableState(row.state)){ loaded=row.state; fromWhere='云端'; }
-      // 旧版整份格式 → 后台迁移为拆分（仅当已成功解析出旧数据，避免误覆盖空 STATE）
-      if(loaded && raw){ try{ const o=JSON.parse(raw.content); if(!o.format||o.format!==SPLIT_FORMAT) migrateBoardToSplit(currentBoard.id, currentBoard.name, loaded); }catch(_){} }
+      if(row&&row.state&&isUsableState(row.state)){
+        // fix53：本机 IndexedDB 可能含比云端更全的数据（如全量库存明细仅存本机、未推云端），以本机优先合并，
+        // 避免被云端精简版覆盖（否则刷新后大表丢失，再次触发重新上传卡顿）
+        let local=null; try{ const c=await idbGet(); if(isUsableState(c)) local=c; }catch(_){}
+        loaded = local ? mergeBoardState(local, row.state) : row.state;
+        fromWhere = local ? '本地优先·与云端合并' : '云端';
+        // 旧版整份格式 → 后台迁移为拆分（仅当已成功解析出旧数据，避免误覆盖空 STATE）
+        if(raw){ try{ const o=JSON.parse(raw.content); if(!o.format||o.format!==SPLIT_FORMAT) migrateBoardToSplit(currentBoard.id, currentBoard.name, loaded); }catch(_){} }
+      }
     }catch(e){ loaded=null; }
   }
   // 云端读不到时（无令牌，或 GitHub API 被本机网络拦截）
