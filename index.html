@@ -702,7 +702,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-27-fix66f-revert-to-github';
+const APP_VERSION = '2026-08-27-fix66g-sr-diag';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -908,7 +908,8 @@ function _parseRows(headers, lines, delim){
       let key=null;
       for(const f in ALIAS){ if(ALIAS[f].includes(lk)){ key=f; break; } }
       if(!key) key='ext_'+lk.replace(/\s+/g,'');
-      const v=cells[ci]!==undefined?cells[ci].trim():'';
+      const raw=cells[ci]!==undefined?cells[ci]:'';
+      const v=(raw instanceof Date)?normDate(raw):(typeof raw==='string'?raw.trim():String(raw).trim());
       if(key) o[key]=v;
     }
     // 过滤日期范围行（如 2026-08-01~2026-08-23、8月1日-8月23日）和汇总行（合计/总计/小计）
@@ -1175,7 +1176,13 @@ function computeSiyunTurnover(asOf){
   all.forEach(a=>{ a.intr=intr; });
   // PV现货率 / 实库现货率：按天匹配（来自 2.7 现货率数据录入）
   const srByDate={}; (B().spot_rate||[]).forEach(r=>{ const d=String(r.date||'').slice(0,10); if(d) srByDate[d]=r; });
-  all.forEach(x=>{ const sr=srByDate[x.date]; if(sr){ const pv=num(sr.pvRate!==undefined?sr.pvRate:sr.PV现货率), rr=num(sr.realRate!==undefined?sr.realRate:sr.实库现货率); if(pv||rr){ x.pvRate=pv; x.realRate=rr; } } });
+  // fix66g diag: 输出现货率匹配诊断
+  console.log('[siyun-sr] brand='+STATE.currentBrand+' spot_rate rows='+(B().spot_rate||[]).length+' srByDate keys='+JSON.stringify(Object.keys(srByDate)));
+  console.log('[siyun-sr] inv_siyun dates='+JSON.stringify(dates));
+  console.log('[siyun-sr] spot_rate raw sample=', (B().spot_rate||[])[0]);
+  let srMatchCount=0;
+  all.forEach(x=>{ const sr=srByDate[x.date]; if(sr){ const pv=num(sr.pvRate!==undefined?sr.pvRate:sr.PV现货率), rr=num(sr.realRate!==undefined?sr.realRate:sr.实库现货率); if(pv||rr){ x.pvRate=pv; x.realRate=rr; srMatchCount++; } } });
+  console.log('[siyun-sr] matched='+srMatchCount+' out of '+all.length+' inventory dates');
   const cur=all.find(x=>x.date===target)||all[all.length-1];
   return {all, cur, dates, target, hasData:true};
 }
