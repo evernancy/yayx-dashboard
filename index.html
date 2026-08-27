@@ -692,7 +692,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-27-fix51-inv-po-mtd';
+const APP_VERSION = '2026-08-27-fix52-inv-data-loss-guard';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -1263,13 +1263,15 @@ function computeInv(asOf){
   const srByDate={}; (B().spot_rate||[]).forEach(r=>{ const d=String(r.date||'').slice(0,10); if(d) srByDate[d]=r; });
   const awByDate={}; (B().aging_warn||[]).forEach(r=>{ const d=String(r.date||'').slice(0,10); if(d) awByDate[d]=r; });
   // 每个日期：派生 13 项指标（库存金额/周转天/各销售金额按公式计算，库龄/现货率优先独立录入区）
+  // 采购金额是「月至今」口径的月度总额，只需并入该月【最新快照日】一次；否则逐日重复累加会虚高库存金额
+  const monthMaxDate={}; dates.forEach(d=>{ const m=d.slice(0,7); if(!monthMaxDate[m]||d>monthMaxDate[m]) monthMaxDate[m]=d; });
   const all=dates.map(d=>{
     const dr=rows.filter(r=>r.date===d);
     const x=invRow(dr[dr.length-1])||{date:d};
-    // 库存金额 = Σ(现货库存×全国采购价) + 当日采购单采购金额
+    // 库存金额 = Σ(现货库存×全国采购价) + 当月采购单采购金额（仅并入月内最新快照日）
     let sumSpot=0, mtdOutAmt=0, biAmt=0, bjAmt=0;
     dr.forEach(r=>{ const p=num(r.purPrice!==undefined?r.purPrice:r.purchase); if(p){ const sq=num(r.spotQty!==undefined?r.spotQty:r.end); sumSpot+=sq*p; mtdOutAmt+=num(r.outBO)*p; biAmt+=num(r.outBI)*p; bjAmt+=num(r.outBJ)*p; } });
-    const invAmt = sumSpot + (poByMonth[d.slice(0,7)]||0);
+    const invAmt = sumSpot + (d===monthMaxDate[d.slice(0,7)] ? (poByMonth[d.slice(0,7)]||0) : 0);
     // 月至今 T-1 天 = 当月已过天数（不含当天）
     const dt=new Date(d+'T00:00:00'); const T1=dt.getDate()-1;
     x.invAmount = invAmt;
@@ -3407,15 +3409,36 @@ function normalizeState(st){
 }
 function applyState(st){ const s=normalizeState(st); if(!s) return null; STATE=s; return 'parsed'; }
 async function loadFromService(){
-  let src=null, fromIdb=false, fromLs=false;
-  try{ const res=await fetch('./data.json?t='+Date.now()); if(res.ok){ const d=await res.json(); const st=(d&&d.state)?d.state:d; if(isUsableState(st)) src={st}; } }catch(e){}
-  if(!src){ try{ const c=await idbGet(); if(isUsableState(c)){ src={st:c}; fromIdb=true; } }catch(e){} }
-  if(!src){ try{ const raw=localStorage.getItem(STORE_KEY); if(raw){ const c=JSON.parse(raw); if(isUsableState(c)){ src={st:c}; fromLs=true; } } }catch(e){} }
-  if(!src) return false;
-  const mode=applyState(src.st);
+  // fix52：启动加载顺序改为「本机优先 · 云端只补缺」，杜绝陈旧云端快照覆盖更丰富的本机数据（data 刷新后丢失）。
+  // 旧逻辑先取云端公开快照(332行)再取本机，且来自服务时顺手 idbSet 写回 → 每次启动都用云端覆盖本机。
+  let local=null, fromIdb=false;
+  try{ const c=await idbGet(); if(isUsableState(c)){ local=c; fromIdb=true; } }catch(e){}
+  if(!local){ try{ const raw=localStorage.getItem(STORE_KEY); if(raw){ const c=JSON.parse(raw); if(isUsableState(c)) local=c; } }catch(e){} }
+  // 云端公开快照：仅用于【补缺】，绝不覆盖更丰富的本机数据
+  try{
+    const res=await fetch('./data.json?t='+Date.now());
+    if(res.ok){ const d=await res.json(); const st=(d&&d.state)?d.state:d;
+      if(isUsableState(st)){
+        if(!local){ local=st; }                 // 本机无任何数据 → 以云端为准（纯查看者）
+        else {
+          // 逐品牌合并：本机优先，云端只补足本机缺失的品牌/字段（杜绝 332 行云端覆盖本机更全数据）
+          const merged=JSON.parse(JSON.stringify(local));
+          if(st.brands){ for(const bk in st.brands){ if(!merged.brands[bk]) merged.brands[bk]=st.brands[bk]; else merged.brands[bk]=mergeBrandData(merged.brands[bk], st.brands[bk]); } }
+          if((!merged.gantt||!merged.gantt.length) && st.gantt) merged.gantt=st.gantt;
+          if(st.ganttRaw!=null) merged.ganttRaw=st.ganttRaw;
+          if(st.currentBrand&&merged.brands[st.currentBrand]) merged.currentBrand=st.currentBrand;
+          if(st.brandOrder) merged.brandOrder=st.brandOrder;
+          if(st.memo) merged.memo=st.memo;
+          local=merged;
+        }
+      }
+    }
+  }catch(e){}
+  if(!local) return false;
+  const mode=applyState(local);
   if(!mode) return false;
   fillInputsForCurrentBrand(); renderAll();
-  if(!fromIdb) idbSet(STATE); // 来自服务/localStorage 时，顺手写一份到 IndexedDB 作为主存储
+  idbSet(STATE); // 始终回写：local 已是「本机优先+云端补缺」后的更全集，持久化不会丢失
   return true;
 }
 
@@ -3815,8 +3838,12 @@ async function boot(){
     const snapOk=snap&&snap.state&&isUsableState(snap.state);
     const localOk=local&&isUsableState(local);
     if(ghToken()){
-      // 有令牌的录入同事：云端已优先；此处优先公开快照（共享真源），本地缓存兜底
-      if(snapOk){ loaded=snap.state; fromWhere='公开快照'; if(snap.name) currentBoard={id:snap.id||currentBoard.id, name:snap.name}; }
+      // 有令牌的录入同事：公开快照是共享真源，但本机 IndexedDB 才是更全的真源（含未落云端的编辑）。
+      // fix52：与无令牌分支一致，采用「本机优先·云端补缺」合并，杜绝 332 行公开快照覆盖本机更全数据（data 刷新后丢失）。
+      if(localOk && snapOk){
+        try{ loaded=mergeBoardState(local, snap.state); fromWhere='本地优先·与公开快照合并'; }
+        catch(_){ loaded=local; fromWhere='本地缓存'; }
+      } else if(snapOk){ loaded=snap.state; fromWhere='公开快照'; if(snap.name) currentBoard={id:snap.id||currentBoard.id, name:snap.name}; }
       else if(localOk){ loaded=local; fromWhere='本地缓存'; }
     } else {
       // 无令牌的编辑同事：其本机 IndexedDB 才是自己录入的真源（云端写不进去）。
