@@ -692,7 +692,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-27-fix60-target-persist-and-score';
+const APP_VERSION = '2026-08-27-fix61b-idb-single-connection';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -4109,10 +4109,18 @@ function freshBrand(){ return { sales:[], inventory:[], inv_full:[], inv_siyun:[
 function hideTip(){ tip.style.opacity=0; }
 function svgEl(W,H,inner){ return `<svg class="chart-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">${inner}</svg>`; }
 
+/* fix61：补回被误删的持久化常量定义（fix53/fix55 批量编辑时丢失），否则 idbOpen/idbSet/idbGet/saveState 全部引用 undefined，
+   createObjectStore(undefined) 与 transaction(undefined) 静默抛错 → object store 从未创建、IndexedDB 与 localStorage 写入永远失败 → “刷新即丢失”。
+   IDB_NAME 沿用历史 DB 名 'yayx-dashboard'（旧版代码曾创建过该库，残留空库需升级版本重建 store）。 */
+const IDB_NAME = 'yayx-dashboard';
+const IDB_STORE = 'STATE';
+const IDB_KEY = 'STATE';
+const STORE_KEY = 'yayx-dashboard-state';
+let _idbConn=null; // fix61b：缓存单条 IndexedDB 连接，避免每次 idbGet/idbSet 都 open 新连接 → 多连接互相阻塞（boot 已持有一条时后续 open 会挂起，idbSet 永不 resolve → 刷新即丢失）
 function idbGet(){ return new Promise(async res=>{ try{ const db=await idbOpen(); const tx=db.transaction(IDB_STORE,'readonly'); const rq=tx.objectStore(IDB_STORE).get(IDB_KEY); rq.onsuccess=()=>res(rq.result||null); rq.onerror=()=>res(null); }catch(e){ res(null); } }); }
 function idbSet(val){ return new Promise(async res=>{ let ok=false; for(let attempt=0; attempt<2 && !ok; attempt++){ try{ const db=await idbOpen(); const tx=db.transaction(IDB_STORE,'readwrite'); tx.objectStore(IDB_STORE).put(val,IDB_KEY); await new Promise(r=>{ tx.oncomplete=()=>{ ok=true; r(); }; tx.onerror=()=>r(); tx.onabort=()=>r(); }); }catch(e){ /* 重试一次 */ } } if(!ok) console.warn('[idbSet] 本地存储写入失败：刚保存的数据可能无法在刷新后保留（建议配置令牌以云端备份）'); res(ok); }); }
 
-function idbOpen(){ return new Promise((res,rej)=>{ try{ if(typeof indexedDB==='undefined'){ rej(new Error('no idb')); return; } const r=indexedDB.open(IDB_NAME,1); r.onupgradeneeded=()=>{ try{ r.result.createObjectStore(IDB_STORE); }catch(_){} }; r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error||new Error('idb open failed')); }catch(e){ rej(e); } }); }
+function idbOpen(){ return new Promise((res,rej)=>{ try{ if(typeof indexedDB==='undefined'){ rej(new Error('no idb')); return; } if(_idbConn && !_idbConn._dead){ res(_idbConn); return; } const r=indexedDB.open(IDB_NAME,2); r.onupgradeneeded=()=>{ try{ if(!r.result.objectStoreNames.contains(IDB_STORE)) r.result.createObjectStore(IDB_STORE); }catch(_){} }; r.onsuccess=()=>{ _idbConn=r.result; _idbConn._dead=false; try{ _idbConn.onversionchange=()=>{ try{ _idbConn.close(); }catch(_){} _idbConn=null; }; }catch(_){} res(_idbConn); }; r.onerror=()=>rej(r.error||new Error('idb open failed')); }catch(e){ rej(e); } }); }
 
 
 
