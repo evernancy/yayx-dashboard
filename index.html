@@ -692,7 +692,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-27-fix57-inventory-no-aggregation';
+const APP_VERSION = '2026-08-27-fix58-target-xlsx-upload';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -3323,7 +3323,21 @@ function setupFile(id,key){ const inp=$(id); const ta=()=>{ const t=$('#'+key+'I
         else if(key==='invFull'){ b.inv_full=objRows; b._raw.inv_full=text; }
         else if(key==='invSiyun'){ b.inv_siyun=objRows; b._raw.inv_siyun=text; }
         else if(key==='chaohu'){ b.chaohu=aggregateRows(objRows); b._raw.chaohu=text; }
-        markDirty(STATE.currentBrand);
+        else if(key==='tgt'){
+          /* fix58：目标数据 xlsx 上传此前缺失此分支 → 只填了文本框却从未写入 b.targets/_raw.targets，
+             导致「目标数据」框上传 Excel 后图表不更新、刷新即丢失。现按「目标数据」框所属品牌
+             （brand_targets 下拉）归户，与 readInputs 的路由保持一致；解析统一走 parseTargets（带/无表头均支持）。 */
+          const tsel=document.getElementById('brand_targets');
+          const tv=(tsel&&tsel.value)||STATE.currentBrand;
+          const tb=STATE.brands[tv]?tv:STATE.currentBrand;
+          const tgtB=STATE.brands[tb];
+          const inc=parseTargets(text);
+          tgtB.targets=mergeTargetRows(tgtB.targets||[], inc);
+          tgtB._raw.targets=mergeTargetsText(tgtB._raw.targets||'', text);
+          markDirty(tb);
+          updateDiag(tgtB._raw.targets||'', parseTargets(tgtB._raw.targets||'').length, 'Targets');
+        }
+        if(key!=='tgt') markDirty(STATE.currentBrand);
         saveState(); renderAll(); saveToService();
       }
       // fix55：上传完成后显示关键诊断（行数 + 金额校验），方便快速判断数据完整性
