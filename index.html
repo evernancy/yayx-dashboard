@@ -702,7 +702,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-27-fix66e-boot-toast+siyun-cols';
+const APP_VERSION = '2026-08-27-fix66f-revert-to-github';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -3634,7 +3634,7 @@ const SNAPSHOT_FALLBACK_URLS=[
 // 默认 'github' 沿用现状（国内同事无 VPN 时走 CloudStudio 回退读）。
 // 改为 'gitee' 即改用码云作云端后端：国内免费、可写、同事免 VPN、无 5 人限制（API 单 token 写入，不占 Git 协作者名额）。
 // 切 Gitee 前需：① 在 Gitee 建好下面的私有数据仓 + 公开快照仓；② 把右下角徽章粘贴的令牌换成 Gitee 私人令牌（repo 权限）。
-const BACKEND_TYPE='gitee';
+const BACKEND_TYPE='github';
 // GitHub 配置（沿用上方 GH_* 常量）
 const GITHUB_CFG={ owner:GH_OWNER, dataRepo:GH_REPO, pubRepo:GH_PUB_REPO, branch:GH_BRANCH,
   pagesBase:'https://'+GH_OWNER+'.github.io/'+GH_PUB_REPO+'/' }; // 查看者免令牌只读基址
@@ -4570,7 +4570,7 @@ init();
   // —— 无令牌（公开部署版）：引导用户输入一次，存本机浏览器 ——
   function noToken(){ return (typeof ghToken==='function') && !ghToken(); }
   function askToken(){
-    var t=prompt('请输入 Gitee 私人令牌（repo 权限；仅录入/同步数据的同事需要，纯查看无需输入。粘贴将覆盖当前令牌）：','');
+    var t=prompt('请输入 GitHub 访问令牌（仅录入数据的同事需要；纯查看无需输入）：','');
     if(t && t.trim()){ try{ localStorage.setItem('GH_TOKEN',t.trim()); }catch(e){} location.reload(); }
   }
   function showTokenSetup(){
