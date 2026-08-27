@@ -692,7 +692,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-27-fix65-remove-cloud-refresh-btn';
+const APP_VERSION = '2026-08-27-fix65b-sync-result-prompt';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -3798,11 +3798,13 @@ async function ghGetBoard(id){
 }
 // 全局写入串行锁：所有云端看板写入排队执行，杜绝「恢复备份」与自动保存/导入并发各自读到旧 SHA、互相 409 覆盖（李锦记 15MB 大文件上传期间尤甚）
 var __upsertChain=Promise.resolve();
+// fix65b：ghUpsertBoard 返回真实结果对象 {ok, failedBrands, manifestOk}，供调用方据以提示「是否真同步成功」（原来单品牌失败被静默跳过，导致假成功）
 async function ghUpsertBoard(id,name,state){
   var run=__upsertChain.then(async ()=>{
   var path='dashboards/'+id+'.json';
   // 脏集合非空 → 只传脏品牌；为空（如仅改甘特图/初始种子）→ 兜底传全部品牌，绝不丢数据
   var dirty = __dirtyBrands.size ? Array.from(__dirtyBrands) : Object.keys(state.brands);
+  var lastFailed=[], lastManifestOk=false;
   for(var attempt=0; attempt<4; attempt++){
     var f=await ghGetFile(path);
     var prev=null; if(f){ try{ prev=JSON.parse(f.content); }catch(_){} }
@@ -3828,11 +3830,15 @@ async function ghUpsertBoard(id,name,state){
     if(failedBrands.length) console.warn('[ghUpsertBoard] 以下品牌云端写入失败（本地 IDB 仍保留）:', failedBrands.join(','));
     // 2) 写/合并清单（含共享字段 gantt/brandOrder/memo，防覆盖）
     var manifest=buildManifest(id,name,state, isSplit?prev:null);
-    try{ await ghPutFile(path, JSON.stringify(manifest), f?f.sha:null); __dirtyBrands.clear(); return; }
-    catch(e){ if(e.status===409 && attempt<3){ continue; } throw e; }
+    try{ await ghPutFile(path, JSON.stringify(manifest), f?f.sha:null); __dirtyBrands.clear();
+         return {ok: failedBrands.length===0, failedBrands: failedBrands.slice(), manifestOk:true}; }
+    catch(e){ lastFailed=failedBrands.slice(); lastManifestOk=false;
+         if(e.status===409 && attempt<3){ continue; }
+         return {ok:false, failedBrands: failedBrands.slice(), manifestOk:false}; }
   }
+  return {ok:false, failedBrands: lastFailed.slice(), manifestOk: lastManifestOk};
   });
-  __upsertChain=run.catch(function(){ return null; });
+  __upsertChain=run.catch(function(){ return {ok:false, failedBrands:[], manifestOk:false, chainError:true}; });
   return run;
 }
 // 旧版整份格式自动迁移为拆分（首次加载旧格式时后台执行一次）
@@ -3929,16 +3935,28 @@ async function saveToService(){
   // 有令牌时同步公开快照（查看者免令牌只读）
   try{ if(ghToken()) await ghPutPublicSnapshot(); }catch(e){ /* 快照失败不影响主存储 */ }
 }
-// fix63：强制把本地全量数据推送到云端共享看板（断网恢复/换网络后主动 flush 一次，确保同事可见）
+// fix63/fix65b：强制把本地全量数据推送到云端共享看板；据 ghUpsertBoard 真实返回结果提示「是否同步成功」
 $('#syncCloudBtn').addEventListener('click',async()=>{
   if(!ghToken()){ toast('⚠️ 请先配置 GitHub 令牌（点右下角徽章粘贴）才能同步到云端', true); return; }
   toast('🔄 正在把本地数据同步到云端共享看板「'+currentBoard.name+'」('+currentBoard.id+')…');
   try{
     if(typeof markAllDirty==='function') markAllDirty(); // 全品牌推送，确保完全一致
-    await ghUpsertBoard(currentBoard.id, currentBoard.name, STATE);
+    const res = await ghUpsertBoard(currentBoard.id, currentBoard.name, STATE);
     try{ if(ghToken()) await ghPutPublicSnapshot(); }catch(_){}
     if(typeof window.clearLocalUnsynced==='function') window.clearLocalUnsynced();
-    toast('✅ 已同步到云端！同事刷新页面即可看到你的数据（看板：'+currentBoard.id+'）');
+    // 依据真实上传结果给提示（fix65b：杜绝假成功）
+    if(res && res.ok){
+      toast('✅ 同步成功！已写入云端共享看板「'+currentBoard.name+'」('+currentBoard.id+')，同事刷新页面即可看到你的数据');
+    } else {
+      const failed = (res && res.failedBrands || []).join('、');
+      if(failed && !(res && res.manifestOk)){
+        toast('❌ 同步失败：所有品牌及清单都未写入云端（多半是网络无法访问 api.github.com，请开 VPN/代理或换网络后重试）', true);
+      } else if(failed){
+        toast('⚠️ 部分同步成功，但以下品牌写入云端失败：'+failed+'。请检查网络后重试', true);
+      } else {
+        toast('⚠️ 各品牌已写入，但看板清单(索引)写入失败，同事可能卡不到。请检查网络后重试', true);
+      }
+    }
   }catch(e){
     toast('❌ 同步失败：'+(errMsg(e)||'网络无法访问 api.github.com')+'。请确认浏览器能连上 GitHub（VPN/代理/换网络）后重试', true);
   }
