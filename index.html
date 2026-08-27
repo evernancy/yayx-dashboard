@@ -692,7 +692,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-27-fix46-tab-switch-defensive';
+const APP_VERSION = '2026-08-27-fix48-hide-zero-channels';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -1427,6 +1427,7 @@ function renderJzt(){
   const tS=c.totalSpend, tG=c.totalGmv;
   let t='<table class="tpl" style="margin-top:8px"><tr><th>渠道</th><th>花费</th><th>点击</th><th>成交</th><th>CPC</th><th>ROI</th><th>花费占比</th><th>成交占比</th></tr>';
   scenes.forEach(([name,s])=>{
+    if(!s.spend && !s.clicks && !s.gmv) return; // fix48: 渠道全部数据为0则不显示该行
     const cpc=s.clicks>0?s.spend/s.clicks:0, roi=s.spend>0?s.gmv/s.spend:0;
     const spShare=tS>0?s.spend/tS:0, gvShare=tG>0?s.gmv/tG:0;
     t+=`<tr><td>${esc(name)}</td><td>${fmtMoney(s.spend)}</td><td>${fmt(s.clicks,0)}</td><td>${fmtMoney(s.gmv)}</td><td>${fmtMoney(cpc)}</td><td>${roi.toFixed(2)}</td><td>${fmtPct(spShare)}</td><td>${fmtPct(gvShare)}</td></tr>`;
