@@ -702,7 +702,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-27-fix66i-gitee-auto-connect';
+const APP_VERSION = '2026-08-27-fix66j-boot-diag-full';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -3936,13 +3936,17 @@ function markAllDirty(){ BRANDS.forEach(function(b){ __dirtyBrands.add(b); }); }
 // 从清单 + 各品牌文件组装完整 STATE（向后兼容：旧版整份格式原样返回）
 async function assembleSplitState(manifest, id){
   var brands={};
+  console.log('[assembleSplitState] manifest.brands=', JSON.stringify(manifest.brands||[]));
   for(var i=0;i<manifest.brands.length;i++){
     var b=manifest.brands[i];
     var bf=await ghGetFile(brandFilePath(id,b));
     if(bf){ try{ var bo=JSON.parse(bf.content); brands[b]=bo.data||{}; }catch(_){ brands[b]={}; } }
+    else { console.warn('[assembleSplitState] brand['+b+'] file NULL/404'); }
     if(!brands[b]) brands[b]={};
   }
-  return { brands:brands, currentBrand:manifest.currentBrand||'李锦记', brandOrder:manifest.brandOrder||BRANDS.slice(), gantt:Array.isArray(manifest.gantt)?manifest.gantt:[], ganttRaw:manifest.ganttRaw||'', memo:manifest.memo||{} };
+  var result={ brands:brands, currentBrand:manifest.currentBrand||'李锦记', brandOrder:manifest.brandOrder||BRANDS.slice(), gantt:Array.isArray(manifest.gantt)?manifest.gantt:[], ganttRaw:manifest.ganttRaw||'', memo:manifest.memo||{} };
+  console.log('[assembleSplitState] assembled brandKeys=', Object.keys(result.brands));
+  return result;
 }
 function buildManifest(id, name, state, prev){
   var m={ id:id, name:name, format:SPLIT_FORMAT,
@@ -3957,13 +3961,16 @@ function buildManifest(id, name, state, prev){
   return m;
 }
 async function ghGetBoard(id){
-  var f=await ghGetFile('dashboards/'+id+'.json'); if(!f) return null;
+  var f=await ghGetFile('dashboards/'+id+'.json');
+  console.log('[ghGetBoard] manifest file result:', f ? ('sha='+f.sha+' contentLen='+(f.content||'').length) : 'NULL/404');
+  if(!f) return null;
   try{
     var o=JSON.parse(f.content);
+    console.log('[ghGetBoard] parsed format='+o.format+' brands=', JSON.stringify(o.brands||[]));
     if(o && o.format===SPLIT_FORMAT){ var st=await assembleSplitState(o,id); return {id:o.id,name:o.name,state:st,updated_at:o.updated_at||''}; }
     if(o && o.state) return {id:o.id,name:o.name,state:o.state,updated_at:o.updated_at||''}; // 旧版整份格式（向后兼容）
     return null;
-  }catch(_){ return null; }
+  }catch(_){ console.error('[ghGetBoard] parse error', _); return null; }
 }
 // 全局写入串行锁：所有云端看板写入排队执行，杜绝「恢复备份」与自动保存/导入并发各自读到旧 SHA、互相 409 覆盖（李锦记 15MB 大文件上传期间尤甚）
 var __upsertChain=Promise.resolve();
@@ -4152,6 +4159,37 @@ function init(){
   boot();
 }
 async function boot(){
+  // ===== fix66j 诊断：逐步记录云端加载链路，定位"徽章已连接但数据走本地缓存"的根因 =====
+  (async function diagBoot(){
+    try{
+      var t=ghToken()||'';
+      console.log('[boot-diag] BACKEND_TYPE='+BACKEND_TYPE+' | token='+(t?t.slice(0,4)+'..'+t.slice(-4):'(empty)')+' | len='+t.length);
+      // Step 1: 测试 Gitee API 基础连通性
+      var be=activeBackend();
+      var cb=repoContentsBase(be.owner, be.dataRepo);
+      console.log('[boot-diag] contentsBase='+cb);
+      try{
+        var r1=await fetch(cb+'/dashboards/index.json?ref='+be.branch,{headers:ghHeaders()});
+        var j1=await r1.json();
+        console.log('[boot-diag] Step1 index.json status='+r1.status+' hasSha='+!!j1.sha+' size='+j1.size);
+      }catch(e){ console.error('[boot-diag] Step1 FAIL', e.message||e); }
+      // Step 2: 读 manifest
+      try{
+        var mf='dashboards/'+(window.currentBoard?currentBoard.id:SHARED_BOARD_ID)+'.json';
+        var r2=await fetch(cb+'/'+mf+'?ref='+be.branch,{headers:ghHeaders()});
+        var j2=await r2.json();
+        console.log('[boot-diag] Step2 manifest '+mf+' status='+r2.status+' hasSha='+!!j2.sha+' size='+(j2.size||0)+' format='+(j2.content?JSON.parse(atob(j2.content)).format:'(no content)'));
+      }catch(e){ console.error('[boot-diag] Step2 FAIL', e.message||e, 'status=', e.status||'?'); }
+      // Step 3: 读一个品牌文件（李锦记通常较小）
+      try{
+        var bf='dashboards/'+(window.currentBoard?currentBoard.id:SHARED_BOARD_ID)+'__'+encodeURIComponent('李锦记')+'.json';
+        var r3=await fetch(cb+'/'+bf+'?ref='+be.branch,{headers:ghHeaders()});
+        var j3=await r3.json();
+        var c3=j3.content?'':0; try{c3=atob(j3.content).length;}catch(_){}
+        console.log('[boot-diag] Step3 brand[李锦记] status='+r3.status+' hasSha='+!!j3.sha+' apiSize='+(j3.size||0)+' decodedLen='+c3);
+      }catch(e){ console.error('[boot-diag] Step3 FAIL', e.message||e, 'status=', e.status||'?'); }
+    }catch(e){ console.error('[boot-diag] EXC', e); }
+  })();
   // 先尝试真正连接云端（GitHub 用首次 list 验证凭证+网络），记录是否成功（避免误报"已连接"弹窗）
   let cloudOk=false, listErr=null, boards=[];
   if(!ghToken()){ listErr=new Error('未配置访问令牌'); }
