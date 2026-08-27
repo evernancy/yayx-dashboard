@@ -130,7 +130,6 @@
   </div>
   <div class="actions">
     <span class="muted" id="lastUpdate" style="color:rgba(255,255,255,.85);font-size:12px"></span>
-    <button class="btn" id="refreshBtn">从云端刷新</button>
     <button class="btn" id="syncCloudBtn">强制同步到云端</button>
     <button class="btn" id="resetBtn">恢复示例数据</button>
     <button class="btn primary" id="exportBtn">导出数据包</button>
@@ -693,7 +692,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-27-fix64-mawei-pop-channel-routing';
+const APP_VERSION = '2026-08-27-fix65-remove-cloud-refresh-btn';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -3930,10 +3929,6 @@ async function saveToService(){
   // 有令牌时同步公开快照（查看者免令牌只读）
   try{ if(ghToken()) await ghPutPublicSnapshot(); }catch(e){ /* 快照失败不影响主存储 */ }
 }
-$('#refreshBtn').addEventListener('click',async()=>{
-  try{ const row=await ghGetBoard(currentBoard.id); if(row&&row.state&&isUsableState(row.state)){ hydrateFromState(row.state); renderAll(); setupTodoAll(); toast('已从云端刷新「'+currentBoard.name+'」'); } else toast('云端暂无更新'); }
-  catch(e){ toast('云端连接失败，请检查网络'); }
-});
 // fix63：强制把本地全量数据推送到云端共享看板（断网恢复/换网络后主动 flush 一次，确保同事可见）
 $('#syncCloudBtn').addEventListener('click',async()=>{
   if(!ghToken()){ toast('⚠️ 请先配置 GitHub 令牌（点右下角徽章粘贴）才能同步到云端', true); return; }
