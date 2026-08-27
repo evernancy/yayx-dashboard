@@ -692,7 +692,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-27-fix61b-idb-single-connection';
+const APP_VERSION = '2026-08-27-fix62-recover-race-and-resilient-upsert';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -3799,18 +3799,24 @@ async function ghUpsertBoard(id,name,state){
     var prev=null; if(f){ try{ prev=JSON.parse(f.content); }catch(_){} }
     var isSplit = prev && prev.format===SPLIT_FORMAT;
     // 1) 逐个写脏品牌文件（每品牌与云端做深并集，防覆盖）。遇 409/422（并发或跨标签页写入）重取云端版本重新合并再试，绝不覆盖他人改动
+    // fix62：单品牌写入失败不再阻断整体 upsert——记日志并继续下一个品牌，避免一个品牌 SHA 冲突导致全盘失败
+    var failedBrands=[];
     for(var i=0;i<dirty.length;i++){
       var b=dirty[i];
       var bpath=brandFilePath(id,b);
+      var brandOk=false;
       for(var rb=0; rb<4; rb++){
-        var data=extractBrandData(state.brands[b]);
-        var bf=await ghGetFile(bpath);
-        if(bf){ try{ var cloudB=JSON.parse(bf.content).data; data=mergeBrandData(data, cloudB); }catch(_){} }
-        var bbody=JSON.stringify({brand:b, data:data, updated_at:new Date().toISOString()});
-        try{ await ghPutFile(bpath, bbody, bf?bf.sha:null); break; }
-        catch(e){ if((e.status===409||e.status===422) && rb<3){ continue; } throw e; }
+        try{
+          var data=extractBrandData(state.brands[b]);
+          var bf=await ghGetFile(bpath);
+          if(bf){ try{ var cloudB=JSON.parse(bf.content).data; data=mergeBrandData(data, cloudB); }catch(_){} }
+          var bbody=JSON.stringify({brand:b, data:data, updated_at:new Date().toISOString()});
+          await ghPutFile(bpath, bbody, bf?bf.sha:null); brandOk=true; break;
+        }catch(e){ if((e.status===409||e.status===422) && rb<3){ continue; } console.warn('[ghUpsertBoard] 品牌写入失败已跳过:', b, e.message); break; }
       }
+      if(!brandOk) failedBrands.push(b);
     }
+    if(failedBrands.length) console.warn('[ghUpsertBoard] 以下品牌云端写入失败（本地 IDB 仍保留）:', failedBrands.join(','));
     // 2) 写/合并清单（含共享字段 gantt/brandOrder/memo，防覆盖）
     var manifest=buildManifest(id,name,state, isSplit?prev:null);
     try{ await ghPutFile(path, JSON.stringify(manifest), f?f.sha:null); __dirtyBrands.clear(); return; }
@@ -3998,8 +4004,8 @@ async function boot(){
         return rows.reduce((s,r)=>s+(Number(r.spend)||0),0).toFixed(2);
       }catch(e){ return 'err'; }
     })();
-    console.log('[dashboard] v2026-08-25-fix4 reparseObj='+!!window.reparseObj+' 麦维他关键词花费='+kwSpend+' jzt总行数='+jztN);
-    if(fromWhere==='云端'){ toast('已从云端加载数据 · v2026-08-26'); window.__hideCollabBadge=true; }
+    console.log('[dashboard] '+APP_VERSION+' reparseObj='+!!window.reparseObj+' 麦维他关键词花费='+kwSpend+' jzt总行数='+jztN);
+    if(fromWhere==='云端'){ toast('已从云端加载数据 · '+APP_VERSION); window.__hideCollabBadge=true; }
     else if(fromWhere==='公开快照'){ toast('已载入「'+currentBoard.name+'」最新数据（只读模式，由录入同事每日更新）'); }
     else if(fromWhere==='本地优先·与公开快照合并'){ toast('已从本机恢复并合并公开快照（未配置令牌：数据仅存本机，点右下角徽章粘贴令牌即可云端共享）'); }
     else { toast('已从本地缓存恢复「'+currentBoard.name+'」（云端暂不可用，联网后将自动同步）'); }
@@ -4495,16 +4501,17 @@ init();
   }
   // —— 从云端 git 历史一键恢复：扫描提交历史，找到含「李锦记/麦维他 完整目标与京准通」的版本，合并回当前 STATE ——
   // 用途：当旧版页面/过期 STATE 整体覆盖云端导致数据丢失时，不必找人，自己点一下就能拉回。
+  // fix62：恢复改为「内存优先」策略——先合并到内存并立即 hydrate 渲染（用户立即可见），
+  // 再异步写 GitHub（失败不阻塞，因为本地 IDB 已保存、刷新不丢）。避免 SHA 竞态导致整个恢复作废。
   window.recoverBoardFromHistory=async function(){
     if(typeof ghToken==='function' && !ghToken()){ toast('⚠️ 需先配置 GitHub 令牌才能读取历史（点右下角徽章设置）', true); return; }
     toast('🔄 正在从云端备份恢复数据…（请稍候）');
     try{
-      // 拆分后主文件是清单(不含品牌数据)，整份数据备份在迁移时生成的 backup_full 文件；
-      // 优先读该备份，逐品牌并集回当前 STATE（当前非空优先，永不覆盖已有数据）。
       var found=null;
       var backupPath='dashboards/backup_full_20260825.json';
       try{ var bf=await ghGetFile(backupPath); if(bf){ var bj=JSON.parse(bf.content); if(bj&&bj.state&&bj.state.brands) found=bj; } }catch(_){}
       if(!found){ toast('❌ 未找到可用的云端备份('+backupPath+')', true); return; }
+      // ① 合并到 STATE（内存）
       for(var bb in found.state.brands){
         if(!STATE.brands[bb]){ STATE.brands[bb]=found.state.brands[bb]; continue; }
         var ob=STATE.brands[bb], cb=found.state.brands[bb];
@@ -4512,10 +4519,17 @@ init();
         if(cb._raw){ ob._raw=ob._raw||{}; for(var k2 in cb._raw){ if(isEmptyVal(ob._raw[k2])&&!isEmptyVal(cb._raw[k2])) ob._raw[k2]=cb._raw[k2]; } }
         if(cb.posInput){ ob.posInput=Object.assign({}, cb.posInput, ob.posInput||{}); }
       }
+      // ② 立即渲染（不等 GitHub 写入）
       if(typeof markAllDirty==='function') markAllDirty();
-      await ghUpsertBoard(currentBoard.id,currentBoard.name,STATE); // 写入时再与云端合并，确保不被覆盖
       hydrateFromState(STATE); renderAll(); setupTodoAll();
-      toast('✅ 已从云端备份恢复李锦记/麦维他等数据');
+      // ③ 先存本地 IndexedDB（确保刷新不丢）
+      try{ await idbSet(STATE); }catch(_){}
+      toast('✅ 已从备份恢复数据（本地已保存）');
+      // ④ 异步写 GitHub（失败仅 toast 警告，不影响已恢复的数据）
+      try{ await ghUpsertBoard(currentBoard.id,currentBoard.name,STATE); }catch(e){
+        console.warn('[recover] 云端写入失败（本地不受影响）：', e.message);
+        toast('⚠️ 备份已恢复到本地，但同步云端失败：'+errMsg(e).slice(0,80), true);
+      }
     }catch(e){ toast('❌ 恢复失败：'+errMsg(e), true); }
   };
   // 恢复按钮（固定于右下角，位于云端协作徽章上方）
@@ -4539,11 +4553,22 @@ init();
             var list=await ghListBoards();
       badge.textContent='云端协作 · 已连接';
       // 自动修复：若李锦记+麦维他 目标与京准通同时为空（典型被旧版页面整体覆盖的签名），从云端历史自动恢复一次
+      // fix62：延迟到 5 秒且检查 __upsertChain 空闲，避免与 boot() 内的 migrateBoardToSplit 并发写 GitHub 导致 SHA 冲突
       try{
         var _lj=STATE.brands['李锦记']||{}, _mw=STATE.brands['麦维他自营']||{};
         var _ljE=isEmptyVal(_lj.targets)&&isEmptyVal(_lj._raw&&_lj._raw.jzt);
         var _mwE=isEmptyVal(_mw.targets)&&isEmptyVal(_mw._raw&&_mw._raw.jzt);
-        if(_ljE && _mwE && typeof window.recoverBoardFromHistory==='function'){ setTimeout(function(){ window.recoverBoardFromHistory(); }, 1000); }
+        if(_ljE && _mwE && typeof window.recoverBoardFromHistory==='function'){
+          (async function(){
+            await new Promise(function(res){ setTimeout(res, 5000); });
+            // 等 upsert 链空闲后再触发（避免并发写入 SHA 冲突）
+            if(__upsertChain) await __upsertChain.catch(function(){});
+            // 再次检查（5秒内可能已被用户手动恢复或数据已加载）
+            var lj2=STATE.brands['李锦记']||{}, mw2=STATE.brands['麦维他自营']||{};
+            if(!isEmptyVal(lj2.targets)||!isEmptyVal(mw2.targets)) return;
+            window.recoverBoardFromHistory();
+          })();
+        }
       }catch(_){}
     }catch(e){
       var msg=errMsg(e);
