@@ -692,7 +692,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-27-fix58-target-xlsx-upload';
+const APP_VERSION = '2026-08-27-fix59-refresh-persist';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -2711,7 +2711,7 @@ function routeRawByBrand(w, cur, fallback, edited){
   });
 }
 
-function readInputs(mode, silent){
+async function readInputs(mode, silent){
   mode=mode||'merge';
   const SECTIONS=['sales','inventory','inv_full','inv_siyun','chaohu','jzt','targets','purchase','purchase_order','spot_rate','aging_warn'];
   const TA={sales:'salesInput',inventory:'invInput',inv_full:'invFullInput',inv_siyun:'invSiyunInput',chaohu:'chaohuInput',jzt:'jztInput',targets:'tgtInput',purchase:'ppInput',purchase_order:'poInput',spot_rate:'srInput',aging_warn:'awInput'};
@@ -2781,7 +2781,7 @@ function readInputs(mode, silent){
   updateDiag(STATE.ganttRaw, STATE.gantt.length, 'Gantt', ganttParsed.length);
   // fix27：标记本次被编辑的品牌为脏，保存时只上传这些品牌（和路雪等小品牌延迟消失）
   if(typeof markDirty==='function') edited.forEach(markDirty);
-  saveState(); renderAll(); saveToService();
+  saveState(); renderAll(); await saveToService();
   if(!silent) toast(mode==='replace' ? '已按文本框内容全量重建并自动存储（刷新/重开不丢）' : ('已按增量更新并自动存储：新增 '+statAdd+' 行、重复 '+statDup+' 行已自动忽略（刷新/重开不丢，历史保留）'));
 }
 $('#applyBtn').addEventListener('click',readInputs);
@@ -3300,7 +3300,7 @@ function setupFile(id,key){ const inp=$(id); const ta=()=>{ const t=$('#'+key+'I
         STATE.gantt=mergeGantt([], ganttParsed); // replace 模式：清空历史只用本次数据
         ensureGanttIds();
         updateDiag(STATE.ganttRaw, STATE.gantt.length, 'Gantt', ganttParsed.length);
-        saveState(); renderAll(); saveToService();
+        saveState(); renderAll(); await saveToService();
       } else {
         /* fix55→fix57：直接将对象写入对应数据段（不再依赖 readInputs 从 textarea 重解析）
            路径：inventory/purchase_order/jzt/sales 等 → 写入 → saveState/render/saveToService
@@ -3337,8 +3337,8 @@ function setupFile(id,key){ const inp=$(id); const ta=()=>{ const t=$('#'+key+'I
           markDirty(tb);
           updateDiag(tgtB._raw.targets||'', parseTargets(tgtB._raw.targets||'').length, 'Targets');
         }
-        if(key!=='tgt') markDirty(STATE.currentBrand);
-        saveState(); renderAll(); saveToService();
+        if(key!=='tgt')         markDirty(STATE.currentBrand);
+        saveState(); renderAll(); await saveToService();
       }
       // fix55：上传完成后显示关键诊断（行数 + 金额校验），方便快速判断数据完整性
       const parsedCount = objRows.length;
@@ -3889,7 +3889,9 @@ function clearInputs(){ $('#salesInput').value=''; $('#invInput').value=''; $('#
 
 // 自动保存：每次解析/导入/编辑后调用。云端 GitHub(共享,多人可见) + 本地 IndexedDB(离线缓存)。
 async function saveToService(){
-  idbSet(STATE); // 浏览器本地主存储：容量大、离线可用
+  // fix59：本地 IndexedDB 必须【先写且 await 完成】再返回。此前 idbSet(STATE) 未 await，
+  // 上传后若用户立刻刷新，本地写入尚未落盘即被丢弃（无令牌或云端推送失败时就彻底丢失）→ “刷新后数据丢失”。
+  await idbSet(STATE); // 浏览器本地主存储：容量大、离线可用（await 保证落盘后再继续）
   if(window.__noCloudPushOnce){ return; } // 保险丝：示例初始化只存本地，不推云端
   if(!ghToken()){
     // 无令牌：云端/快照均不可写，数据只在本机浏览器。明确告警一次，避免同事以为已保存（fix28）
@@ -4101,7 +4103,7 @@ function hideTip(){ tip.style.opacity=0; }
 function svgEl(W,H,inner){ return `<svg class="chart-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">${inner}</svg>`; }
 
 function idbGet(){ return new Promise(async res=>{ try{ const db=await idbOpen(); const tx=db.transaction(IDB_STORE,'readonly'); const rq=tx.objectStore(IDB_STORE).get(IDB_KEY); rq.onsuccess=()=>res(rq.result||null); rq.onerror=()=>res(null); }catch(e){ res(null); } }); }
-function idbSet(val){ return new Promise(async res=>{ try{ const db=await idbOpen(); const tx=db.transaction(IDB_STORE,'readwrite'); tx.objectStore(IDB_STORE).put(val,IDB_KEY); tx.oncomplete=()=>res(true); tx.onerror=()=>res(false); }catch(e){ res(false); } }); }
+function idbSet(val){ return new Promise(async res=>{ let ok=false; for(let attempt=0; attempt<2 && !ok; attempt++){ try{ const db=await idbOpen(); const tx=db.transaction(IDB_STORE,'readwrite'); tx.objectStore(IDB_STORE).put(val,IDB_KEY); await new Promise(r=>{ tx.oncomplete=()=>{ ok=true; r(); }; tx.onerror=()=>r(); tx.onabort=()=>r(); }); }catch(e){ /* 重试一次 */ } } if(!ok) console.warn('[idbSet] 本地存储写入失败：刚保存的数据可能无法在刷新后保留（建议配置令牌以云端备份）'); res(ok); }); }
 
 function idbOpen(){ return new Promise((res,rej)=>{ try{ if(typeof indexedDB==='undefined'){ rej(new Error('no idb')); return; } const r=indexedDB.open(IDB_NAME,1); r.onupgradeneeded=()=>{ try{ r.result.createObjectStore(IDB_STORE); }catch(_){} }; r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error||new Error('idb open failed')); }catch(e){ rej(e); } }); }
 
@@ -4373,6 +4375,8 @@ init();
     try{ var b=(st&&st.state&&st.state.brands)||{}; var s=0;
       for(var k in b){ var br=b[k];
         if(br.targets) s+=br.targets.length;
+        if(br.inventory) s+=br.inventory.length;                 // fix59：补计库存行数（此前未计，导致纯库存更新时 localScore=0）
+        if(br._raw&&br._raw.inventory) s+=Math.floor(br._raw.inventory.length/1000);
         if(br._raw&&br._raw.jzt) s+=Math.floor(br._raw.jzt.length/1000);
         if(br.posInput) s+=Object.keys(br.posInput).length;
         if(br.sales) s+=br.sales.length;
