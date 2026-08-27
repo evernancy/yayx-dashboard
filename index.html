@@ -702,7 +702,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-27-fix66c-boot-diag';
+const APP_VERSION = '2026-08-27-fix66d-gitee-406-header-fix';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -3670,8 +3670,14 @@ function __boardIdCacheGet(){ try{ return localStorage.getItem('__BOARD_ID_CACHE
 function __boardIdCacheSet(id){ try{ if(id) localStorage.setItem('__BOARD_ID_CACHE', id); }catch(_){} }
 
 function ghHeaders(extra){
-  // Gitee 用「token」前缀鉴权，GitHub 用「Bearer」；Gitee 忽略未知的 Accept 头，无妨
-  var h={'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28','Authorization':(BACKEND_TYPE==='gitee'?'token ':'Bearer ')+ghToken()};
+  // Gitee 用「token」前缀鉴权，GitHub 用「Bearer」。Gitee 不接受 GitHub 专用头（X-GitHub-Api-Version / Accept: application/vnd.github+json），
+  // 浏览器跨域 PUT 预检会被 Gitee 以 406 拒绝，故 Gitee 仅发标准 JSON 头（fix66d）。
+  var h;
+  if(BACKEND_TYPE==='gitee'){
+    h={'Accept':'application/json','Authorization':'token '+ghToken()};
+  } else {
+    h={'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28','Authorization':'Bearer '+ghToken()};
+  }
   if(extra) for(var k in extra) h[k]=extra[k];
   return h;
 }
@@ -3683,7 +3689,21 @@ async function ghApi(method, path, body, base){
   if(sendBody!==undefined) opt.body=JSON.stringify(sendBody);
   var res=await fetch(base+path, opt);
   var data=null; try{ data=await res.json(); }catch(_){}
-  if(!res.ok){ var msg=(data&&data.message)||('HTTP '+res.status); var err=new Error(msg); err.status=res.status; err.data=data; throw err; }
+  if(!res.ok){
+    // fix66d：Gitee 浏览器跨域 PUT 预检偶发 406（GitHub 专用头），重试一次用干净头（去掉 X-GitHub-Api-Version / 改 Accept: application/json）
+    if(BACKEND_TYPE==='gitee' && res.status===406 && !(opt.headers&&opt.headers['X-GitHub-Api-Version']===undefined && opt.headers['Accept']==='application/json')){
+      try{
+        var cleanHeaders={'Accept':'application/json','Authorization':'token '+ghToken()};
+        var opt2={method:method, headers:cleanHeaders};
+        if(sendBody!==undefined) opt2.body=opt.body;
+        var res2=await fetch(base+path, opt2);
+        var data2=null; try{ data2=await res2.json(); }catch(_){}
+        if(res2.ok) return data2;
+        data=data2;
+      }catch(_){}
+    }
+    var msg=(data&&data.message)||('HTTP '+res.status); var err=new Error(msg); err.status=res.status; err.data=data; throw err;
+  }
   return data;
 }
 function b64enc(str){ var bytes=new TextEncoder().encode(str); var bin=''; for(var i=0;i<bytes.length;i++) bin+=String.fromCharCode(bytes[i]); return btoa(bin); }
