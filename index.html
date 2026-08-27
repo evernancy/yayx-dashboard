@@ -695,6 +695,14 @@ function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]
 const APP_VERSION = '2026-08-27-fix46-tab-switch-defensive';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
+// 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
+// 首次加载时仍为 undefined，导致 hydrateFromState 读取 STATE.currentBrand 抛 ReferenceError、
+// STATE 始终未赋值、所有数据不渲染、品牌 tab 点击因 switchBrand 引用 STATE 而整段中断（"没有反应"）。
+// 这里在脚本顶层预置一份空 STATE，确保任何代码路径访问 STATE 前它都已存在（boot 加载后会被 applyState 覆盖）。
+var STATE = emptyState();
+// fix47：补回被误删的顶层常量声明（原声明块在 fix41/42 的批量编辑中丢失，导致多处 ReferenceError）
+const PALETTE=['#2563eb','#16a34a','#f59e0b','#db2777','#7c3aed','#0891b2','#dc2626','#65a30d','#ea580c','#4f46e5','#0d9488','#c026d3'];
+const OWNER_PALETTE=['#2563eb','#16a34a','#f59e0b','#db2777','#7c3aed','#0891b2','#dc2626','#65a30d','#ea580c','#4f46e5'];
 /* 列名同义词映射 */
 const ALIAS = {
   date:['日期','时间','date','day','dt','订购时间','采购时间','下单时间'],
@@ -2609,6 +2617,7 @@ function applyTvDates(){ renderTargets(); updateTimeProgress(); }
 const tvApplyBtn=$('#tvApplyBtn'); if(tvApplyBtn) tvApplyBtn.addEventListener('click',applyTvDates);
 const tvResetBtn=$('#tvResetBtn'); if(tvResetBtn) tvResetBtn.addEventListener('click',()=>{ $('#tvStart').value=''; $('#tvEnd').value=''; applyTvDates(); });
 function applyJztDates(){ renderJzt(); renderJztTargets(); updateTimeProgress(); }
+var invAsOf=null; // fix47：库存周转"按日期查看"选定日（顶层声明，原缺失导致 refreshInvDateOptions 抛 ReferenceError）
 function refreshInvDateOptions(){
   const sel=$('#invDate'); if(!sel) return;
   const dates=[...new Set(B().inventory.map(r=>r.date).filter(Boolean))].sort().reverse(); // 降序：最新在前
@@ -3726,9 +3735,11 @@ function emptyState(){ const brands={}; BRANDS.forEach(b=>{ brands[b]=freshBrand
 async function loadBoardState(id){ const row=await ghGetBoard(id); if(row&&row.state&&isUsableState(row.state)) return {state:row.state,updated_at:row.updated_at}; return null; }
 function hydrateFromState(st){
   // 云端同步只更新【数据】，绝不改动本地视图位置（当前品牌/视图/子视图）
-  const keepBrand=STATE.currentBrand, keepView=currentView, keepSub=lijxSub;
+  // fix47：首次加载时 STATE 可能仍为 undefined，先判断再读取，避免 ReferenceError 中断整个加载
+  const keepBrand=(typeof STATE!=='undefined'&&STATE)?STATE.currentBrand:undefined;
+  const keepView=currentView, keepSub=lijxSub;
   const mode=applyState(st); if(!mode) return false;
-  STATE.currentBrand=keepBrand; currentView=keepView; lijxSub=keepSub;
+  STATE.currentBrand=keepBrand||STATE.currentBrand; currentView=keepView; lijxSub=keepSub;
   fillInputsForCurrentBrand(); syncBrandUI(); renderAll(); idbSet(STATE); return true;
 }
 // 把当前品牌的原始输入回填到数据输入区文本框（供查看/编辑）；甘特图回填到共享框
@@ -3815,6 +3826,11 @@ async function boot(){
     }
   }
   if(loaded){
+    // fix47：甘特图(数据日历)数据在云端清单里可能为空（历史上未随品牌数据一起落库）。
+    // 若加载到的 gantt 为空、但本机 IndexedDB 存有非空 gantt，则优先保留本机数据，避免刷新即丢失用户已录入的日历任务。
+    if(!(loaded.gantt && loaded.gantt.length)){
+      try{ const lg=await idbGet(); if(lg && lg.gantt && lg.gantt.length){ loaded.gantt=lg.gantt; if(lg.ganttRaw) loaded.ganttRaw=lg.ganttRaw; } }catch(_){}
+    }
     hydrateFromState(loaded);
     // 🔧 云端/公开快照/本地合并加载成功后，强制把真值写回本地 IndexedDB，覆盖任何旧缓存残留，避免下次 fallback 到陈旧数据
     if(fromWhere==='云端'||fromWhere==='公开快照'||fromWhere==='本地优先·与公开快照合并'){ try{ idbSet(STATE); }catch(e){} }
