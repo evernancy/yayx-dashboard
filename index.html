@@ -702,7 +702,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-28-fix66m-xlsx-date-normalize';
+const APP_VERSION = '2026-08-28-fix66n-inventory-persist';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -3920,12 +3920,14 @@ function mergeBrandData(inc, cloud){
 function extractBrandData(b){
   if(!b) return freshBrand();
   const raw=Object.assign({sales:'',inventory:'',inv_full:'',inv_siyun:'',chaohu:'',jzt:'',targets:'',purchase:'',purchase_order:'',spot_rate:'',aging_warn:''}, b._raw||{});
-  // fix53：超大明细（库存明细·李锦记 全量导出 1.2万行×117列 ≈ 16MB；库存明细全量列 inv_full 同理）不推云端。
-  // 原因：GitHub Contents API 对多 MB 文件会超时挂起，导致保存时页面「卡住」无法恢复。
-  // 改为仅存本机 IndexedDB（本地持久化、刷新不丢），云端/公开快照只保留轻量字段，避免上传卡死。
-  // 启动加载时 boot() 已改为「本机优先·云端只补缺」合并，故本机这份全量数据在刷新后依旧保留。
+  // fix53→fix66n：超大明细（库存明细·李锦记 全量导出 1.2万行×117列 ≈ 16MB；库存明细全量列 inv_full 同理）不推云端。
+  // 原因：GitHub Contents API 对极大多 MB 文件会超时挂起，导致保存时页面「卡住」无法恢复。
+  // 但原阈值 1.5MB 过低：丝蕴库存日报 14MB xlsx → 解析 TSV 约 8.3MB，被误判为「全量大表」而整体丢弃，
+  // 导致用户新上传的库存（库存 16960 / 近7天出库 7528 / 近14天出库 12643）永远写不进云端、刷新即丢失，即本次「上传数据没存储」的根因。
+  // 实测 inv_siyun（3318 行、数 MB）可正常落云，故阈值放宽到 30MB：仅真正 pathological 的全量导出才本地化，常规库存明细全部上云。
+  // 启动加载时 boot() 仍「本机优先·云端只补缺」合并，即便超大文件本地化，刷新后本机数据依旧保留。
   const invRawLen=(raw.inventory||'').length;
-  const stripInventory = invRawLen>1500000; // ≈>1.5MB 视为全量大表（正常人工录入的库存明细仅数百行，远小于此）
+  const stripInventory = invRawLen>30000000; // ≈>30MB 才视为需本地化的全量大表（fix66n：避免常规库存被误丢）
   return {
     sales:Array.isArray(b.sales)?b.sales:[],
     inventory: stripInventory? [] : (Array.isArray(b.inventory)?b.inventory:[]),
@@ -4132,8 +4134,16 @@ async function saveToService(){
     if(typeof window.markLocalUnsynced==='function') window.markLocalUnsynced(); // fix31：常驻"未同步"警告
     return; // 无令牌不尝试云端，避免无谓 401 报错
   }
-  try{ await ghUpsertBoard(currentBoard.id, currentBoard.name, STATE); if(typeof window.clearLocalUnsynced==='function') window.clearLocalUnsynced(); }
-  catch(e){ /* 云端不可达：忽略，依赖本地缓存；下次保存会自动重试 */ }
+  try{
+    const _res=await ghUpsertBoard(currentBoard.id, currentBoard.name, STATE);
+    if(typeof window.clearLocalUnsynced==='function') window.clearLocalUnsynced();
+    // fix66n：云端同步未完全成功时不再静默吞掉——明确提示用户（数据已存本机），避免「以为存了实则丢了」
+    if(_res && _res.ok===false){
+      const _fb=(_res.failedBrands||[]).join('、');
+      toast('⚠️ 云端同步未完全成功'+( _fb?('（失败品牌：'+_fb+'）'):'')+'，数据已存本机；请检查网络后点「同步云端」重试', true);
+    }
+  }
+  catch(e){ toast('⚠️ 云端同步失败（'+(errMsg(e)||'网络异常').slice(0,60)+'），数据已存本机；请检查网络后点「同步云端」重试', true); }
   // 有令牌时同步公开快照（查看者免令牌只读）
   try{ if(ghToken()) await ghPutPublicSnapshot(); }catch(e){ /* 快照失败不影响主存储 */ }
 }
