@@ -702,7 +702,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-28-fix66n-inventory-persist';
+const APP_VERSION = '2026-08-28-fix66o-siyun-date-picker+pop-target-persist';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -2700,7 +2700,14 @@ function applyJztDates(){ renderJzt(); renderJztTargets(); updateTimeProgress();
 var invAsOf=null; // fix47：库存周转"按日期查看"选定日（顶层声明，原缺失导致 refreshInvDateOptions 抛 ReferenceError）
 function refreshInvDateOptions(){
   const sel=$('#invDate'); if(!sel) return;
-  const dates=[...new Set(B().inventory.map(r=>r.date).filter(Boolean))].sort().reverse(); // 降序：最新在前
+  // fix66o：日期来源合并 inventory + inv_siyun(丝蕴) + spot_rate(现货率)
+  // 原：仅 B().inventory → 丝蕴库存存于 inv_siyun 导致下拉只有"最新(-)"无其他选项
+  const b=B();
+  const dateSet=new Set();
+  (b.inventory||[]).forEach(r=>{ const d=String(r.date||'').trim(); if(d) dateSet.add(d); });
+  (b.inv_siyun||[]).forEach(r=>{ const d=String(r.date||'').trim(); if(d) dateSet.add(d); });
+  (b.spot_rate||[]).forEach(r=>{ const d=String(r.date||'').trim(); if(d) dateSet.add(d); });
+  const dates=[...dateSet].sort().reverse();
   if(invAsOf && !dates.includes(invAsOf)) invAsOf=null;   // 选定日已不在数据中则回退最新
   const cur=invAsOf||'';   // null=最新：选中 value="" 的「最新」选项
   sel.innerHTML='<option value="">最新 ('+(dates[0]||'-')+')</option>'+dates.map(d=>'<option value="'+d+'"'+(d===cur?' selected':'')+'>'+d+'</option>').join('');
@@ -4766,8 +4773,14 @@ init();
         if(JSON.stringify(dataOnly(STATE))!==JSON.stringify(dataOnly(row.state))){
           var cloudScore=dataScore(row.state), localScore=dataScore(STATE);
           if(cloudScore>=localScore){
-            // 云端数据不少于本地：安全拉取（正常协作同步）
-            hydrateFromState(row.state); renderAll(); setupTodoAll(); showBadge(); badge.textContent='云端协作 · 已同步 '+fmtTime(new Date()); syncing=false; return;
+            // fix66o：云端数据不少于本地时，不再直接 hydrateFromState 覆盖（会丢失本地刚录入的 by-day 目标等数据），
+            // 改为 mergeBoardState 并集合并（targets 按 key 去重合并，其余字段空才补云端的值），与 boot() 加载路径一致。
+            // 这根治了「麦维他POP by-day 目标录入后刷新丢失」——此前 pollSync 快路径绕过了 mergeBoardState 的 fix65c targets 并集逻辑。
+            var merged=mergeBoardState(STATE, row.state);
+            if(JSON.stringify(dataOnly(STATE))!==JSON.stringify(dataOnly(merged))){
+              hydrateFromState(merged); showBadge(); badge.textContent='云端协作 · 已同步 '+fmtTime(new Date());
+            } else { showBadge(); badge.textContent='云端协作 · 已连接'+(srvUpd?' · '+fmtTime(new Date(srvUpd)):''); }
+            syncing=false; return;
           } else {
             // 云端数据比本地【少】（典型：旧版页面用空 STATE 覆盖过云端）→ 不回灌空数据，反而把本地更全的数据推上去修正云端，阻断“越存越少”的死循环
             try{ window.__lastSaveAt=Date.now(); window.__saving=(window.__saving||0)+1; await ghUpsertBoard(currentBoard.id,currentBoard.name,STATE); window.__lastSaveAt=Date.now(); }
