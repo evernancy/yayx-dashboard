@@ -702,7 +702,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-28-fix66v-chaohu-display-union';
+const APP_VERSION = '2026-08-28-fix66w-ver-tag-clearcache';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -4894,6 +4894,67 @@ init();
     // 正常云端加载成功后，隐藏徽章（只保留 toast 提示）；后续同步/保存/异常时 showBadge() 恢复
     if(window.__hideCollabBadge){ var b=document.getElementById('collabBadge'); if(b) b.style.display='none'; }
   })();
+})();
+</script>
+<script>
+/* fix66w：常驻版本号 + 一键清缓存按钮。
+   背景：此前版本号只打在 console / 云端加载 toast 里，且浏览器/CDN 会缓存旧版 HTML，
+   导致“看到旧版、还找不到版本号”。这里把版本号钉在左下角，并提供一键清缓存：
+   清 IndexedDB + 本地存储，并以带时间戳的 URL 重新加载，强制绕过文档缓存拿到最新版。 */
+(function(){
+  // —— 一键清缓存：关闭本地存储并以最新版本重新加载 ——
+  window.clearAllCache = async function(force){
+    if(!force){
+      var lbl = (typeof cloudLabel==='function') ? cloudLabel() : '云端';
+      if(!confirm('确定清除本机缓存并重新加载最新版本？\n\n将清除：本地 IndexedDB 数据 + 浏览器本地存储（看板状态）\n保留：'+lbl+' 令牌（免重新登录）\n\n⚠️ 未同步到云端的数据会丢失，确定继续？')) return;
+    }
+    // 1) 关闭当前 IndexedDB 连接，避免 deleteDatabase 因连接未释放而 blocked 挂起
+    try{ if(typeof _idbConn!=='undefined' && _idbConn){ _idbConn.close(); } }catch(_){}
+    try{ _idbConn=null; }catch(_){}
+    try{
+      await new Promise(function(res){
+        try{
+          var req=indexedDB.deleteDatabase('yayx-dashboard');
+          req.onsuccess=function(){ res(); };
+          req.onerror=function(){ res(); };
+          req.onblocked=function(){ res(); };
+        }catch(e){ res(); }
+        setTimeout(res, 3000); // 兜底：3 秒后无论如何继续
+      });
+    }catch(e){}
+    // 2) 清本地存储中的数据键（保留令牌）
+    try{
+      localStorage.removeItem('yayx-dashboard-state');
+      localStorage.removeItem('__localUnsynced');
+      localStorage.removeItem('__BOARD_ID_CACHE');
+      localStorage.removeItem('__hideCollabBadge');
+      // 如需连令牌一起清，取消下一行注释：
+      // localStorage.removeItem('GH_TOKEN'); localStorage.removeItem('GITEE_TOKEN');
+    }catch(e){}
+    if(typeof toast==='function') toast('🧹 本地缓存已清除，正在以最新版本重新加载…');
+    // 3) 带时间戳 query 重新加载，强制绕过 CDN/浏览器对文档的缓存，拿到最新版 HTML
+    setTimeout(function(){
+      var base=location.href.split('#')[0].split('?')[0];
+      location.href=base+'?_='+Date.now();
+    }, 600);
+  };
+
+  // —— 常驻版本标签（左下角）+ 清缓存按钮 ——
+  try{
+    var vt=document.createElement('div');
+    vt.id='verTag';
+    vt.style.cssText='position:fixed;left:14px;bottom:14px;z-index:99998;font:11px/1.4 system-ui,-apple-system,sans-serif;color:#6b7280;background:rgba(255,255,255,.92);padding:6px 10px;border-radius:9px;box-shadow:0 1px 6px rgba(0,0,0,.18);display:flex;align-items:center;gap:8px;';
+    var ver=document.createElement('span');
+    ver.textContent='版本 '+APP_VERSION;
+    ver.style.cursor='default';
+    var btn=document.createElement('button');
+    btn.textContent='🧹 清缓存并刷新';
+    btn.style.cssText='border:none;background:#185FA5;color:#fff;font:11px/1.4 system-ui;padding:4px 10px;border-radius:6px;cursor:pointer;';
+    btn.title='清除本机 IndexedDB + 本地存储，并以最新版本重新加载（未同步云端的数据会丢失）';
+    btn.onclick=window.clearAllCache;
+    vt.appendChild(ver); vt.appendChild(btn);
+    document.body.appendChild(vt);
+  }catch(e){ console.warn('[verTag] 创建失败', e); }
 })();
 </script>
 </body>
