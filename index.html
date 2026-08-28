@@ -702,7 +702,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-27-fix66j2-readfile-diag';
+const APP_VERSION = '2026-08-28-fix66k-siyun-col-priority';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -1156,8 +1156,9 @@ function computeSiyunTurnover(asOf){
   const resKey=name=>{ const lk=String(name).trim().toLowerCase(); for(const f in ALIAS){ if(ALIAS[f].includes(lk)) return f; } return 'ext_'+lk.replace(/\s+/g,''); };
   const g1=(r,names)=>{ for(const n of names){ const k=resKey(n); const v=r[k]; if(v!==undefined&&v!==''){ const x=num(v); if(!isNaN(x)) return x; } } return 0; };
   const QTY=['库存数量','现货库存','可用库存','库存件数'];
-  const O7=['近7天出库件数','近7日出库商品件数','近7日出库','近7日收货地商品件数'];
-  const O14=['近14天出库件数','近14日出库商品件数','近14日出库','近14日收货地商品件数'];
+  // 丝蕴库存周转：出库件数优先取「收货地」列（BE/BF），与京东库存日报一致
+  const O7=['近7日收货地商品件数','近7天出库件数','近7日出库商品件数','近7日出库'];
+  const O14=['近14日收货地商品件数','近14天出库件数','近14日出库商品件数','近14日出库'];
   // fix66h: 日期集合合并 库存明细(丝蕴) + 现货率，使仅录入现货率（无对应库存明细行）的日期也能在库存周转中显示
   const dateSet=new Set(inv.map(r=>String(r.date||'').slice(0,10)));
   (B().spot_rate||[]).forEach(r=>{ const d=String(r.date||'').slice(0,10); if(d) dateSet.add(d); });
