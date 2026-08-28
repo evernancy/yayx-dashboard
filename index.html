@@ -236,7 +236,7 @@
     </div>
     <div class="panel" id="invThreePartPanel" style="display:none;border-top:3px solid var(--blue,#2563eb)">
       <h2>麦维他库存周转 · 三部分总览</h2>
-      <p class="hint">按「京仓 / 巢湖库存 / 全链路」三部分拆开展示库存周转核心指标。京仓真是在途金额、全链路金额取自「库存明细（麦维他）」录入列（缺列留空）；巢湖库存取自「2.4 巢湖库存数据」录入。</p>
+      <p class="hint">按「京仓 / 巢湖库存 / 全链路」三部分拆开展示库存周转核心指标。京仓真实在途金额、全链路金额取自「库存明细（麦维他）」录入列（缺列留空）；巢湖库存取自「2.4 巢湖库存数据」录入。</p>
       <div class="tp-grid" id="invThreePart"></div>
     </div>
     <div class="panel"><div class="chart-title">事项（上周 / 本周）</div><div class="todo-grid" id="todo_inventory"></div></div>
@@ -702,7 +702,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-28-fix66p-spotrate-excel-date-tz';
+const APP_VERSION = '2026-08-28-fix66q-chaohu-label-rename';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -1358,7 +1358,7 @@ function renderInv(){
     el.style.display=''; panel.style.display='none'; $('#invThreePart').innerHTML='';
     el.innerHTML=sep('① 京仓')+kpiHTML([
       {label:'库存数量',value:num0(x.jcQty)},{label:'库存金额',value:money(x.jcAmt),cls:'blue'},
-      {label:'京仓真是在途金额',value:money(x.jcIntr)},{label:'库存周转(天)',value:days(x.jcTurn)},
+      {label:'京仓真实在途金额',value:money(x.jcIntr)},{label:'库存周转(天)',value:days(x.jcTurn)},
       {label:'近7天销售金额',value:money(x.jc7)},{label:'近14天销售金额',value:money(x.jc14)},
     ])+sep('② 巢湖库存')+kpiHTML([
       {label:'库存数量',value:num0(x.chQty)},{label:'库存金额',value:money(x.chAmt),cls:'blue'},
@@ -4492,7 +4492,7 @@ function renderInvThreePartHTML(tp){
   const r1=row('① 京仓',[
     item('库存数量',num0(x.jcQty)),
     item('库存金额',money(x.jcAmt),'blue'),
-    item('京仓真是在途金额',money(x.jcIntr)),
+    item('京仓真实在途金额',money(x.jcIntr)),
     item('库存周转(天)',days(x.jcTurn)),
     item('近7天销售金额',money(x.jc7)),
     item('近14天销售金额',money(x.jc14)),
