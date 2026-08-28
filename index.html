@@ -702,7 +702,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-28-fix66o-siyun-date-picker+pop-target-persist';
+const APP_VERSION = '2026-08-28-fix66p-spotrate-excel-date-tz';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -877,30 +877,11 @@ function parseTable(text){
   return _parseRows(headers, lines, delim);
 }
 
-/* fix55：直接从 SheetJS Worksheet 构建对象数组（与 parseTable 输出格式完全一致）。
-   绕过 TSV 文本中转，避免大文件时浏览器端 sheetToTsv→textarea→parseTable 链路丢行
-   （6.57MB xlsx / 12558行 在部分浏览器环境仅解析出 12150 行，原因疑为 XLSX.read 内存模式差异
-   导致部分 cell 定义丢失；sheet_to_json 为 SheetJS 官方推荐的高层 API，更可靠）。 */
-function sheetToObjects(ws){
-  if(!ws||!ws['!ref']) return [];
-  const range=XLSX.utils.decode_range(ws['!ref']);
-  const nRows=(range.e.r-range.s.r+1);
-  if(nRows>300000) throw new Error('工作表行数过多（超过 30 万行）');
-  // 用 sheet_to_json 取原始值（{header:1} 返回二维数组，header:1 表示第一行是表头）
-  const raw=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
-  if(!raw.length||!raw[0].length) return [];
-  const headers=raw[0].map(h=>String(h||'').trim());
-  // 将二维数组转成 parseTable 期望的 lines 格式（每行 tab 分隔），复用 _parseRows
-  // fix66m：SheetJS 开 cellDates:true 时日期单元格是 Date 对象，必须在此先格式化为 YYYY-MM-DD，
-  // 否则 String(Date) 会变成 "Wed Aug 27 2026..." 乱码字符串、下游 normDate 无法还原
-  const lines=raw.map(row=>row.map(c=>{
-    if(c instanceof Date){ const y=c.getFullYear(),mo=String(c.getMonth()+1).padStart(2,'0'),dd=String(c.getDate()).padStart(2,'0'); return `${y}-${mo}-${dd}`; }
-    return c!==undefined&&c!==null?String(c):'';
-  }).join('\t'));
-  return _parseRows(headers, lines, '\t');
-}
+/* fix66p：Excel 上传的日期转换统一走 sheetToTsv（原始序列号→normDate，已验证正确）后再 parseTable，
+   与「复制粘贴」路径完全一致；不再使用基于 SheetJS Date 对象 + 本地 getDate() 的 sheetToObjects（会把本地时间日期扰动成前一天，
+   如 2026-08-27 → 2026-08-26，导致现货率/库存等按错误日期存储、看似「未识别」）。实现见 setupFile 内的 fix66p。 */
 
-/* parseTable 和 sheetToObjects 共用的行解析核心：表头映射 + 过滤 + 对象构建 */
+/* parseTable 的行解析核心：表头映射 + 过滤 + 对象构建 */
 function _parseRows(headers, lines, delim){
   const rows=[];
   for(let i=1;i<lines.length;i++){
@@ -3349,12 +3330,14 @@ function setupFile(id,key){ const inp=$(id); const ta=()=>{ const t=$('#'+key+'I
       const dataSheet=wb.SheetNames.find(n=>/[模板数据gantt数据sheet]/i.test(n))||wb.SheetNames.find(n=>!/[说明帮助指引readme注]/i.test(n));
       if(dataSheet&&wb.Sheets[dataSheet]) ws=wb.Sheets[dataSheet];
       trimSheet(ws);
-      /* fix55：用 sheetToObjects 直接出对象数组（基于 sheet_to_json），绕过 TSV 文本中转
-         消除大文件时浏览器端 sheetToTsv→textarea→parseTable 链路丢行问题 */
-      const objRows = sheetToObjects(ws);
-      if(!objRows.length) throw new Error('工作表为空或无法解析，请确认首个工作表包含数据');
-      // 同时生成 TSV 存入 textarea（供用户查看/编辑/复制粘贴，也作为 _raw 原文存档）
+      /* fix66p：日期 off-by-one 修复。原 sheetToObjects 用 SheetJS Date 对象 + 本地 getDate() 转换，
+         遇「本地时间日期」会被时区扰动成前一天（如 2026-08-27 → 2026-08-26），导致现货率/库存等按错误日期存储、看似「未识别」。
+         改为：先生成经 sheetToTsv（原始序列号→normDate，已验证正确）的 TSV 文本存入 _raw，
+         再用 parseTable 解析出对象数组，保证内存对象与存档文本完全一致、日期正确（顺带消除 Excel 残留空行）。 */
       const text = await sheetToTsv(ws);
+      if(!text.trim()) throw new Error('工作表为空或无法解析，请确认首个工作表包含数据');
+      const objRows = parseTable(text);
+      if(!objRows.length) throw new Error('工作表为空或无法解析，请确认首个工作表包含数据');
       ta().value = text;
       /* 甘特图上传：只替换甘特图数据（不影响销售/库存等其他段，防止误清空） */
       if(key==='gantt'){
