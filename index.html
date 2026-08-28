@@ -702,7 +702,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-28-fix66l-github-vpn-connect';
+const APP_VERSION = '2026-08-28-fix66m-xlsx-date-normalize';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -891,7 +891,12 @@ function sheetToObjects(ws){
   if(!raw.length||!raw[0].length) return [];
   const headers=raw[0].map(h=>String(h||'').trim());
   // 将二维数组转成 parseTable 期望的 lines 格式（每行 tab 分隔），复用 _parseRows
-  const lines=raw.map(row=>row.map(c=>c!==undefined&&c!==null?String(c):'').join('\t'));
+  // fix66m：SheetJS 开 cellDates:true 时日期单元格是 Date 对象，必须在此先格式化为 YYYY-MM-DD，
+  // 否则 String(Date) 会变成 "Wed Aug 27 2026..." 乱码字符串、下游 normDate 无法还原
+  const lines=raw.map(row=>row.map(c=>{
+    if(c instanceof Date){ const y=c.getFullYear(),mo=String(c.getMonth()+1).padStart(2,'0'),dd=String(c.getDate()).padStart(2,'0'); return `${y}-${mo}-${dd}`; }
+    return c!==undefined&&c!==null?String(c):'';
+  }).join('\t'));
   return _parseRows(headers, lines, '\t');
 }
 
@@ -909,7 +914,9 @@ function _parseRows(headers, lines, delim){
       for(const f in ALIAS){ if(ALIAS[f].includes(lk)){ key=f; break; } }
       if(!key) key='ext_'+lk.replace(/\s+/g,'');
       const raw=cells[ci]!==undefined?cells[ci]:'';
-      const v=(raw instanceof Date)?normDate(raw):(typeof raw==='string'?raw.trim():String(raw).trim());
+      let v;
+      if(raw instanceof Date){ const y=raw.getFullYear(),mo=String(raw.getMonth()+1).padStart(2,'0'),dd=String(raw.getDate()).padStart(2,'0'); v=`${y}-${mo}-${dd}`; }
+      else v=(typeof raw==='string'?raw.trim():String(raw).trim());
       if(key) o[key]=v;
     }
     // 过滤日期范围行（如 2026-08-01~2026-08-23、8月1日-8月23日）和汇总行（合计/总计/小计）
