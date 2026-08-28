@@ -702,7 +702,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-28-fix66k-siyun-col-priority';
+const APP_VERSION = '2026-08-28-fix66l-github-vpn-connect';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -3623,7 +3623,7 @@ function diagHints(raw){
 //           且仓库设为私有，数据不会外泄；用于内部小团队协作完全足够（如需更严可后加代理层）。
 // Token 加载：优先读浏览器 localStorage（公开部署版用，首次打开时用户输入一次），否则用内嵌值（内部/私有部署用）。
 // 公开部署时把 GH_TOKEN_EMBED 置空 '' —— 源码公开也不会泄露数据写权限。
-const GH_TOKEN_EMBED='07453c033a91d2c90aaf01c0e199d2c7'; // ← 内嵌 Gitee 令牌：国内直连、免 VPN、免手动粘贴即自动连接云端。GitHub 后端请置空（公开版不应带写令牌）
+const GH_TOKEN_EMBED=''; // GitHub 令牌不内嵌（安全扫描会拦截）；首次打开点右下角徽章粘贴一次即可
 function ghToken(){
   try{
     if(BACKEND_TYPE==='gitee'){
@@ -3631,7 +3631,7 @@ function ghToken(){
       return GH_TOKEN_EMBED; // Gitee 后端：优先本机存过的 Gitee 令牌，否则用内嵌令牌自动连接
     }
     var h=(localStorage.getItem('GH_TOKEN')||'').trim(); if(h) return h;
-    return ''; // GitHub 后端不内嵌令牌（公开版安全），需手动粘贴
+    return GH_TOKEN_EMBED; // GitHub 后端：优先本机令牌，否则用内嵌令牌（需 VPN）
   }catch(e){ return GH_TOKEN_EMBED; }
 }
 const GH_OWNER='evernancy';       // ← 你的 GitHub 用户名
@@ -3654,7 +3654,7 @@ const SNAPSHOT_FALLBACK_URLS=[
 // 默认 'github' 沿用现状（国内同事无 VPN 时走 CloudStudio 回退读）。
 // 改为 'gitee' 即改用码云作云端后端：国内免费、可写、同事免 VPN、无 5 人限制（API 单 token 写入，不占 Git 协作者名额）。
 // 切 Gitee 前需：① 在 Gitee 建好下面的私有数据仓 + 公开快照仓；② 把右下角徽章粘贴的令牌换成 Gitee 私人令牌（repo 权限）。
-const BACKEND_TYPE='gitee'; // 改用码云(Gitee)作云端后端：国内直连、免 VPN、同事免协作者名额
+const BACKEND_TYPE='github'; // fix66l: 切回 GitHub（用户已开 VPN；Gitee 24MB 文件截断导致云端加载失败）
 // GitHub 配置（沿用上方 GH_* 常量）
 const GITHUB_CFG={ owner:GH_OWNER, dataRepo:GH_REPO, pubRepo:GH_PUB_REPO, branch:GH_BRANCH,
   pagesBase:'https://'+GH_OWNER+'.github.io/'+GH_PUB_REPO+'/' }; // 查看者免令牌只读基址
