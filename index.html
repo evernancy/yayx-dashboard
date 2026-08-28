@@ -702,7 +702,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-28-fix66r-po-sku-collision-jcintr';
+const APP_VERSION = '2026-08-28-fix66s-mcvitie-jc-spotrate';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -1257,6 +1257,8 @@ function computeThreePart(asOf){
   // fix56：长库龄预警按「最新值」展示（同 computeInv）——无对应日期时回退最新快照
   let latestAwKey=null, latestAw={age60:0,age90:0};
   (B().aging_warn||[]).forEach(r=>{ const d=String(r.date||'').slice(0,10); if(!d) return; const g=k=>num(r[k]); const o={age60:g('age60')||num(r['60-90天长库龄预警金额']), age90:g('age90')||num(r['90天以上长库龄金额'])}; if(!latestAwKey || d>latestAwKey){ latestAwKey=d; latestAw=o; } });
+  // fix66s：现货率按日索引（来自 2.7 现货率数据录入区），供京仓卡片展示 PV/实库现货率
+  const srByDate={}; (B().spot_rate||[]).forEach(r=>{ const d=String(r.date||'').slice(0,10); if(d) srByDate[d]=r; });
   const ds=[...new Set(inv.map(r=>String(r.date||'').slice(0,10)))].filter(Boolean).sort();
   const target=asOf||ds[ds.length-1];
   if(!ds.length){
@@ -1276,7 +1278,10 @@ function computeThreePart(asOf){
     const jcTurn=s30>0? jcAmt/s30*30 : null;
     const fcTurn=s30>0? fcAmt/s30*30 : null;
     const aw=awByDate[d]||latestAw;
-    return {date:d, jcQty, jcAmt, jcIntr, jc7:s7, jc14:s14, s30, jcTurn, chQty:ch.qty, chAmt:ch.amt, chIntr:ch.intr, fcAmt, fcTurn, sluggish:aw.age90, longAge:aw.age60};
+    // fix66s：PV/实库现货率按天匹配（来自 2.7 现货率数据录入区）
+    const sr=srByDate[d]; let pvRate=undefined, realRate=undefined;
+    if(sr){ const pv=num(sr.pvRate!==undefined?sr.pvRate:sr.PV现货率), rr=num(sr.realRate!==undefined?sr.realRate:sr.实库现货率); if(pv||rr){ pvRate=pv; realRate=rr; } }
+    return {date:d, jcQty, jcAmt, jcIntr, jc7:s7, jc14:s14, s30, jcTurn, chQty:ch.qty, chAmt:ch.amt, chIntr:ch.intr, fcAmt, fcTurn, sluggish:aw.age90, longAge:aw.age60, pvRate, realRate};
   });
   const cur=all.find(x=>x.date===target)||all[all.length-1];
   return {all, cur, dates:ds, target, hasData:true};
@@ -1359,12 +1364,16 @@ function renderInv(){
     const money=v=> (v==null||isNaN(v)||v===0)?'—':fmtMoney(v);
     const num0=v=> (v==null||isNaN(v)||v===0)?'—':fmt(v,0);
     const days=v=> (v==null||isNaN(v)||v<=0)?'—':v.toFixed(1);
+    const pct=v=>{ if(v===undefined||isNaN(v)||v===0) return '—'; const p=v>1? v : v*100; return p.toFixed(1)+'%'; };
+    const pctCls=v=>{ if(v===undefined||isNaN(v)) return ''; const p=v>1? v : v*100; return p>=90?'green':(p>=70?'amber':'red'); };
     const sep=t=>`<div class="kpi-sep">${t}</div>`;
     el.style.display=''; panel.style.display='none'; $('#invThreePart').innerHTML='';
     el.innerHTML=sep('① 京仓')+kpiHTML([
       {label:'库存数量',value:num0(x.jcQty)},{label:'库存金额',value:money(x.jcAmt),cls:'blue'},
       {label:'京仓真实在途金额',value:money(x.jcIntr)},{label:'库存周转(天)',value:days(x.jcTurn)},
       {label:'近7天销售金额',value:money(x.jc7)},{label:'近14天销售金额',value:money(x.jc14)},
+      {label:'PV现货率',value:pct(x.pvRate),cls:pctCls(x.pvRate)},
+      {label:'实库现货率',value:pct(x.realRate),cls:pctCls(x.realRate)},
     ])+sep('② 巢湖库存')+kpiHTML([
       {label:'库存数量',value:num0(x.chQty)},{label:'库存金额',value:money(x.chAmt),cls:'blue'},
       {label:'品牌采购在途金额',value:money(x.chIntr)},
