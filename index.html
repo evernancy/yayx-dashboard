@@ -702,7 +702,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-28-fix66q-chaohu-label-rename';
+const APP_VERSION = '2026-08-28-fix66r-po-sku-collision-jcintr';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -898,7 +898,9 @@ function _parseRows(headers, lines, delim){
       let v;
       if(raw instanceof Date){ const y=raw.getFullYear(),mo=String(raw.getMonth()+1).padStart(2,'0'),dd=String(raw.getDate()).padStart(2,'0'); v=`${y}-${mo}-${dd}`; }
       else v=(typeof raw==='string'?raw.trim():String(raw).trim());
-      if(key) o[key]=v;
+      /* fix66r：同一 key 被多列映射时（如「商品编号」与「货号」都→sku），后到的空单元格不应覆盖先到的非空值。
+         仅当新值非空、或该 key 尚未赋值时才写入；空值遇到已存在的非空值则跳过。 */
+      if(key){ if(v!=='' || o[key]===undefined) o[key]=v; }
     }
     // 过滤日期范围行（如 2026-08-01~2026-08-23、8月1日-8月23日）和汇总行（合计/总计/小计）
     // 必须在 normDate 之前用原始日期串判断，否则 2026-08-01~2026-08-23 会被截成 2026-08-01 而漏判；
@@ -1265,7 +1267,10 @@ function computeThreePart(asOf){
     const day=inv.filter(r=>String(r.date||'').slice(0,10)===d);
     let jcQty=0,jcAmt=0,s7=0,s14=0,s30=0;
     day.forEach(r=>{ const sku=String(r.sku||'').trim(); const p=priceOf(d,sku); const avail=num(r.nationAvail); jcQty+=avail; if(p!==undefined){ jcAmt+=avail*p; s7+=num(r.nation7Out)*p; s14+=num(r.nation14Out)*p; s30+=num(r.nation30Out)*p; } });
-    let jcIntr=0; (B().purchase_order||[]).forEach(r=>{ if(poDate(r)!==d) return; const p=priceOf(d,poSku(r)); const q=poQty(r); if(p!==undefined) jcIntr+=q*p; });
+    // fix66r：京仓真实在途金额 = Σ(采购单采购数量 × 浮码单价)。采购单按「订购时间」下单，与库存快照日(如8-28)通常不同，
+    // 原精确日期匹配 poDate(r)===d 恒成立 0（永不匹配）→ 在途金额恒为 0。改按用户公式对全部采购单行求和：采购数量(R列) × 浮码价格，
+    // priceOf(d,sku) 优先取当日期单价、否则以 sku 兜底取浮码数据中的浮码价格
+    let jcIntr=0; (B().purchase_order||[]).forEach(r=>{ const sku=poSku(r); if(!sku) return; const p=priceOf(d,sku); const q=poQty(r); if(p!==undefined && q) jcIntr+=q*p; });
     const ch=chByDate[d]||{qty:0,amt:0,intr:0};
     const fcAmt=jcAmt+jcIntr+ch.amt+ch.intr;
     const jcTurn=s30>0? jcAmt/s30*30 : null;
