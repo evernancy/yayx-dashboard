@@ -702,7 +702,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-28-fix66w-ver-tag-clearcache';
+const APP_VERSION = '2026-08-28-fix66x-chaohu-intr-date-serial-bug';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -3305,8 +3305,10 @@ async function sheetToTsv(ws){
       if(!cell||cell.t==='z'||cell.v===undefined){ row.push(''); continue; }
       let val;
       /* 数字单元格：Excel 内部以「序列号」存日期（如 46265），规范转换；优先用 v 避免美式格式文本污染 */
-      /* 修复：金额等数值可能落在 [25000,70000] 区间（如 ¥46144），不能仅凭数值范围判断为日期；需结合格式化文本 w 辅助判断 */
-      if(cell.t==='n' && Math.floor(cell.v)>25000 && Math.floor(cell.v)<70000){
+      /* fix66x：日期序列号【必为整数】（无小数位）。若值含小数（如 39205.26638）则是金额等数值，
+         绝非日期。此前仅凭 [25000,70000] 范围判断，导致巢湖库存 V 列品牌采购在途金额被误转为 "2007-05-04" 日期字符串，
+         parseFloat 截取后变成 2007 → 显示 ¥2,007（正确值应为 ¥39,205.27）。现增加整数守卫。 */
+      if(cell.t==='n' && cell.v === Math.floor(cell.v) && Math.floor(cell.v)>25000 && Math.floor(cell.v)<70000){
         const fw=cell.w!==undefined?String(cell.w):'';
         /* 若 w 是纯数字且等于 v 的整数部分，说明该单元格实际是数值（如成交金额），不应转为日期 */
         if(fw && /^\d+$/.test(fw) && Number(fw)===Math.floor(cell.v)) val=fw;
@@ -3314,7 +3316,7 @@ async function sheetToTsv(ws){
       }
       /* 文本/日期单元格：优先用格式化文本 w，再用 v；w 仍非标准（如 8/31/26）时若 v 是序列号则转换 */
       else if(cell.w!==undefined && String(cell.w).trim()) val=String(cell.w).trim();
-      else if(typeof cell.v==='number' && Math.floor(cell.v)>25000 && Math.floor(cell.v)<70000){
+      else if(typeof cell.v==='number' && cell.v === Math.floor(cell.v) && Math.floor(cell.v)>25000 && Math.floor(cell.v)<70000){
         const fw2=cell.w!==undefined?String(cell.w):'';
         if(fw2 && /^\d+$/.test(fw2) && Number(fw2)===Math.floor(cell.v)) val=fw2;
         else val=normDate(String(Math.floor(cell.v)));
