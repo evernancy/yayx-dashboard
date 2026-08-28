@@ -702,7 +702,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-28-fix66u-chaohu-no-aggregate';
+const APP_VERSION = '2026-08-28-fix66v-chaohu-display-union';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -1260,7 +1260,16 @@ function computeThreePart(asOf){
   (B().aging_warn||[]).forEach(r=>{ const d=String(r.date||'').slice(0,10); if(!d) return; const g=k=>num(r[k]); const o={age60:g('age60')||num(r['60-90天长库龄预警金额']), age90:g('age90')||num(r['90天以上长库龄金额'])}; if(!latestAwKey || d>latestAwKey){ latestAwKey=d; latestAw=o; } });
   // fix66s：现货率按日索引（来自 2.7 现货率数据录入区），供京仓卡片展示 PV/实库现货率
   const srByDate={}; (B().spot_rate||[]).forEach(r=>{ const d=String(r.date||'').slice(0,10); if(d) srByDate[d]=r; });
-  const ds=[...new Set(inv.map(r=>String(r.date||'').slice(0,10)))].filter(Boolean).sort();
+  /* fix66v：日期轴 ds 必须是「所有每日数据源的并集」，否则当某一类数据（如京仓库存明细 inv_full）缺失时，
+     其余已录入的数据（巢湖库存/现货率/采购单等）因没有对应日期挂载点而整体不显示（表现为「前端不显示」）。
+     原先 ds 仅来自 inv_full，导致只上传巢湖库存却看不到巢湖数值。现并入 chaohu/purchase_order/spot_rate/aging_warn 的日期。 */
+  const ds=[...new Set([
+    ...inv.map(r=>String(r.date||'').slice(0,10)),
+    ...(B().chaohu||[]).map(r=>String(r.date||'').slice(0,10)),
+    ...(B().purchase_order||[]).map(r=>String(r.date||'').slice(0,10)),
+    ...(B().spot_rate||[]).map(r=>String(r.date||'').slice(0,10)),
+    ...(B().aging_warn||[]).map(r=>String(r.date||'').slice(0,10)),
+  ])].filter(Boolean).sort();
   const target=asOf||ds[ds.length-1];
   if(!ds.length){
     // 暂无库存明细数据：返回占位结构，三卡显示 -/0，便于先看布局
