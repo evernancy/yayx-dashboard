@@ -702,7 +702,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-28-fix66s-mcvitie-jc-spotrate';
+const APP_VERSION = '2026-08-28-fix66t-chaohu-nan-guard';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -1248,9 +1248,10 @@ function computeThreePart(asOf){
   const poSku=r=>String(r.sku||r['商品编号']||r['ext_商品编号']||'').trim();
   const poQty=r=>num(r.ppQty!==undefined?r.ppQty:(r['采购数量']!==undefined?r['采购数量']:r['ext_采购数量']));
   const poDate=r=>String(r.date||r['订购时间']||r['ext_订购时间']||'').slice(0,10);
-  // 巢湖按日聚合
+  // 巢湖按日聚合（fix66t：num() 对空串返回 NaN，NaN+=n 会毒化整个求和→用 ||0 兜底；
+  //   Excel 末行常为「合计」行，仅品牌采购在途有值、其余列空→此前整日聚合全变 NaN 导致巢湖库存显示 —）
   const chByDate={};
-  (B().chaohu||[]).forEach(r=>{ const d=String(r.date||'').slice(0,10); if(!d) return; chByDate[d]=chByDate[d]||{qty:0,amt:0,intr:0}; chByDate[d].qty+=num(chGet(r,'可发库存')); chByDate[d].amt+=num(chGet(r,'可发金额')); chByDate[d].intr+=num(chGet(r,'品牌采购在途')); });
+  (B().chaohu||[]).forEach(r=>{ const d=String(r.date||'').slice(0,10); if(!d) return; chByDate[d]=chByDate[d]||{qty:0,amt:0,intr:0}; chByDate[d].qty+=(num(chGet(r,'可发库存'))||0); chByDate[d].amt+=(num(chGet(r,'可发金额'))||0); chByDate[d].intr+=(num(chGet(r,'品牌采购在途'))||0); });
   // 长库龄预警按日
   const awByDate={};
   (B().aging_warn||[]).forEach(r=>{ const d=String(r.date||'').slice(0,10); if(!d) return; const g=k=>num(r[k]); awByDate[d]={ age60:g('age60')||num(r['60-90天长库龄预警金额']), age90:g('age90')||num(r['90天以上长库龄金额']) }; });
