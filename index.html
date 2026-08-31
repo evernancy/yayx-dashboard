@@ -702,7 +702,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-31-fix66z-gantt-monday-start';
+const APP_VERSION = '2026-08-31-fix67-gantt-week-cross-month';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -2036,6 +2036,7 @@ function getGanttMonths(module){
   const set=new Set();
   (STATE.gantt||[]).forEach(r=>{ if(r.module===module && r.date) set.add(r.date.slice(0,7)); });
   set.add(curMonth());
+  if(ganttMonthSel[module]) set.add(ganttMonthSel[module]); // fix67: 跨月后已选月也作为选项
   return Array.from(set).sort().reverse();
 }
 // 甘特图：已应用月份 / 可见周(周一) 记忆；点「应用日期」才切换月份
@@ -2198,16 +2199,41 @@ function renderGantt(module, elId, ym){
   const svg=svgEl(W,H,g);
   el.innerHTML=`<div class="ganttScroll" style="overflow-x:auto;padding-bottom:6px">${svg}</div>`; bindTips(el);
 }
-// 周导航按钮：上一周 / 本周 / 下一周
+// 周导航按钮：上一周 / 本周 / 下一周（到达本月首/末完整周时自动跨月）
 $$('.ganttWeekBtn').forEach(b=>b.addEventListener('click',()=>{
   const module=b.dataset.module, dir=b.dataset.week;
-  const ym=ganttMonthSel[module]||curMonth();
-  const ms=ym+'-01', me=lastDayOfMonth(ym);
-  const rs=mondayOf(ms), maxw=ymdAdd(me,-6);
+  let ym=ganttMonthSel[module]||curMonth();
+  let ms=ym+'-01', me=lastDayOfMonth(ym);
+  let rs=mondayOf(ms), maxw=ymdAdd(me,-6);
   let cur=ganttWeekStart[module]||mondayOf(todayStr());
-  if(dir==='prev') cur=ymdAdd(cur,-7); else if(dir==='next') cur=ymdAdd(cur,7); else cur=mondayOf(todayStr());
+  if(dir==='prev'){
+    cur=ymdAdd(cur,-7);
+    if(cur<rs){ // 已到本月首完整周仍往前 → 跨上月，定位上月末完整周
+      ym=ymdAdd(ym+'-01',-1).slice(0,7); // 上月（如 2026-08 → 2026-07；2026-01 → 2025-12）
+      ganttMonthSel[module]=ym;
+      ms=ym+'-01'; me=lastDayOfMonth(ym); rs=mondayOf(ms); maxw=ymdAdd(me,-6);
+      cur=mondayOf(maxw);
+    }
+  } else if(dir==='next'){
+    cur=ymdAdd(cur,7);
+    if(cur>maxw){ // 已到本月末完整周仍往后 → 跨下月，定位下月首完整周
+      ym=ymdAdd(ym+'-01',32).slice(0,7);
+      ganttMonthSel[module]=ym;
+      ms=ym+'-01'; me=lastDayOfMonth(ym); rs=mondayOf(ms); maxw=ymdAdd(me,-6);
+      cur=mondayOf(ms);
+    }
+  } else {
+    cur=mondayOf(todayStr());
+  }
   if(cur<rs) cur=mondayOf(rs); if(cur>maxw) cur=mondayOf(maxw); // fix66z: 钳位必须落周一
   ganttWeekStart[module]=cur;
+  // 同步月份下拉框（跨月后确保已选月份可见且选中）
+  const sel=document.querySelector('.ganttMonth[data-module="'+module+'"]');
+  if(sel){
+    let opt=Array.from(sel.options).find(o=>o.value===ym);
+    if(!opt){ opt=document.createElement('option'); opt.value=ym; opt.textContent=ym+(ym===curMonth()?'（当前）':''); sel.appendChild(opt); }
+    sel.value=ym;
+  }
   renderGantt(module, GANTT_EL[module]||('#gantt'+module), ym);
 }));
 
