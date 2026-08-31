@@ -702,7 +702,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-31-fix66y-gantt-legend-color';
+const APP_VERSION = '2026-08-31-fix66z-gantt-monday-start';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -2073,7 +2073,7 @@ function renderGantt(module, elId, ym){
   const td=todayStr();
   const isMonthView=(ganttViewMode[module]==='month');
   if(!ganttWeekStart[module]){ ganttWeekStart[module] = (td>=ms && td<=me) ? mondayOf(td) : rs; }
-  let mc=ganttWeekStart[module]; if(mc<rs) mc=rs; if(mc>maxw) mc=maxw; ganttWeekStart[module]=mc;
+  let mc=ganttWeekStart[module]; if(mc<rs) mc=mondayOf(rs); if(mc>maxw) mc=mondayOf(maxw); ganttWeekStart[module]=mc; // fix66z: 钳位必须落周一，maxw/rs 可能非周一
   // 整月视图：仅显示当月 1 号~月末（不含上月尾巴/下月头）；周视图：7天
   const days=[];
   if(isMonthView){
@@ -2206,7 +2206,7 @@ $$('.ganttWeekBtn').forEach(b=>b.addEventListener('click',()=>{
   const rs=mondayOf(ms), maxw=ymdAdd(me,-6);
   let cur=ganttWeekStart[module]||mondayOf(todayStr());
   if(dir==='prev') cur=ymdAdd(cur,-7); else if(dir==='next') cur=ymdAdd(cur,7); else cur=mondayOf(todayStr());
-  if(cur<rs) cur=rs; if(cur>maxw) cur=maxw;
+  if(cur<rs) cur=mondayOf(rs); if(cur>maxw) cur=mondayOf(maxw); // fix66z: 钳位必须落周一
   ganttWeekStart[module]=cur;
   renderGantt(module, GANTT_EL[module]||('#gantt'+module), ym);
 }));
