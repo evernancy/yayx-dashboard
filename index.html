@@ -726,7 +726,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-31-fix69-local-mode';
+const APP_VERSION = '2026-08-31-fix69b-local-autodetect';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -3851,9 +3851,13 @@ const SNAPSHOT_FALLBACK_URLS=[
 // 切 Gitee 前需：① 在 Gitee 建好下面的私有数据仓 + 公开快照仓；② 把右下角徽章粘贴的令牌换成 Gitee 私人令牌（repo 权限）。
 const BACKEND_TYPE='github'; // fix66l: 切回 GitHub（用户已开 VPN；Gitee 24MB 文件截断导致云端加载失败）
 
-// fix69：本地服务器模式（自托管）。用 ?local=1 或 ?local=http://host:port 开启：
-// 数据改存「本机磁盘」（由 serve_local.js 提供 /api/state），不再依赖 GitHub，适合单机/局域网内自托管。
-const LOCAL_MODE = /[?&]local(=|$)/.test(location.search);
+// fix69：本地服务器模式（自托管）。开启方式（任选其一）：
+//   ① 用 ?local=1 或 ?local=http://host:port 显式开启；
+//   ② 更简单：直接用本机服务地址打开（http://127.0.0.1:8787/），页面会自动识别 localhost 进入本地模式。
+// 数据改存「本机磁盘」（由 serve_local.js 提供 /api/state），不再依赖 GitHub，适合单机/局域网内自托管、先把逻辑调通。
+// 反之 ?cloud=1 可强制走云端（即使在本机打开也连 GitHub）。
+const LOCAL_MODE = /[?&]local(=|$)/.test(location.search)
+  || (/^https?:\/\/(localhost|127\.0\.0\.1|::1)([:\/]|$)/.test(location.href) && !/[?&]cloud=1/.test(location.search));
 const LOCAL_BASE = (function(){
   const m = location.search.match(/[?&]local=(https?:\/\/[^&\s]+)/);
   return m ? m[1].replace(/\/$/,'') : 'http://127.0.0.1:8787';
@@ -4385,7 +4389,7 @@ $('#syncCloudBtn').addEventListener('click',async()=>{
 /* ---------- 初始化 ---------- */
 function init(){
   // 若以 file:// 双击打开：浏览器禁用 IndexedDB/跨域 fetch，数据无法自动持久化。提示改用本地服务地址。
-  try{ if(location.protocol==='file:'){ toast('⚠️ 当前以 file:// 方式打开，浏览器限制导致数据无法自动保存。请改用 http://127.0.0.1:8765/dashboard.html 打开（数据将自动存储，重开不丢）', true); } }catch(e){}
+  try{ if(location.protocol==='file:'){ toast('⚠️ 当前以 file:// 方式打开，浏览器限制导致数据无法自动保存。请改用 http://127.0.0.1:8787/ 打开（先运行 start_local.command 启动本机服务，数据将自动存本机、重开不丢）', true); } }catch(e){}
   // 和路雪：达成明细 POS 实际前台可编辑（input 实时刷新、blur 千分位重格式化）
   const tt=$('#targetTable'); if(tt){ tt.addEventListener('input', onPosInput); tt.addEventListener('blur', onPosBlur, true); }
   boot();
