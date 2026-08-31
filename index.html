@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<html lang="zh-CN" data-page-node-id="kN8UgzZQcPCWpymkiiLD9y">
+<head data-page-node-id="sbZfr46xjTfdHS3MqmMz6w">
+<meta charset="UTF-8" data-page-node-id="CGGHF05WLbNbHr16QYh4Ep">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="9vn78cLdXfFdjBTZcIMvao">
 <title>金致数据看板</title>
 <style>
   :root{
@@ -124,89 +124,89 @@
 <!-- GitHub 存储后端使用浏览器原生 fetch，无需额外 SDK 脚本 -->
 <!--SHEETJS_INLINE-->
 </head>
-<body>
-<header>
-  <div>
-    <h1>金致数据看板</h1>
-    <div class="sub">销售(含目标达成) · 库存周转 · 京东京准通 &nbsp;|&nbsp; 提供表格即实时更新</div>
+<body data-page-node-id="TnJopYRx03FYyUEAnM7EON">
+<header data-page-node-id="Ga9C2hOEsJ1kc9ZcrA2GBM">
+  <div data-page-node-id="hgBqtPPakQD5m3PWstrT5i">
+    <h1 data-page-node-id="fg5DOI2AMlCsBXlnIPDeM6">金致数据看板</h1>
+    <div class="sub" data-page-node-id="bDUL6ngn6Dq4ElxNUHYFIi">销售(含目标达成) · 库存周转 · 京东京准通 &nbsp;|&nbsp; 提供表格即实时更新</div>
   </div>
-  <div class="actions">
-    <span class="muted" id="lastUpdate" style="color:rgba(255,255,255,.85);font-size:12px"></span>
-    <button class="btn" id="syncCloudBtn">强制同步到云端</button>
-    <button class="btn" id="resetBtn">恢复示例数据</button>
-    <button class="btn primary" id="exportBtn">导出数据包</button>
-    <label class="btn" id="importBtnLabel">导入数据包<input type="file" id="importBtn" accept=".json,application/json" hidden></label>
+  <div class="actions" data-page-node-id="2ZEKgMWtNB1y6XDxB0Jo3A">
+    <span class="muted" id="lastUpdate" style="color:rgba(255,255,255,.85);font-size:12px" data-page-node-id="49tzhbUZLpPVnxMpDBplkg"></span>
+    <button class="btn" id="syncCloudBtn" data-page-node-id="L2VIKGYPwwAKgW1f4FRBom">强制同步到云端</button>
+    <button class="btn" id="resetBtn" data-page-node-id="uqFFJI4Bjif04yYCR4RtgD">恢复示例数据</button>
+    <button class="btn primary" id="exportBtn" data-page-node-id="E5Pqfttz3FarI0igVT5u0z">导出数据包</button>
+    <label class="btn" id="importBtnLabel" data-page-node-id="p19xwDnaVCTmwN60e3Jqph">导入数据包<input type="file" id="importBtn" accept=".json,application/json" hidden data-page-node-id="AkVrhswwC19MQWOc2VZgIU"></label>
   </div>
 </header>
 
-<div class="wrap">
-  <div class="boardbar" id="boardBar" style="display:none"></div>
-  <div class="tabs">
-    <div class="tab active" data-view="overview">总览</div>
-    <div class="tab" data-view="lijx" data-brand="李锦记">李锦记</div>
-    <div class="tab" data-view="lijx" data-brand="麦维他">麦维他</div>
-    <div class="tab" data-view="lijx" data-brand="丝蕴">丝蕴</div>
-    <div class="tab" data-view="lijx" data-brand="和路雪">和路雪</div>
-    <div class="tab" data-view="lijx" data-brand="家乐">家乐</div>
-    <div class="tab" data-view="lijx" data-brand="联合利华">联合利华</div>
-    <div class="tab" data-view="gantt_mkt">营销日历</div>
-    <div class="tab" data-view="gantt_design">设计日历</div>
-    <div class="tab" data-view="gantt_data">数据日历</div>
-    <div class="tab" data-view="input">数据输入区</div>
+<div class="wrap" data-page-node-id="2744HA3elrNoF00DkxNx3x">
+  <div class="boardbar" id="boardBar" style="display:none" data-page-node-id="YG9uamCZpgwjcUYGvRolpd"></div>
+  <div class="tabs" data-page-node-id="CxaYK9qPpBoDp3Vzec7dEG">
+    <div class="tab active" data-view="overview" data-page-node-id="RIHAFzS20knDpRmA1zDMvI">总览</div>
+    <div class="tab" data-view="lijx" data-brand="李锦记" data-page-node-id="NifK3HDNUlVWoHZSsHBrZY">李锦记</div>
+    <div class="tab" data-view="lijx" data-brand="麦维他" data-page-node-id="39gtsikVBcC2CMv22WMBHZ">麦维他</div>
+    <div class="tab" data-view="lijx" data-brand="丝蕴" data-page-node-id="8CONI4JodUS2Wrm6xb1tke">丝蕴</div>
+    <div class="tab" data-view="lijx" data-brand="和路雪" data-page-node-id="2DsWRB8qB7PBe4KBYZYFFM">和路雪</div>
+    <div class="tab" data-view="lijx" data-brand="家乐" data-page-node-id="xYWfUib9swV99aXFTo3KxA">家乐</div>
+    <div class="tab" data-view="lijx" data-brand="联合利华" data-page-node-id="ACCvguPVs48h98yayWuCRX">联合利华</div>
+    <div class="tab" data-view="gantt_mkt" data-page-node-id="5DxiuwqCInECclkHuBFEkP">营销日历</div>
+    <div class="tab" data-view="gantt_design" data-page-node-id="oaDfIVdYKrgoZbpZ3Q2Y36">设计日历</div>
+    <div class="tab" data-view="gantt_data" data-page-node-id="00Lc9HK8FkBEqSrc8kvE3w">数据日历</div>
+    <div class="tab" data-view="input" data-page-node-id="LR493AgWsh7dyRE7z2MrYu">数据输入区</div>
   </div>
 
   <!-- OVERVIEW -->
-  <section data-section="overview">
-    <div class="panel">
-      <h2>核心指标总览</h2>
-      <p class="hint">汇总四类数据的关键结果，任何一张表更新后这里同步刷新。</p>
-      <div class="kpis" id="ovKpis"></div>
+  <section data-section="overview" data-page-node-id="eqgSJt6ObiGHVNhVYY66YP">
+    <div class="panel" data-page-node-id="EXHkOVfFRwDJr9vsDAMDdt">
+      <h2 data-page-node-id="ekL1qVqqyC6CPtwbTcCLgL">核心指标总览</h2>
+      <p class="hint" data-page-node-id="b0NEIj6cmOTUINuqaxpFvx">汇总四类数据的关键结果，任何一张表更新后这里同步刷新。</p>
+      <div class="kpis" id="ovKpis" data-page-node-id="DdwCIWBeIqL2JKOx3uUadp"></div>
     </div>
-    <div class="grid2">
-      <div class="panel"><div class="chart-title">销售趋势（按日销售额）</div><div id="ovSalesTrend"></div></div>
-      <div class="panel"><div class="chart-title">京准通：每日花费 vs GMV</div><div id="ovJztTrend"></div></div>
+    <div class="grid2" data-page-node-id="JIm9nIC4gEoWmyVvQYqw6n">
+      <div class="panel" data-page-node-id="cQnndbAHDUhKJEnu1Abuxf"><div class="chart-title" data-page-node-id="sxbrELYPg10PrbI4bSwxCP">销售趋势（按日销售额）</div><div id="ovSalesTrend" data-page-node-id="M84QYw4BDnj1vs4yKQamq4"></div></div>
+      <div class="panel" data-page-node-id="yfUC4662oCPmUAooB8zvZH"><div class="chart-title" data-page-node-id="CMv7hay6zudeezP2vBQola">京准通：每日花费 vs GMV</div><div id="ovJztTrend" data-page-node-id="5x803AjRTgv1f5Cb398FSE"></div></div>
     </div>
-    <div class="grid2">
-      <div class="panel"><div class="chart-title">渠道销售占比</div><div id="ovChannel"></div></div>
-      <div class="panel"><div class="chart-title">库存周转天数（Top SKU）</div><div id="ovInv"></div></div>
+    <div class="grid2" data-page-node-id="LvXBiWQuxgFlcf5eOhszXm">
+      <div class="panel" data-page-node-id="hThsspCeEEXSRAiPlPhJYj"><div class="chart-title" data-page-node-id="VklNpLgSr3hAgswoWp9QN2">渠道销售占比</div><div id="ovChannel" data-page-node-id="jFkmqXmgAYzgW8HMFLrTZC"></div></div>
+      <div class="panel" data-page-node-id="StbNZUyFUwnqMWoNaLUTNc"><div class="chart-title" data-page-node-id="H6L2NEniYMnYfjqfJ8SG0q">库存周转天数（Top SKU）</div><div id="ovInv" data-page-node-id="zlwvkNnL7o1KPymWbjtO5K"></div></div>
     </div>
   </section>
 
   <!-- LIJX 李锦记 -->
-  <section data-section="lijx" style="display:none">
-      <div class="subtabs">
-        <div class="subtab active" data-view="sales">销售数据</div>
-        <div class="subtab" data-view="jzt">京准通推广</div>
-        <div class="subtab" data-view="inventory">库存周转</div>
-        <div class="subtab" data-view="zhongtai">中台</div>
+  <section data-section="lijx" style="display:none" data-page-node-id="4XLIlXrRD4id6eTmMFozjj">
+      <div class="subtabs" data-page-node-id="1u54Xjgt15Q0i2A3Y8mUr9">
+        <div class="subtab active" data-view="sales" data-page-node-id="H03kwUpic97xJmvGkJCkCy">销售数据</div>
+        <div class="subtab" data-view="jzt" data-page-node-id="xG1Y1VqgQK38ha64dx2BdJ">京准通推广</div>
+        <div class="subtab" data-view="inventory" data-page-node-id="nJfbxFC5YvaCGx9E9tBfnB">库存周转</div>
+        <div class="subtab" data-view="zhongtai" data-page-node-id="GpFQIicoTxHBhMFXCH0h3X">中台</div>
       </div>
 
   <!-- SALES -->
-  <section data-sub="sales">
-    <div class="panel" id="zyTargetPanel" style="border-top:3px solid var(--blue)">
-      <h2 id="zyTargetTitle">自营销售目标达成</h2>
-      <p class="hint">麦维他自营 GMV（销售成交金额）目标达成追踪（按月累计 MTD）。日期范围可调。</p>
-      <div class="row">
-        <span>起始</span><input type="date" id="tvStart">
-        <span>结束</span><input type="date" id="tvEnd">
-        <button class="btn2 primary" id="tvApplyBtn" style="background:var(--blue);color:#fff;border-color:var(--blue)">应用日期</button>
-        <button class="btn2 ghost" id="tvResetBtn">恢复全部</button>
-        <span class="muted">只选一端=查看单日；两端都空=默认全部日期</span>
+  <section data-sub="sales" data-page-node-id="IsPCcXIGcGTuEM0uzRjQl6">
+    <div class="panel" id="zyTargetPanel" style="border-top:3px solid var(--blue)" data-page-node-id="vWbXdfEHdphfDogasbImST">
+      <h2 id="zyTargetTitle" data-page-node-id="TtPnr2OFP5rA8uyg0cQ7Rj">自营销售目标达成</h2>
+      <p class="hint" data-page-node-id="2yWCXMwHen3OiqWQm3OJnN">麦维他自营 GMV（销售成交金额）目标达成追踪（按月累计 MTD）。日期范围可调。</p>
+      <div class="row" data-page-node-id="STSeKzXCNdFlRDeal1T9JU">
+        <span data-page-node-id="EjysFAm818aqGacnSiji6M">起始</span><input type="date" id="tvStart" data-page-node-id="n9LtTcMtKhac4fwm2mlDKG">
+        <span data-page-node-id="5wlmn7LFI0h2Ft5i6MmIFB">结束</span><input type="date" id="tvEnd" data-page-node-id="QQBheCYMNWsYSlkhTFMglw">
+        <button class="btn2 primary" id="tvApplyBtn" style="background:var(--blue);color:#fff;border-color:var(--blue)" data-page-node-id="Yz5JeQaeeskbTV7z57mjuJ">应用日期</button>
+        <button class="btn2 ghost" id="tvResetBtn" data-page-node-id="lXXG1WsFqCJWjIwDO3qzPZ">恢复全部</button>
+        <span class="muted" data-page-node-id="hRHZ96TV8SeniE9p9yiLvN">只选一端=查看单日；两端都空=默认全部日期</span>
       </div>
-      <div class="timeProgress" id="tvTimeProgress"></div>
-      <div class="kpis" id="zyTargetKpis"></div>
+      <div class="timeProgress" id="tvTimeProgress" data-page-node-id="A0uYhUeGQVX13yZ863L14g"></div>
+      <div class="kpis" id="zyTargetKpis" data-page-node-id="QUFVBFpS2uHPapypX3vf5L"></div>
     </div>
-    <div class="panel" id="popTargetPanel">
-      <h2 id="popTargetTitle">POP销售目标达成</h2>
-      <p class="hint">麦维他POP GMV（销售成交金额）目标达成追踪（按月累计 MTD）。</p>
-      <div class="kpis" id="popTargetKpis"></div>
+    <div class="panel" id="popTargetPanel" data-page-node-id="VLQ1e0DgUpxX0klWg3IoUU">
+      <h2 id="popTargetTitle" data-page-node-id="6dEmpmPMjBAoXmGpdOqzTU">POP销售目标达成</h2>
+      <p class="hint" data-page-node-id="EN29OD9WXIIjJSgvItlJud">麦维他POP GMV（销售成交金额）目标达成追踪（按月累计 MTD）。</p>
+      <div class="kpis" id="popTargetKpis" data-page-node-id="T3nPyWlc4pixIq7xTB92Nk"></div>
     </div>
-    <div class="panel"><div class="chart-title">事项（上周 / 本周）</div><div class="todo-grid" id="todo_sales"></div></div>
-    <div class="grid2">
-      <div class="panel"><div class="chart-title" id="targetGmvTitle">自营GMV实际 vs 品牌目标</div><div id="targetGmv"></div></div>
-      <div class="panel"><div class="chart-title" id="targetPosTitle">POP GMV实际 vs 品牌目标</div><div id="targetPos"></div></div>
+    <div class="panel" data-page-node-id="myjbSok8e50SicRsOtDA8k"><div class="chart-title" data-page-node-id="BXr3aJF4gN2UKNbZViQGb5">事项（上周 / 本周）</div><div class="todo-grid" id="todo_sales" data-page-node-id="hlaa0TCQWevzQNcTJsBsqS"></div></div>
+    <div class="grid2" data-page-node-id="uG7CYqt1exj6YYXV23GYMS">
+      <div class="panel" data-page-node-id="pPjEJTdej36RE7u3h4DOhB"><div class="chart-title" id="targetGmvTitle" data-page-node-id="iEMfGFHq3EpG8eONGpMurR">自营GMV实际 vs 品牌目标</div><div id="targetGmv" data-page-node-id="0db517LEvBPs5fQ7GCpitH"></div></div>
+      <div class="panel" data-page-node-id="TjXwiBCo5q3WjcZHrfeFaS"><div class="chart-title" id="targetPosTitle" data-page-node-id="pBqr4NGqKsrKEQ3fScsmR7">POP GMV实际 vs 品牌目标</div><div id="targetPos" data-page-node-id="zuxhnRwfnITEkulqYW0UmE"></div></div>
     </div>
-    <div class="panel"><div class="chart-title" id="targetTableTitle">达成明细（按日：时间 / 自营目标(by day) / 自营实际GMV / 自营GMV达成率 / POP目标(by day) / POP实际GMV / POPGMV达成率）</div><div id="targetTable"></div></div>
+    <div class="panel" data-page-node-id="ZHsXL1iB3nu0C8uFRG0PZ8"><div class="chart-title" id="targetTableTitle" data-page-node-id="dnANBsw1G3Y46CelyAUFD0">达成明细（按日：时间 / 自营目标(by day) / 自营实际GMV / 自营GMV达成率 / POP目标(by day) / POP实际GMV / POPGMV达成率）</div><div id="targetTable" data-page-node-id="YrHRCyPVDPW9xmLz3ZzkJB"></div></div>
   </section>
 
   <!-- INVENTORY -->
@@ -222,491 +222,491 @@
   .tp-ivalue.red{color:#dc2626}
   .tp-ivalue.green{color:#16a34a}
   </style>
-  <section data-sub="inventory">
-    <div class="panel">
-      <h2>库存周转数据</h2>
-      <p class="hint"><b>模板 1（库存明细，逐 SKU）</b>：每行 = 一个 SKU 在某天的库存快照，含 时间 / 商品名称 / SKU / 品牌 / 一级~三级类目 / 店铺名称 / 供应商 / 全国采购价 / 库存件数 / 现货库存 / 可用库存 / 近7~90日出库商品件数 / 月至今出库商品件数 / 预计可售天数 / 无货pv / PV现货率 等全量列（列名自动识别，缺列留空）。同一「时间 + SKU」重复录入即覆盖更新。<br><b>库存周转模块仅展示以下 13 个指标</b>（其余指标不再展示）：库存金额、库存周转（天）、近7天销售（金额）、近14天销售（金额）、日均销售（金额）、60-90天长库龄预警金额（及基调/复调）、90天以上长库龄金额（及基调/复调）、PV现货率、实库现货率。<br><b>库存金额已接计算逻辑</b>：库存金额 = Σ(库存明细:现货库存 × 全国采购价) + Σ(采购单:采购金额，按「订购时间」同日归并)；其余 12 项暂按读列展示（缺列留空）。</p>
-      <div class="row" style="margin:6px 0 10px">
-        <span>查看日期</span>
-        <select id="invDate" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px"></select>
-        <button class="btn2 primary" id="invDateApplyBtn" style="background:var(--blue);color:#fff;border-color:var(--blue)">应用日期</button>
-        <span class="muted">选某天查看该日全量库存快照；默认显示最新一天</span>
+  <section data-sub="inventory" data-page-node-id="Eprtgg2bGgZwEIEEroVUOa">
+    <div class="panel" data-page-node-id="q7Om3bra46Fpdf7ZjZa12A">
+      <h2 data-page-node-id="5CgJdLBn3uipqnEqTeeFu5">库存周转数据</h2>
+      <p class="hint" data-page-node-id="fD4NRiyVf9fm6J9pvdjnH6"><b data-page-node-id="Qjy2W9RKkR4Cu3HglmNxy0">模板 1（库存明细，逐 SKU）</b>：每行 = 一个 SKU 在某天的库存快照，含 时间 / 商品名称 / SKU / 品牌 / 一级~三级类目 / 店铺名称 / 供应商 / 全国采购价 / 库存件数 / 现货库存 / 可用库存 / 近7~90日出库商品件数 / 月至今出库商品件数 / 预计可售天数 / 无货pv / PV现货率 等全量列（列名自动识别，缺列留空）。同一「时间 + SKU」重复录入即覆盖更新。<br data-page-node-id="iWPcKQ5zC3YJ632H3nXeBa"><b data-page-node-id="PHdDvhB5slw3NYxMAqcCyL">库存周转模块仅展示以下 13 个指标</b>（其余指标不再展示）：库存金额、库存周转（天）、近7天销售（金额）、近14天销售（金额）、日均销售（金额）、60-90天长库龄预警金额（及基调/复调）、90天以上长库龄金额（及基调/复调）、PV现货率、实库现货率。<br data-page-node-id="UCqT4VcikKmPRf8bFU4E14"><b data-page-node-id="qhreoDL0pBZLZBE9E4Cbj9">库存金额已接计算逻辑</b>：库存金额 = Σ(库存明细:现货库存 × 全国采购价) + Σ(采购单:采购金额，按「订购时间」同日归并)；其余 12 项暂按读列展示（缺列留空）。</p>
+      <div class="row" style="margin:6px 0 10px" data-page-node-id="9cnQ9GPV4VDEU8nTAAaJog">
+        <span data-page-node-id="25HTPbIjJybTvPDiprTOek">查看日期</span>
+        <select id="invDate" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px" data-page-node-id="TQGeyxX6tAvRZocHjhJJLi"></select>
+        <button class="btn2 primary" id="invDateApplyBtn" style="background:var(--blue);color:#fff;border-color:var(--blue)" data-page-node-id="Ibm75IYHZx1BEdjCgfbPEi">应用日期</button>
+        <span class="muted" data-page-node-id="C9zELjVbAG1BzME3QqYhJl">选某天查看该日全量库存快照；默认显示最新一天</span>
       </div>
-      <div class="kpis" id="invKpis"></div>
+      <div class="kpis" id="invKpis" data-page-node-id="7HLI1nsRIrVMHabIokisbX"></div>
     </div>
-    <div class="panel" id="invThreePartPanel" style="display:none;border-top:3px solid var(--blue,#2563eb)">
-      <h2>麦维他库存周转 · 三部分总览</h2>
-      <p class="hint">按「京仓 / 巢湖库存 / 全链路」三部分拆开展示库存周转核心指标。京仓真实在途金额、全链路金额取自「库存明细（麦维他）」录入列（缺列留空）；巢湖库存取自「2.4 巢湖库存数据」录入。</p>
-      <div class="tp-grid" id="invThreePart"></div>
+    <div class="panel" id="invThreePartPanel" style="display:none;border-top:3px solid var(--blue,#2563eb)" data-page-node-id="Hub417XB5AxLYQ1sSXCqTk">
+      <h2 data-page-node-id="N60QFY07G9E09zKQd5xM5Y">麦维他库存周转 · 三部分总览</h2>
+      <p class="hint" data-page-node-id="BDcx1CI1ONbxODF4ShDjZT">按「京仓 / 巢湖库存 / 全链路」三部分拆开展示库存周转核心指标。京仓真实在途金额、全链路金额取自「库存明细（麦维他）」录入列（缺列留空）；巢湖库存取自「2.4 巢湖库存数据」录入。</p>
+      <div class="tp-grid" id="invThreePart" data-page-node-id="8NtZaPHiHQWH5swGEyiIXm"></div>
     </div>
-    <div class="panel"><div class="chart-title">事项（上周 / 本周）</div><div class="todo-grid" id="todo_inventory"></div></div>
-    <div class="grid2">
-      <div class="panel"><div class="chart-title">库存周转（天）趋势（含全链路周转）</div><div id="invRate"></div></div>
-      <div class="panel"><div class="chart-title">全国库存（件）与日均销售（件）趋势</div><div id="invDays"></div></div>
+    <div class="panel" data-page-node-id="FwdGeyUdDIHA6H9tWW8Gdh"><div class="chart-title" data-page-node-id="beeIACht713fiaud67X5cm">事项（上周 / 本周）</div><div class="todo-grid" id="todo_inventory" data-page-node-id="ePVsJ7EyRgskls54xLwkTh"></div></div>
+    <div class="grid2" data-page-node-id="ZgPmiGWGiS6oebyd8bbYv6">
+      <div class="panel" data-page-node-id="tEmfKzvZVHis93QoX8ZdDU"><div class="chart-title" data-page-node-id="NVZmEZ7lCsi7r8zTVAUr5q">库存周转（天）趋势（含全链路周转）</div><div id="invRate" data-page-node-id="2DWUhJWuCBWrGlXGvsUqaS"></div></div>
+      <div class="panel" data-page-node-id="uQGQNt0p5txCAC3ASujqiF"><div class="chart-title" data-page-node-id="6mP8jaBAmrvw4z7ZbdqKjP">全国库存（件）与日均销售（件）趋势</div><div id="invDays" data-page-node-id="rrWQimMPYOMSX54DHRDl8H"></div></div>
     </div>
-    <div class="panel"><div class="chart-title">库存结构明细</div><div id="invTable"></div></div>
+    <div class="panel" data-page-node-id="5DbKXH4DBFoMzLgZt17vSq"><div class="chart-title" data-page-node-id="4UEEhrJideth0FD7RESylt">库存结构明细</div><div id="invTable" data-page-node-id="yteDG4wKsbCMrxjJteGh3a"></div></div>
   </section>
 
   <!-- ZHONGTAI 中台 -->
-  <section data-sub="zhongtai">
-    <div class="panel"><h2>中台 · 营销</h2><div class="chart-title">事项（上周 / 本周）</div><div class="todo-grid" id="todo_mt_marketing"></div></div>
-    <div class="panel"><h2>中台 · 设计</h2><div class="chart-title">事项（上周 / 本周）</div><div class="todo-grid" id="todo_mt_design"></div></div>
-    <div class="panel"><h2>中台 · 数据</h2><div class="chart-title">事项（上周 / 本周）</div><div class="todo-grid" id="todo_mt_data"></div></div>
+  <section data-sub="zhongtai" data-page-node-id="UPDTCu97aDYfyv6R2Glycj">
+    <div class="panel" data-page-node-id="XBfPSV8vX0WLezu8JBQt12"><h2 data-page-node-id="FPfEmuof5oWdwNam8ncwtu">中台 · 营销</h2><div class="chart-title" data-page-node-id="QJQNOWqqeYq0QSs6EpuCeG">事项（上周 / 本周）</div><div class="todo-grid" id="todo_mt_marketing" data-page-node-id="bQuDjrEiKsGFVlA13liwXc"></div></div>
+    <div class="panel" data-page-node-id="kap6rHlidF823Ap6MZuJEU"><h2 data-page-node-id="Dygyi3LihkgMMoHdd0npGX">中台 · 设计</h2><div class="chart-title" data-page-node-id="HpR0QyjCsyKk3IVKOwHPgn">事项（上周 / 本周）</div><div class="todo-grid" id="todo_mt_design" data-page-node-id="SkdkLAIGVefuztZqRzJ8qJ"></div></div>
+    <div class="panel" data-page-node-id="ZQ58BhD65qlhjtCUB0ilZ0"><h2 data-page-node-id="g7UIBceRqBUtvCLMrTGUQw">中台 · 数据</h2><div class="chart-title" data-page-node-id="sypjSGgEfnCQpKCkznM0gc">事项（上周 / 本周）</div><div class="todo-grid" id="todo_mt_data" data-page-node-id="OSJHVs3jE8JzSkzX5RThh1"></div></div>
   </section>
 
   <!-- JZT -->
-  <section data-sub="jzt">
-    <div class="panel" style="border-top:3px solid var(--blue)">
-      <h2>京准通推广数据</h2>
-      <p class="hint">投放花费目标、费比目标均来自「目标数据」（费比目标：类型填 费比目标、粒度 month、值填小数如 0.15=15%）。MTD 与同比基于下方日期范围（默认本月至今）；同比 = 本年区间 vs 去年同日区间。</p>
-      <div class="row">
-        <span>起始</span><input type="date" id="jztStart">
-        <span>结束</span><input type="date" id="jztEnd">
-        <button class="btn2 primary" id="jztApplyBtn" style="background:var(--blue);color:#fff;border-color:var(--blue)">应用日期</button>
-        <button class="btn2 ghost" id="jztResetBtn">恢复整月</button>
-        <span class="muted">只选一端=查看单日；两端都空=默认整月</span>
+  <section data-sub="jzt" data-page-node-id="QFI07BzoXrv3KBqOtCwiRu">
+    <div class="panel" style="border-top:3px solid var(--blue)" data-page-node-id="J96DtHpkoYa4IpVbtOcyuZ">
+      <h2 data-page-node-id="KJeig3bMRJBaczBEfZILie">京准通推广数据</h2>
+      <p class="hint" data-page-node-id="6oiRsZcHiAYNENXBGtfatX">投放花费目标、费比目标均来自「目标数据」（费比目标：类型填 费比目标、粒度 month、值填小数如 0.15=15%）。MTD 与同比基于下方日期范围（默认本月至今）；同比 = 本年区间 vs 去年同日区间。</p>
+      <div class="row" data-page-node-id="EouchU5SVMhevxI1qdWVlF">
+        <span data-page-node-id="KoHWcbev9PDo9VdXdPWt6c">起始</span><input type="date" id="jztStart" data-page-node-id="aFCx1jDNrZD24eLFWpxOXh">
+        <span data-page-node-id="u7KlaWxsqFF6qruD91D8Yn">结束</span><input type="date" id="jztEnd" data-page-node-id="XVeHrknxBf9DIdklO6msjX">
+        <button class="btn2 primary" id="jztApplyBtn" style="background:var(--blue);color:#fff;border-color:var(--blue)" data-page-node-id="7YODYuJk7AknrFa5NfLlSr">应用日期</button>
+        <button class="btn2 ghost" id="jztResetBtn" data-page-node-id="TzOqoHl4tFflOwh3dksXEi">恢复整月</button>
+        <span class="muted" data-page-node-id="9hQrqHHd0ko1VwYDd4ASnD">只选一端=查看单日；两端都空=默认整月</span>
       </div>
-      <div class="timeProgress" id="jztTimeProgress"></div>
-      <div class="kpis" id="jztTargetKpis"></div>
-      <div id="jztDataHint" class="hint warn" style="display:none"></div>
+      <div class="timeProgress" id="jztTimeProgress" data-page-node-id="Z8dnc9eDWHL1sgJHYL7TJ2"></div>
+      <div class="kpis" id="jztTargetKpis" data-page-node-id="uRKPGnyfoGEKX5S940ECSY"></div>
+      <div id="jztDataHint" class="hint warn" style="display:none" data-page-node-id="JcQUTFKkNaakRvi8hy0aQ7"></div>
     </div>
-    <div class="panel"><div class="chart-title">事项（上周 / 本周）</div><div class="todo-grid" id="todo_jzt"></div></div>
-    <div class="panel"><div class="chart-title">各渠道花费（MTD）</div><div id="jztScene"></div></div>
+    <div class="panel" data-page-node-id="8vIP0hEH1LdLq9YDAaMTHM"><div class="chart-title" data-page-node-id="XmVnIyBfAUiCTutmHyLciN">事项（上周 / 本周）</div><div class="todo-grid" id="todo_jzt" data-page-node-id="wT9xC9uur6EAEnuOixcPTl"></div></div>
+    <div class="panel" data-page-node-id="69yzky8pxPbGxVbyHgmZL1"><div class="chart-title" data-page-node-id="g2D5SlFi2ypaHR8jKu9iVN">各渠道花费（MTD）</div><div id="jztScene" data-page-node-id="QTFYkw8v3Q4DBzhB86Ln1y"></div></div>
   </section>
   </section>
 
   <!-- GANTT 营销 -->
-  <section data-section="gantt_mkt" style="display:none">
-    <div class="panel">
-      <h2>营销</h2>
-      <div style="margin:-2px 0 8px;font-size:13px;color:#374151">查看月份：<select class="ganttMonth" data-module="营销" style="padding:3px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px"></select><button class="btn2 primary btnApplyMonth" data-module="营销" style="background:var(--blue);color:#fff;border-color:var(--blue);margin-left:8px">应用日期</button>（含历史月份，可切换查看）</div>
-      <div style="margin:2px 0 8px;font-size:13px;color:#374151">
-        <button class="btn2 ganttWeekBtn" data-module="营销" data-week="prev" style="margin-right:4px">‹ 上一周</button>
-        <button class="btn2 ganttWeekBtn" data-module="营销" data-week="this" style="margin-right:4px">本周</button>
-        <button class="btn2 ganttWeekBtn" data-module="营销" data-week="next" style="margin-right:4px">下一周 ›</button>
-        <button class="btn2 primary ganttFullMonthBtn" data-module="营销" style="background:var(--blue);color:#fff;border-color:var(--blue)">📅 显示整月</button>
-        <span class="muted">（横轴=天·周一开始；点任务块可编辑）</span>
+  <section data-section="gantt_mkt" style="display:none" data-page-node-id="hFLMYmfZJjd10KAaDJZp4E">
+    <div class="panel" data-page-node-id="0ZmRS1u0Azdrnbh6wi9ili">
+      <h2 data-page-node-id="lpFcDjqgIeE1KkNFQK7mDg">营销</h2>
+      <div style="margin:-2px 0 8px;font-size:13px;color:#374151" data-page-node-id="yx17W07S8OHs0pbUtYbbF7">查看月份：<select class="ganttMonth" data-module="营销" style="padding:3px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px" data-page-node-id="bSbZVRCJL5fua9dnAFLPYg"></select><button class="btn2 primary btnApplyMonth" data-module="营销" style="background:var(--blue);color:#fff;border-color:var(--blue);margin-left:8px" data-page-node-id="5jRIRkHLklBhuI7mEB4cvp">应用日期</button>（含历史月份，可切换查看）</div>
+      <div style="margin:2px 0 8px;font-size:13px;color:#374151" data-page-node-id="fuc0Cv0H9muckr2XPHzTh6">
+        <button class="btn2 ganttWeekBtn" data-module="营销" data-week="prev" style="margin-right:4px" data-page-node-id="XZqaRshWrxBjIucPFV5eRd">‹ 上一周</button>
+        <button class="btn2 ganttWeekBtn" data-module="营销" data-week="this" style="margin-right:4px" data-page-node-id="i0AfmD9Tyybi103LSrl8Q7">本周</button>
+        <button class="btn2 ganttWeekBtn" data-module="营销" data-week="next" style="margin-right:4px" data-page-node-id="PFHUgsUJ4D6UJSvHIt1Gq8">下一周 ›</button>
+        <button class="btn2 primary ganttFullMonthBtn" data-module="营销" style="background:var(--blue);color:#fff;border-color:var(--blue)" data-page-node-id="XdRDBkEsAzO5ovz5RxvUht">📅 显示整月</button>
+        <span class="muted" data-page-node-id="EBZ9RNMTLUFis4F1JN8WSz">（横轴=天·周一开始；点任务块可编辑）</span>
       </div>
-      <p class="hint">**周/月视图**：默认显示一周（可左右切换）；点「显示整月」查看月份全貌。任务条按负责人着色，跨周任务自动延展。点任务块可编辑。数据在「数据输入区」统一录入（含「模块」列自动分流）。</p>
-      <div id="ganttMkt"></div>
+      <p class="hint" data-page-node-id="mJzPFwjIcwyyCDUvIRCOIG">**周/月视图**：默认显示一周（可左右切换）；点「显示整月」查看月份全貌。任务条按负责人着色，跨周任务自动延展。点任务块可编辑。数据在「数据输入区」统一录入（含「模块」列自动分流）。</p>
+      <div id="ganttMkt" data-page-node-id="1LeeltnSDyBAANNKssczXZ"></div>
     </div>
   </section>
 
   <!-- GANTT 设计 -->
-  <section data-section="gantt_design" style="display:none">
-    <div class="panel">
-      <h2>设计</h2>
-      <div style="margin:-2px 0 8px;font-size:13px;color:#374151">查看月份：<select class="ganttMonth" data-module="设计" style="padding:3px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px"></select><button class="btn2 primary btnApplyMonth" data-module="设计" style="background:var(--blue);color:#fff;border-color:var(--blue);margin-left:8px">应用日期</button>（含历史月份，可切换查看）</div>
-      <div style="margin:2px 0 8px;font-size:13px;color:#374151">
-        <button class="btn2 ganttWeekBtn" data-module="设计" data-week="prev" style="margin-right:4px">‹ 上一周</button>
-        <button class="btn2 ganttWeekBtn" data-module="设计" data-week="this" style="margin-right:4px">本周</button>
-        <button class="btn2 ganttWeekBtn" data-module="设计" data-week="next" style="margin-right:4px">下一周 ›</button>
-        <button class="btn2 primary ganttFullMonthBtn" data-module="设计" style="background:var(--blue);color:#fff;border-color:var(--blue)">📅 显示整月</button>
-        <span class="muted">（横轴=天·周一开始；点任务块可编辑）</span>
+  <section data-section="gantt_design" style="display:none" data-page-node-id="qhuSpisvQgciXsDaL5wNQc">
+    <div class="panel" data-page-node-id="ncAUFv6jC1VwUbTCLuGXfO">
+      <h2 data-page-node-id="BHqM0fqNTh7KBsadSQMr1t">设计</h2>
+      <div style="margin:-2px 0 8px;font-size:13px;color:#374151" data-page-node-id="12uASbjr0fQUzm7EIUANlt">查看月份：<select class="ganttMonth" data-module="设计" style="padding:3px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px" data-page-node-id="AgKw5aO0FhaqJnaJrto8tS"></select><button class="btn2 primary btnApplyMonth" data-module="设计" style="background:var(--blue);color:#fff;border-color:var(--blue);margin-left:8px" data-page-node-id="eqIVLXNG3V5SfhsPvIcsao">应用日期</button>（含历史月份，可切换查看）</div>
+      <div style="margin:2px 0 8px;font-size:13px;color:#374151" data-page-node-id="SjhbZ2nF86ZnGVqqFfzCTz">
+        <button class="btn2 ganttWeekBtn" data-module="设计" data-week="prev" style="margin-right:4px" data-page-node-id="Vxz4LeXxtPFSFmcZAiyXBi">‹ 上一周</button>
+        <button class="btn2 ganttWeekBtn" data-module="设计" data-week="this" style="margin-right:4px" data-page-node-id="u4syXBEX7xA4OPkmGVatbJ">本周</button>
+        <button class="btn2 ganttWeekBtn" data-module="设计" data-week="next" style="margin-right:4px" data-page-node-id="MuB8hVR2bXxk5nNxPBFZj8">下一周 ›</button>
+        <button class="btn2 primary ganttFullMonthBtn" data-module="设计" style="background:var(--blue);color:#fff;border-color:var(--blue)" data-page-node-id="LnFAOfBLYxlqTbysPuEibc">📅 显示整月</button>
+        <span class="muted" data-page-node-id="oUzHxKbX4NLufhFj2DDrHI">（横轴=天·周一开始；点任务块可编辑）</span>
       </div>
-      <p class="hint">**周/月视图**：默认显示一周（可左右切换）；点「显示整月」查看月份全貌。任务条按负责人着色，跨周任务自动延展。点任务块可编辑。数据在「数据输入区」统一录入（含「模块」列自动分流）。</p>
-      <div id="ganttDesign"></div>
+      <p class="hint" data-page-node-id="BW4DUaBfA0CJKS5nUsrf8R">**周/月视图**：默认显示一周（可左右切换）；点「显示整月」查看月份全貌。任务条按负责人着色，跨周任务自动延展。点任务块可编辑。数据在「数据输入区」统一录入（含「模块」列自动分流）。</p>
+      <div id="ganttDesign" data-page-node-id="qHWOMfR0C2onGIlTCa9q9S"></div>
     </div>
   </section>
 
   <!-- GANTT 数据 -->
-  <section data-section="gantt_data" style="display:none">
-    <div class="panel">
-      <h2>数据</h2>
-      <div style="margin:-2px 0 8px;font-size:13px;color:#374151">查看月份：<select class="ganttMonth" data-module="数据" style="padding:3px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px"></select><button class="btn2 primary btnApplyMonth" data-module="数据" style="background:var(--blue);color:#fff;border-color:var(--blue);margin-left:8px">应用日期</button>（含历史月份，可切换查看）</div>
-      <div style="margin:2px 0 8px;font-size:13px;color:#374151">
-        <button class="btn2 ganttWeekBtn" data-module="数据" data-week="prev" style="margin-right:4px">‹ 上一周</button>
-        <button class="btn2 ganttWeekBtn" data-module="数据" data-week="this" style="margin-right:4px">本周</button>
-        <button class="btn2 ganttWeekBtn" data-module="数据" data-week="next" style="margin-right:4px">下一周 ›</button>
-        <button class="btn2 primary ganttFullMonthBtn" data-module="数据" style="background:var(--blue);color:#fff;border-color:var(--blue)">📅 显示整月</button>
-        <span class="muted">（横轴=天·周一开始；点任务块可编辑）</span>
+  <section data-section="gantt_data" style="display:none" data-page-node-id="Gs9qEfTQrEdAv9uBz7Z0W9">
+    <div class="panel" data-page-node-id="QbNu88JMyDI02ztTzAb33A">
+      <h2 data-page-node-id="DknJ7tGGTLAiyJkw7D4UsP">数据</h2>
+      <div style="margin:-2px 0 8px;font-size:13px;color:#374151" data-page-node-id="0fTxaXs2ntILvcifD5brgf">查看月份：<select class="ganttMonth" data-module="数据" style="padding:3px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px" data-page-node-id="gk5ME36HZ0gQ3OZKDUbjFt"></select><button class="btn2 primary btnApplyMonth" data-module="数据" style="background:var(--blue);color:#fff;border-color:var(--blue);margin-left:8px" data-page-node-id="yPDtdQKewCEIzmWZ1EVp7T">应用日期</button>（含历史月份，可切换查看）</div>
+      <div style="margin:2px 0 8px;font-size:13px;color:#374151" data-page-node-id="adL7VfcCpGYBCFnKmu4L3e">
+        <button class="btn2 ganttWeekBtn" data-module="数据" data-week="prev" style="margin-right:4px" data-page-node-id="ojwuRJE14HKhWTQ7WIBH2g">‹ 上一周</button>
+        <button class="btn2 ganttWeekBtn" data-module="数据" data-week="this" style="margin-right:4px" data-page-node-id="1YbOTXiRDF5UbYDCTg6rzX">本周</button>
+        <button class="btn2 ganttWeekBtn" data-module="数据" data-week="next" style="margin-right:4px" data-page-node-id="jxttcr8FEnO2TieQMhcDJA">下一周 ›</button>
+        <button class="btn2 primary ganttFullMonthBtn" data-module="数据" style="background:var(--blue);color:#fff;border-color:var(--blue)" data-page-node-id="W7KC7bIBn1ql2ZRW8HwYrg">📅 显示整月</button>
+        <span class="muted" data-page-node-id="NfyVCftuDyCkLxYuEsKQDC">（横轴=天·周一开始；点任务块可编辑）</span>
       </div>
-      <p class="hint">**周/月视图**：默认显示一周（可左右切换）；点「显示整月」查看月份全貌。任务条按负责人着色，跨周任务自动延展。点任务块可编辑。数据在「数据输入区」统一录入（含「模块」列自动分流）。</p>
-      <div id="ganttData"></div>
+      <p class="hint" data-page-node-id="4SSBZIp8cMJONvKqZkreGB">**周/月视图**：默认显示一周（可左右切换）；点「显示整月」查看月份全貌。任务条按负责人着色，跨周任务自动延展。点任务块可编辑。数据在「数据输入区」统一录入（含「模块」列自动分流）。</p>
+      <div id="ganttData" data-page-node-id="UMIxFtGHmlFGSyMJlQfjju"></div>
     </div>
   </section>
 
   <!-- INPUT -->
-  <section data-section="input" style="display:none">
-    <div class="panel">
-      <h2>数据输入区</h2>
-      <p class="hint">三种方式任选：① 从 Excel 复制后直接粘贴（含表头）② 粘贴 CSV 文本 ③ 上传 .csv / .xlsx 文件。<b>所有上传（无论全量还是增量）均按「增量更新」处理</b>：新数据与已有数据按业务键合并（同键更新、新键追加），<b>重复的数据自动忽略</b>，历史数据保留不清空；如需清空某一数据集请用各区「清除历史」按钮。修改后图表自动实时更新，并自动保存在本机浏览器中。</p>
+  <section data-section="input" style="display:none" data-page-node-id="OSuKrRChBgKCR6A9Q3LHoM">
+    <div class="panel" data-page-node-id="qY1uMUptNfgzr61ppsHDSa">
+      <h2 data-page-node-id="i7BWAznD2mp2VHvsGpCCtl">数据输入区</h2>
+      <p class="hint" data-page-node-id="Xh3cTBM09Q0iQlMkLXjFsF">三种方式任选：① 从 Excel 复制后直接粘贴（含表头）② 粘贴 CSV 文本 ③ 上传 .csv / .xlsx 文件。<b data-page-node-id="jHadGJ8ZH1pejIjKCkQbC6">所有上传（无论全量还是增量）均按「增量更新」处理</b>：新数据与已有数据按业务键合并（同键更新、新键追加），<b data-page-node-id="DTFxiA0ZljXQZ7jDq5h3KC">重复的数据自动忽略</b>，历史数据保留不清空；如需清空某一数据集请用各区「清除历史」按钮。修改后图表自动实时更新，并自动保存在本机浏览器中。</p>
 
       <!-- fix65c：麦维他双渠道（自营 / POP）显式切换条。根治「麦维他POP 的 by day 目标反复丢失」：之前用户录入 POP 目标时，当前渠道仍停留在 麦维他自营，导致目标被静默存到自营、刷新后 POP 显示为空。切换条让当前渠道始终可见、一键切换，且录入一律按当前渠道保存。 -->
-      <div id="mwChannelBar" style="display:none;align-items:center;gap:10px;margin:2px 0 14px;padding:9px 14px;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;font-size:13px">
-        <b style="color:#9a3412">麦维他渠道</b>
-        <button type="button" class="btn2 mwCh" data-mwch="麦维他自营" style="padding:5px 14px">自营</button>
-        <button type="button" class="btn2 mwCh" data-mwch="麦维他POP" style="padding:5px 14px">POP</button>
-        <span class="muted">当前编辑渠道：<b id="mwChCur" style="color:#9a3412"></b> —— 下方各分区（销售/目标/库存…）的数据均按此渠道保存</span>
+      <div id="mwChannelBar" style="display:none;align-items:center;gap:10px;margin:2px 0 14px;padding:9px 14px;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;font-size:13px" data-page-node-id="XJ0zRFuznTQh7UhCuj8orz">
+        <b style="color:#9a3412" data-page-node-id="JZdTUu9CmzVdAiFUIz0KDB">麦维他渠道</b>
+        <button type="button" class="btn2 mwCh" data-mwch="麦维他自营" style="padding:5px 14px" data-page-node-id="jybBalNTTwhfkt9w07Tj8O">自营</button>
+        <button type="button" class="btn2 mwCh" data-mwch="麦维他POP" style="padding:5px 14px" data-page-node-id="R2BdZtC4ABvwzDEqDkA3EC">POP</button>
+        <span class="muted" data-page-node-id="nhLaXFqCyw6jPoZpatMrwD">当前编辑渠道：<b id="mwChCur" style="color:#9a3412" data-page-node-id="YkQN3LhQzc5NzNDllWqo7X"></b> —— 下方各分区（销售/目标/库存…）的数据均按此渠道保存</span>
       </div>
 
-      <details open>
-        <summary>1 · 销售数据</summary>
-        <div class="row">
-          <span class="muted" style="font-size:12px">品牌</span>
-          <select id="brand_sales" class="secBrand" data-sec="sales" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px">
-            <option value="李锦记">李锦记</option>
-            <option value="麦维他自营">麦维他自营</option>
-            <option value="麦维他POP">麦维他POP</option>
-            <option value="丝蕴">丝蕴</option>
-            <option value="和路雪">和路雪</option>
-            <option value="家乐">家乐</option>
-            <option value="联合利华">联合利华</option>
+      <details open data-page-node-id="U9QGlBI9xB0FW6FPMoAj55">
+        <summary data-page-node-id="BDi41eeXXLqeGILE8YRB0N">1 · 销售数据</summary>
+        <div class="row" data-page-node-id="WhjPzEQ9LEfYuijNJdrvy9">
+          <span class="muted" style="font-size:12px" data-page-node-id="uprup3xCLe72WXl9xWgLRA">品牌</span>
+          <select id="brand_sales" class="secBrand" data-sec="sales" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px" data-page-node-id="9E6CXTJopVddM46PVfgIiA">
+            <option value="李锦记" data-page-node-id="HIvFcLEdXF1m7nmCnmQQql">李锦记</option>
+            <option value="麦维他自营" data-page-node-id="UkhN0rb8vbQv91xLyXbGuw">麦维他自营</option>
+            <option value="麦维他POP" data-page-node-id="PdaUAvCDjOFquajc8E2dNJ">麦维他POP</option>
+            <option value="丝蕴" data-page-node-id="hcd4qheLBRSmfoHkVcspec">丝蕴</option>
+            <option value="和路雪" data-page-node-id="yDw4t0LQF6OfqW5PNztvlk">和路雪</option>
+            <option value="家乐" data-page-node-id="uNnGDlISJHeEeMwW98Bk8a">家乐</option>
+            <option value="联合利华" data-page-node-id="anGKHb62x5HH7x75MvloIN">联合利华</option>
           </select>
-          <label class="filelabel">上传文件<input type="file" id="salesFile" accept=".csv,.xlsx,.xls" hidden></label>
-          <button class="btn2 ghost clearBtn" data-which="sales">清除历史</button>
+          <label class="filelabel" data-page-node-id="7ErJ8arjbWGzAnrPhLXSBo">上传文件<input type="file" id="salesFile" accept=".csv,.xlsx,.xls" hidden data-page-node-id="cOWtzsWMTRhECHQfDzwLf7"></label>
+          <button class="btn2 ghost clearBtn" data-which="sales" data-page-node-id="AxyaMCBL8zFVa5pSMoOtjI">清除历史</button>
         </div>
         <textarea id="salesInput" placeholder=""></textarea>
-        <div class="diag" id="diagSales"></div>
+        <div class="diag" id="diagSales" data-page-node-id="iniQniLqOn0GLGo1HK1oag"></div>
       </details>
 
-<details>
-        <summary>2.1 · 库存明细（李锦记）</summary>
-        <div class="row">
-          <span class="muted" style="font-size:12px">品牌</span>
-          <select id="brand_inventory" class="secBrand" data-sec="inventory" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px">
-            <option value="李锦记">李锦记</option>
-            <option value="麦维他自营">麦维他自营</option>
-            <option value="麦维他POP">麦维他POP</option>
-            <option value="丝蕴">丝蕴</option>
-            <option value="和路雪">和路雪</option>
-            <option value="家乐">家乐</option>
-            <option value="联合利华">联合利华</option>
+<details data-page-node-id="J1RBB1Y61SxDE4oCOfOtlL">
+        <summary data-page-node-id="62JiC6sxD0EpniqvSc2D7z">2.1 · 库存明细（李锦记）</summary>
+        <div class="row" data-page-node-id="IzhEMNs6HSX0ufxefTPUP0">
+          <span class="muted" style="font-size:12px" data-page-node-id="WJKgjFYPHGDQBNVhFCNVZk">品牌</span>
+          <select id="brand_inventory" class="secBrand" data-sec="inventory" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px" data-page-node-id="3LJlggRRrFFsEG99gJpBfw">
+            <option value="李锦记" data-page-node-id="P9awjhnB5WiIFZ4XSDNc2K">李锦记</option>
+            <option value="麦维他自营" data-page-node-id="iQoTFDM4Eu1wuT2NzJx2Sx">麦维他自营</option>
+            <option value="麦维他POP" data-page-node-id="C0h7gpeO0XdozCNdY1V4T8">麦维他POP</option>
+            <option value="丝蕴" data-page-node-id="PUiBZkuBAnJfcGRNCWXTFO">丝蕴</option>
+            <option value="和路雪" data-page-node-id="KiVzsdLdttdye3Kz03cT41">和路雪</option>
+            <option value="家乐" data-page-node-id="HjdfIzz2G6XKUouXVBPP6R">家乐</option>
+            <option value="联合利华" data-page-node-id="HB6YSNEJDJlzBmHEuEDo6r">联合利华</option>
           </select>
-          <label class="filelabel">上传文件<input type="file" id="invFile" accept=".csv,.xlsx,.xls" hidden></label>
-          <button class="btn2 ghost" id="invTplBtn">下载填写模板</button>
-          <button class="btn2 ghost clearBtn" data-which="inventory">清除历史</button>
+          <label class="filelabel" data-page-node-id="VvqSBoMohtCqQTJ4LyBTyy">上传文件<input type="file" id="invFile" accept=".csv,.xlsx,.xls" hidden data-page-node-id="UQ95mptgReaOUPnZk5NDmG"></label>
+          <button class="btn2 ghost" id="invTplBtn" data-page-node-id="g3Ar1pWWODHZiUwEgQ8fyM">下载填写模板</button>
+          <button class="btn2 ghost clearBtn" data-which="inventory" data-page-node-id="HoBIyRX8nbOuYG1sxv8CYT">清除历史</button>
         </div>
         <textarea id="invInput" placeholder="粘贴供应链库存明细（李锦记）数据（含表头，列名自动识别）；数据独立存储，与 2.2 库存明细（麦维他）/ 2.3 库存明细（丝蕴）互不覆盖。"></textarea>
-        <div class="diag" id="diagInv"></div>
+        <div class="diag" id="diagInv" data-page-node-id="vXXYJlCvjfqufwW9HQ8oFb"></div>
       </details>
 
-<details>
-        <summary>2.2 · 库存明细（麦维他）</summary>
-        <p class="hint">本模板为供应链「库存明细·全量列」导出：含 时间 / 商品名称 / SKU / 品牌 / 一级~三级类目 / 店铺名称 / 供应商 / 全国采购价 … 前缀列，外加「全国」与各城市/仓（上海、北京、成都…林芝等约 80 个）的库存·出入库·厂直·VMI·采购·退供应商等指标块。<b>列名自动识别，缺列留空</b>；每行 = 某天某个 SKU 的全量快照。<b>该数据独立录入、独立存储</b>（与 2.1 库存明细（李锦记）互不覆盖）；粘贴含表头的数据后点「应用并更新看板」即保存。点「下载填写模板」可导出 .xlsx。</p>
-        <div class="row">
-          <span class="muted" style="font-size:12px">品牌</span>
-          <select id="brand_inv_full" class="secBrand" data-sec="inv_full" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px">
-            <option value="李锦记">李锦记</option>
-            <option value="麦维他自营">麦维他自营</option>
-            <option value="麦维他POP">麦维他POP</option>
-            <option value="丝蕴">丝蕴</option>
-            <option value="和路雪">和路雪</option>
-            <option value="家乐">家乐</option>
-            <option value="联合利华">联合利华</option>
+<details data-page-node-id="Zy5cNjETzvQQTplWeG6xFe">
+        <summary data-page-node-id="oIO4aeNhCjDWf0ZQqwrPNt">2.2 · 库存明细（麦维他）</summary>
+        <p class="hint" data-page-node-id="BBlP6ALT7ByXnXrgx7BCEc">本模板为供应链「库存明细·全量列」导出：含 时间 / 商品名称 / SKU / 品牌 / 一级~三级类目 / 店铺名称 / 供应商 / 全国采购价 … 前缀列，外加「全国」与各城市/仓（上海、北京、成都…林芝等约 80 个）的库存·出入库·厂直·VMI·采购·退供应商等指标块。<b data-page-node-id="tjxmadfBRZXJ5pBlcLQlDs">列名自动识别，缺列留空</b>；每行 = 某天某个 SKU 的全量快照。<b data-page-node-id="SbNAGIfFCpbDfIHjz323C8">该数据独立录入、独立存储</b>（与 2.1 库存明细（李锦记）互不覆盖）；粘贴含表头的数据后点「应用并更新看板」即保存。点「下载填写模板」可导出 .xlsx。</p>
+        <div class="row" data-page-node-id="2nzloJwMFJDF1DvxPWvuPx">
+          <span class="muted" style="font-size:12px" data-page-node-id="L8xkPWKjvabk9fFeXUz8QE">品牌</span>
+          <select id="brand_inv_full" class="secBrand" data-sec="inv_full" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px" data-page-node-id="4mrhyH8qinEAk0BccYdZWM">
+            <option value="李锦记" data-page-node-id="GB3Dmc842N06pk8ySF8KI9">李锦记</option>
+            <option value="麦维他自营" data-page-node-id="Xna8ZstxlYgT0nU32Z8Nhs">麦维他自营</option>
+            <option value="麦维他POP" data-page-node-id="Xx0Ei8fNpQItUzRo4G6HF4">麦维他POP</option>
+            <option value="丝蕴" data-page-node-id="aZALMNaTcTH6mn0AzVQRjc">丝蕴</option>
+            <option value="和路雪" data-page-node-id="lqgvjRb3fmiOk18Qh2Yja8">和路雪</option>
+            <option value="家乐" data-page-node-id="uAjVtGHS4bUwEts1aL76si">家乐</option>
+            <option value="联合利华" data-page-node-id="8TKXxD4JtPoQ8jstHGoG2D">联合利华</option>
           </select>
-          <label class="filelabel">上传文件<input type="file" id="invFullFile" accept=".csv,.xlsx,.xls" hidden></label>
-          <button class="btn2 ghost" id="invFullTplBtn">下载填写模板</button>
-          <button class="btn2 ghost clearBtn" data-which="inv_full">清除历史</button>
+          <label class="filelabel" data-page-node-id="Er8hGDipCcxHJPte12fYAZ">上传文件<input type="file" id="invFullFile" accept=".csv,.xlsx,.xls" hidden data-page-node-id="NG07AdAwyovXXjNUUsHTTG"></label>
+          <button class="btn2 ghost" id="invFullTplBtn" data-page-node-id="BDRvIVVGC8gmDeTs2yOOfr">下载填写模板</button>
+          <button class="btn2 ghost clearBtn" data-which="inv_full" data-page-node-id="iWb2MZEqnxAJHIF7ThIHp0">清除历史</button>
         </div>
         <textarea id="invFullInput" placeholder="粘贴供应链库存明细·全量列（含表头，列名自动识别）；数据独立存储，与 2.1 库存明细（李锦记）互不覆盖。" style="min-height:140px"></textarea>
-        <div class="diag" id="diagInvFull"></div>
+        <div class="diag" id="diagInvFull" data-page-node-id="cdUkXNGu3awgWEtiyLuWDy"></div>
       </details>
 
-<details>
-        <summary>2.3 · 库存明细（丝蕴）</summary>
-        <p class="hint">表头（共 69 列）：<b>时间 / 商品名称 / SKU / 品牌 / 一级类目 / 二级类目 / 三级类目 / 店铺名称 / 供应商简码 / 供应商名称 / 是否售完即止 / 是否厂直 / 是否影分身 / 是否虚拟组套 / 是否虚拟品类 / 上柜时间 / 是否平行库存 / 是否赠品 / SPU编码 / 条形码 / 保质期 / RDC / 配送中心 / 仓网选品打标 / 上级B配送中心编码 / 上级B配送中心名称 / 上下柜状态 / 商品价格 / 全国采购价 / 长度 / 宽度 / 高度 / 重量 / 现货库存 / 内配在途 / 可订购库存 / B仓(商)京东自营渠道采购在途库存 / B仓(商)京东自营渠道现货库存 / 采购在途数量 / 滞销库存件数 / 不动销库存件数 / 长库龄数量 / 91-120天库存数量 / 121-150天库存数量 / 151-180天库存数量 / 181-360天库存数量 / 1年以上库存数量 / 昨日出库商品件数 / 近7日出库商品件数 / 近14日出库商品件数 / 近28日出库商品件数 / 近30日出库商品件数 / 近60日出库商品件数 / 近90日出库商品件数 / 月至今出库商品件数 / 昨日收货地商品件数 / 近7日收货地商品件数 / 近14日收货地商品件数 / 近28日收货地商品件数 / 近30日收货地商品件数 / 近60日收货地商品件数 / 近90日收货地商品件数 / 月至今收货地商品件数 / 昨日采购入库件数 / 近7日采购入库件数 / 近14日采购入库件数 / 近28日采购入库件数 / 近30日采购入库件数 / 月至今采购入库件数</b>。每行=某天某 SKU 的库存快照。<b>该数据独立录入、独立存储</b>，与 2.2 库存明细（麦维他）互不覆盖；粘贴含表头的数据后点「应用并更新看板」即保存。列名自动识别，缺列留空。<br>看板「丝蕴」库存周转视图取值：<b>库存数量</b>（兼容「现货库存/可用库存」）、<b>近7天出库件数</b>、<b>近14天出库件数</b>（兼容「近N日出库商品件数」）；<b>在途数量</b>=采购单「采购数量」(R列) 合计；<b>PV现货率/实库现货率</b>取自 2.7 现货率数据（按天匹配）。</p>
-        <div class="row">
-          <span class="muted" style="font-size:12px">品牌</span>
-          <select id="brand_inv_siyun" class="secBrand" data-sec="inv_siyun" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px">
-            <option value="李锦记">李锦记</option>
-            <option value="麦维他自营">麦维他自营</option>
-            <option value="麦维他POP">麦维他POP</option>
-            <option value="丝蕴">丝蕴</option>
-            <option value="和路雪">和路雪</option>
-            <option value="家乐">家乐</option>
-            <option value="联合利华">联合利华</option>
+<details data-page-node-id="FeAi6ocuFFFj66D2JKVwwx">
+        <summary data-page-node-id="6lUUV9rHUhknLsxMgRERZq">2.3 · 库存明细（丝蕴）</summary>
+        <p class="hint" data-page-node-id="klaynBPQLFYilnmRIxmQO1">表头（共 69 列）：<b data-page-node-id="4INgNBk835rQGE1vM2xaCs">时间 / 商品名称 / SKU / 品牌 / 一级类目 / 二级类目 / 三级类目 / 店铺名称 / 供应商简码 / 供应商名称 / 是否售完即止 / 是否厂直 / 是否影分身 / 是否虚拟组套 / 是否虚拟品类 / 上柜时间 / 是否平行库存 / 是否赠品 / SPU编码 / 条形码 / 保质期 / RDC / 配送中心 / 仓网选品打标 / 上级B配送中心编码 / 上级B配送中心名称 / 上下柜状态 / 商品价格 / 全国采购价 / 长度 / 宽度 / 高度 / 重量 / 现货库存 / 内配在途 / 可订购库存 / B仓(商)京东自营渠道采购在途库存 / B仓(商)京东自营渠道现货库存 / 采购在途数量 / 滞销库存件数 / 不动销库存件数 / 长库龄数量 / 91-120天库存数量 / 121-150天库存数量 / 151-180天库存数量 / 181-360天库存数量 / 1年以上库存数量 / 昨日出库商品件数 / 近7日出库商品件数 / 近14日出库商品件数 / 近28日出库商品件数 / 近30日出库商品件数 / 近60日出库商品件数 / 近90日出库商品件数 / 月至今出库商品件数 / 昨日收货地商品件数 / 近7日收货地商品件数 / 近14日收货地商品件数 / 近28日收货地商品件数 / 近30日收货地商品件数 / 近60日收货地商品件数 / 近90日收货地商品件数 / 月至今收货地商品件数 / 昨日采购入库件数 / 近7日采购入库件数 / 近14日采购入库件数 / 近28日采购入库件数 / 近30日采购入库件数 / 月至今采购入库件数</b>。每行=某天某 SKU 的库存快照。<b data-page-node-id="tCraIFv5vPvFSMmyWIMrYp">该数据独立录入、独立存储</b>，与 2.2 库存明细（麦维他）互不覆盖；粘贴含表头的数据后点「应用并更新看板」即保存。列名自动识别，缺列留空。<br data-page-node-id="UgTtR93LX2XaszfxlpyPhu">看板「丝蕴」库存周转视图取值：<b data-page-node-id="LGU7j6oVgcoOjTjufvK0cb">库存数量</b>（兼容「现货库存/可用库存」）、<b data-page-node-id="mjnEEzGrKtHlAPdzWgEMtc">近7天出库件数</b>、<b data-page-node-id="mQ5Fuz3NcXl2y4Wh2ggUF3">近14天出库件数</b>（兼容「近N日出库商品件数」）；<b data-page-node-id="Od1fq9MbWAvPZRvdgA0xPK">在途数量</b>=采购单「采购数量」(R列) 合计；<b data-page-node-id="JMoIAdfYTg1StIZpwgpwGz">PV现货率/实库现货率</b>取自 2.7 现货率数据（按天匹配）。</p>
+        <div class="row" data-page-node-id="VLbbEZClfFPTXU1R4648wC">
+          <span class="muted" style="font-size:12px" data-page-node-id="kIQ4TtrGfl6GEOOuql5lD2">品牌</span>
+          <select id="brand_inv_siyun" class="secBrand" data-sec="inv_siyun" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px" data-page-node-id="v6EeXHLLmExb5Xbc3gA9jg">
+            <option value="李锦记" data-page-node-id="mIifM3lgY4BAJ4xKip0rtc">李锦记</option>
+            <option value="麦维他自营" data-page-node-id="3VJboM86GNY6fJ2U0lBB1p">麦维他自营</option>
+            <option value="麦维他POP" data-page-node-id="5jZQ8I9saB1dHkglwgJeWk">麦维他POP</option>
+            <option value="丝蕴" data-page-node-id="3FtFkcReYDVlgTcYksmLam">丝蕴</option>
+            <option value="和路雪" data-page-node-id="jVWaCnmEcV6Rw6hE13CR0p">和路雪</option>
+            <option value="家乐" data-page-node-id="hWhQDSnE8612UDqtUGB21U">家乐</option>
+            <option value="联合利华" data-page-node-id="ujRU1W6bKTprGuTcNqA3MP">联合利华</option>
           </select>
-          <label class="filelabel">上传文件<input type="file" id="invSiyunFile" accept=".csv,.xlsx,.xls" hidden></label>
-          <button class="btn2 ghost" id="invSiyunTplBtn">下载填写模板</button>
-          <button class="btn2 ghost clearBtn" data-which="inv_siyun">清除历史</button>
+          <label class="filelabel" data-page-node-id="ZuanVQbv2TunMYQtyM1ve3">上传文件<input type="file" id="invSiyunFile" accept=".csv,.xlsx,.xls" hidden data-page-node-id="6aD0iqsXxhgpsgLVyx2IvQ"></label>
+          <button class="btn2 ghost" id="invSiyunTplBtn" data-page-node-id="Bko1AHb7vUAHIMQZZlcH4g">下载填写模板</button>
+          <button class="btn2 ghost clearBtn" data-which="inv_siyun" data-page-node-id="uF1Tsbuhbh7ftPuuXrTiHn">清除历史</button>
         </div>
         <textarea id="invSiyunInput" placeholder="粘贴丝蕴库存明细（含表头，列名自动识别）；数据独立存储，与 2.2 库存明细（麦维他）互不覆盖。" style="min-height:140px"></textarea>
-        <div class="diag" id="diagInvSiyun"></div>
+        <div class="diag" id="diagInvSiyun" data-page-node-id="pkRIvKEGYdnLagpq7704yY"></div>
       </details>
 
-<details>
-        <summary>2.4 · 巢湖库存数据</summary>
-        <p class="hint">表头：<b>时间&#9;仓库&#9;货主&#9;商家编码&#9;货品名称&#9;条形码&#9;品牌&#9;生产日期&#9;保质期&#9;有效期&#9;距离到期天数&#9;是否正品&#9;可发库存&#9;黄/红/黑/绿货&#9;临期预警&#9;采购价&#9;可发金额&#9;1/2效期&#9;库内周转45天允收期&#9;紧急临期时间&#9;最后入仓时间&#9;品牌采购在途</b>。逐行录入（每行一个货品在某仓的快照），列名自动识别，缺列留空。<b>该数据独立录入、独立存储</b>，与 2.1 库存明细（李锦记）互不覆盖；粘贴含表头的数据后点「应用并更新看板」即保存。点「下载填写模板」可导出 .xlsx。</p>
-        <div class="row">
-          <span class="muted" style="font-size:12px">品牌</span>
-          <select id="brand_chaohu" class="secBrand" data-sec="chaohu" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px">
-            <option value="李锦记">李锦记</option>
-            <option value="麦维他自营">麦维他自营</option>
-            <option value="麦维他POP">麦维他POP</option>
-            <option value="丝蕴">丝蕴</option>
-            <option value="和路雪">和路雪</option>
-            <option value="家乐">家乐</option>
-            <option value="联合利华">联合利华</option>
+<details data-page-node-id="Twr8D33a6x5vxethCBgjQf">
+        <summary data-page-node-id="foKwLxNF5n25iT1TMej25l">2.4 · 巢湖库存数据</summary>
+        <p class="hint" data-page-node-id="VV77AgR9lGtaiGYhpPBxw9">表头：<b data-page-node-id="0jRLlILa0mgYizJFIKaLHd">时间&#9;仓库&#9;货主&#9;商家编码&#9;货品名称&#9;条形码&#9;品牌&#9;生产日期&#9;保质期&#9;有效期&#9;距离到期天数&#9;是否正品&#9;可发库存&#9;黄/红/黑/绿货&#9;临期预警&#9;采购价&#9;可发金额&#9;1/2效期&#9;库内周转45天允收期&#9;紧急临期时间&#9;最后入仓时间&#9;品牌采购在途</b>。逐行录入（每行一个货品在某仓的快照），列名自动识别，缺列留空。<b data-page-node-id="EqhekfwPkzM2Y3AtoJvqyv">该数据独立录入、独立存储</b>，与 2.1 库存明细（李锦记）互不覆盖；粘贴含表头的数据后点「应用并更新看板」即保存。点「下载填写模板」可导出 .xlsx。</p>
+        <div class="row" data-page-node-id="Gzi1HClLCsQmSQRWGjkf1n">
+          <span class="muted" style="font-size:12px" data-page-node-id="b8Q0IJeDkQGCEWiA2mdBRs">品牌</span>
+          <select id="brand_chaohu" class="secBrand" data-sec="chaohu" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px" data-page-node-id="FgRj4IEOZUQoFO2FqHKPwO">
+            <option value="李锦记" data-page-node-id="0cfPd0audqIDKqunx2lhrt">李锦记</option>
+            <option value="麦维他自营" data-page-node-id="EjJIFRsl5Mt0RuTND7s0ij">麦维他自营</option>
+            <option value="麦维他POP" data-page-node-id="UzTd3typ7nALgjh4XySweY">麦维他POP</option>
+            <option value="丝蕴" data-page-node-id="6uZ9tilISNeNx9EetegzYr">丝蕴</option>
+            <option value="和路雪" data-page-node-id="tgc0G81bK36xHC8xDKFHPR">和路雪</option>
+            <option value="家乐" data-page-node-id="NNrcqUb4ETb9mVGL69xcNE">家乐</option>
+            <option value="联合利华" data-page-node-id="lp4BldK4ul0U2jp4N9UzZ5">联合利华</option>
           </select>
-          <label class="filelabel">上传文件<input type="file" id="chaohuFile" accept=".csv,.xlsx,.xls" hidden></label>
-          <button class="btn2 ghost" id="chaohuTplBtn">下载填写模板</button>
-          <button class="btn2 ghost clearBtn" data-which="chaohu">清除历史</button>
+          <label class="filelabel" data-page-node-id="UhxemUy1Nq8tiZWDNZgTYu">上传文件<input type="file" id="chaohuFile" accept=".csv,.xlsx,.xls" hidden data-page-node-id="NPSjsniUPojxEMNHHV11G2"></label>
+          <button class="btn2 ghost" id="chaohuTplBtn" data-page-node-id="ibiRoFBhfYho5ESEejDq5T">下载填写模板</button>
+          <button class="btn2 ghost clearBtn" data-which="chaohu" data-page-node-id="FhvwmxcKU2XCWJQPJTpRgh">清除历史</button>
         </div>
         <textarea id="chaohuInput" placeholder="时间&#9;仓库&#9;货主&#9;商家编码&#9;货品名称&#9;条形码&#9;品牌&#9;生产日期&#9;保质期&#9;有效期&#9;距离到期天数&#9;是否正品&#9;可发库存&#9;黄/红/黑/绿货&#9;临期预警&#9;采购价&#9;可发金额&#9;1/2效期&#9;库内周转45天允收期&#9;紧急临期时间&#9;最后入仓时间&#9;品牌采购在途&#9;（逐行录入；缺列留空，列名自动识别）" style="min-height:120px"></textarea>
-        <div class="diag" id="diagChaohu"></div>
+        <div class="diag" id="diagChaohu" data-page-node-id="VF4fQy33O0hqgtPRZLFZ2a"></div>
       </details>
 
-<details>
-        <summary>2.5 · 采购单数据</summary>
-        <p class="hint">采购单数据与库存明细（李锦记）相互独立，本框单独录入、单独存储。表头：采购单号 / 采购渠道 / 合同主体 / 供应商简码 / 供应商名称 / 商品编号 / 商品名称 / 订单属性 / 配送中心 / 京东仓库 / 京东库房地址 / 京东站点 / 京东站点地址 / 收货负责人 / 收货电话 / 采购价格 / 原始采购数量 / 采购数量 / 实收数量 / 贴码建议 / 京东贴码数量 / 溯源贴码 / 重码UPC / UPC码 / 采购金额 / 实收金额 / 采购单位 / 币种 / 采购员 / 建单人 / 订单状态 / 订购时间 等全量列（列名自动识别，缺列留空）。<b>当前仅做录入与存储，计算口径稍后由你确认后再接入。</b></p>
-        <div class="row">
-          <span class="muted" style="font-size:12px">品牌</span>
-          <select id="brand_purchase_order" class="secBrand" data-sec="purchase_order" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px">
-            <option value="李锦记">李锦记</option>
-            <option value="麦维他自营">麦维他自营</option>
-            <option value="麦维他POP">麦维他POP</option>
-            <option value="丝蕴">丝蕴</option>
-            <option value="和路雪">和路雪</option>
-            <option value="家乐">家乐</option>
-            <option value="联合利华">联合利华</option>
+<details data-page-node-id="ERCG773lUKMFLouEZVbft1">
+        <summary data-page-node-id="hGPhmkFhhPadthOUqpBfxw">2.5 · 采购单数据</summary>
+        <p class="hint" data-page-node-id="4Dn90pEgKySVgDC6uAahop">采购单数据与库存明细（李锦记）相互独立，本框单独录入、单独存储。表头：采购单号 / 采购渠道 / 合同主体 / 供应商简码 / 供应商名称 / 商品编号 / 商品名称 / 订单属性 / 配送中心 / 京东仓库 / 京东库房地址 / 京东站点 / 京东站点地址 / 收货负责人 / 收货电话 / 采购价格 / 原始采购数量 / 采购数量 / 实收数量 / 贴码建议 / 京东贴码数量 / 溯源贴码 / 重码UPC / UPC码 / 采购金额 / 实收金额 / 采购单位 / 币种 / 采购员 / 建单人 / 订单状态 / 订购时间 等全量列（列名自动识别，缺列留空）。<b data-page-node-id="EPJumFskYXZEHs5H6VhcuK">当前仅做录入与存储，计算口径稍后由你确认后再接入。</b></p>
+        <div class="row" data-page-node-id="8ugkOFachFSgGJXo8pUqI0">
+          <span class="muted" style="font-size:12px" data-page-node-id="eYw0BcrEjgDhfAgf0Sp5l1">品牌</span>
+          <select id="brand_purchase_order" class="secBrand" data-sec="purchase_order" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px" data-page-node-id="BO158pL49j357hO6rDwexb">
+            <option value="李锦记" data-page-node-id="ySLHVQuZOQ2qiev8FJVsz8">李锦记</option>
+            <option value="麦维他自营" data-page-node-id="YnC7VlsVsA8h5MPitVZpof">麦维他自营</option>
+            <option value="麦维他POP" data-page-node-id="oCtWq683yqEm1CxmpgWjA1">麦维他POP</option>
+            <option value="丝蕴" data-page-node-id="HX1iK1ZsDT7VCPygchqsmV">丝蕴</option>
+            <option value="和路雪" data-page-node-id="pbtnRAFzAjxSD3n6qoq1zZ">和路雪</option>
+            <option value="家乐" data-page-node-id="bN9VkbT5nR5FsxBIHwcnFo">家乐</option>
+            <option value="联合利华" data-page-node-id="pjyOy4ryb498RG0QcRU1ct">联合利华</option>
           </select>
-          <label class="filelabel">上传文件<input type="file" id="poFile" accept=".csv,.xlsx,.xls" hidden></label>
-          <button class="btn2 ghost" id="poTplBtn">下载填写模板</button>
-          <button class="btn2 ghost clearBtn" data-which="purchase_order">清除历史</button>
+          <label class="filelabel" data-page-node-id="NCH3D6U95KmoR1veUcXmXk">上传文件<input type="file" id="poFile" accept=".csv,.xlsx,.xls" hidden data-page-node-id="BvH2ZhIdDDdEI5zDyPNpBD"></label>
+          <button class="btn2 ghost" id="poTplBtn" data-page-node-id="8zt34cM7t7uCGnzyDBVnG7">下载填写模板</button>
+          <button class="btn2 ghost clearBtn" data-which="purchase_order" data-page-node-id="U4rmFo0WRfazU5K5NikD9F">清除历史</button>
         </div>
         <textarea id="poInput" placeholder="采购单号&#9;采购渠道&#9;合同主体&#9;供应商简码&#9;供应商名称&#9;商品编号&#9;商品名称&#9;订单属性&#9;配送中心&#9;京东仓库&#9;采购价格&#9;原始采购数量&#9;采购数量&#9;实收数量&#9;采购金额&#9;实收金额&#9;采购员&#9;建单人&#9;订单状态&#9;订购时间&#9;（模板2·采购单·全量列；缺列留空，列名自动识别）"></textarea>
-        <div class="diag" id="diagPo"></div>
+        <div class="diag" id="diagPo" data-page-node-id="fMM18iaX712SRe8ACny6xY"></div>
       </details>
 
-<details>
-        <summary>2.6 · 浮码数据</summary>
-        <p class="hint">浮码数据与库存明细（李锦记）相互独立，本框单独录入、单独存储。表头：<b>时间 / SKU / 浮码</b>（无需录入出库件数）。「全国昨日出库商品件数」<b>自动取自「库存明细（李锦记）」明细中的「昨日出库商品件数」列，按时间 + SKU 匹配</b>；公式为 <b>Σ（浮码 × 昨日出库商品件数）÷ 1.129</b>，用于计算 POS 实际数据。库存明细缺该 SKU/日期的昨日出库时该项留空（不计入 POS）。同一「时间 + SKU」重复录入即覆盖更新。</p>
-        <div class="row">
-          <span class="muted" style="font-size:12px">品牌</span>
-          <select id="brand_purchase" class="secBrand" data-sec="purchase" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px">
-            <option value="李锦记">李锦记</option>
-            <option value="麦维他自营">麦维他自营</option>
-            <option value="麦维他POP">麦维他POP</option>
-            <option value="丝蕴">丝蕴</option>
-            <option value="和路雪">和路雪</option>
-            <option value="家乐">家乐</option>
-            <option value="联合利华">联合利华</option>
+<details data-page-node-id="fAc2Y4XxcCsBgCgXtjoQhp">
+        <summary data-page-node-id="vSzilDcbEDPpwBjA4aoBF4">2.6 · 浮码数据</summary>
+        <p class="hint" data-page-node-id="dMzsJR8npnO69d1vyen9Nd">浮码数据与库存明细（李锦记）相互独立，本框单独录入、单独存储。表头：<b data-page-node-id="1api7Frag7sXa72JH8yrdY">时间 / SKU / 浮码</b>（无需录入出库件数）。「全国昨日出库商品件数」<b data-page-node-id="bvRDlG8V9EW2lkS2HHhvTs">自动取自「库存明细（李锦记）」明细中的「昨日出库商品件数」列，按时间 + SKU 匹配</b>；公式为 <b data-page-node-id="LqqMDQAyWqx0Eqk7xVvz5G">Σ（浮码 × 昨日出库商品件数）÷ 1.129</b>，用于计算 POS 实际数据。库存明细缺该 SKU/日期的昨日出库时该项留空（不计入 POS）。同一「时间 + SKU」重复录入即覆盖更新。</p>
+        <div class="row" data-page-node-id="ClDbB4KTF974OAoQcHtCth">
+          <span class="muted" style="font-size:12px" data-page-node-id="M8WQgdrRJ56QPpTfevRthA">品牌</span>
+          <select id="brand_purchase" class="secBrand" data-sec="purchase" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px" data-page-node-id="rV9g6bGYNissLhXmwTStXa">
+            <option value="李锦记" data-page-node-id="erKT2P0MrpUH859KBgH20f">李锦记</option>
+            <option value="麦维他自营" data-page-node-id="MT35wAFyCXX8Ix3lSfsIdc">麦维他自营</option>
+            <option value="麦维他POP" data-page-node-id="2veG9xLrkeLDV7ABBIuKD3">麦维他POP</option>
+            <option value="丝蕴" data-page-node-id="3L2t8EKnSLNoFmwNMcQz0H">丝蕴</option>
+            <option value="和路雪" data-page-node-id="B9EySNsO9aiaIs0rsu18rl">和路雪</option>
+            <option value="家乐" data-page-node-id="eVRCaRxtPDWfw5PiF1nauJ">家乐</option>
+            <option value="联合利华" data-page-node-id="w1bzKlLh3za5HiGxPzXPE6">联合利华</option>
           </select>
-          <label class="filelabel">上传文件<input type="file" id="ppFile" accept=".csv,.xlsx,.xls" hidden></label>
-          <button class="btn2 ghost" id="ppTplBtn">下载填写模板</button>
-          <button class="btn2 ghost clearBtn" data-which="purchase">清除历史</button>
+          <label class="filelabel" data-page-node-id="6fVDGy7fP4gyofGHkFlIof">上传文件<input type="file" id="ppFile" accept=".csv,.xlsx,.xls" hidden data-page-node-id="OxWqbpOZCbglXuVFRQjOhE"></label>
+          <button class="btn2 ghost" id="ppTplBtn" data-page-node-id="o9CAXK2oqCUf0e51I2kwB3">下载填写模板</button>
+          <button class="btn2 ghost clearBtn" data-which="purchase" data-page-node-id="sFxbhHHVrdZLbzxBdBgmRK">清除历史</button>
         </div>
         <textarea id="ppInput" placeholder="时间&#9;SKU&#9;浮码（浮码单独录入；全国昨日出库件数自动取自库存明细的「昨日出库商品件数」列，按时间+SKU匹配）"></textarea>
-        <div class="diag" id="diagPp"></div>
+        <div class="diag" id="diagPp" data-page-node-id="wVStCFDIVEWp2Se9WGEPkM"></div>
       </details>
 
-<details>
-        <summary>2.7 · 现货率数据</summary>
-        <p class="hint">表头：<b>PV现货率&#9;实库现货率</b>。每日一行（日期 + 两列比率，0~1 小数或百分比均可，列名自动识别，缺列留空）。<b>该数据独立录入、独立存储，前台按天展示；优先于库存明细里的同名列。</b>同一「日期」重复录入即覆盖更新。</p>
-        <div class="row">
-          <span class="muted" style="font-size:12px">品牌</span>
-          <select id="brand_spot_rate" class="secBrand" data-sec="spot_rate" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px">
-            <option value="李锦记">李锦记</option>
-            <option value="麦维他自营">麦维他自营</option>
-            <option value="麦维他POP">麦维他POP</option>
-            <option value="丝蕴">丝蕴</option>
-            <option value="和路雪">和路雪</option>
-            <option value="家乐">家乐</option>
-            <option value="联合利华">联合利华</option>
+<details data-page-node-id="20IZZv3DgFFw5Ev1Snp55z">
+        <summary data-page-node-id="U40HF5DMfujnHIvrEsl0yD">2.7 · 现货率数据</summary>
+        <p class="hint" data-page-node-id="ZIfFLxQfxzjwwrqXhyIUNy">表头：<b data-page-node-id="z5lbLHQyKs4B8z2YUwTVvF">PV现货率&#9;实库现货率</b>。每日一行（日期 + 两列比率，0~1 小数或百分比均可，列名自动识别，缺列留空）。<b data-page-node-id="JHpPhg6IGeazH3nekQPJ80">该数据独立录入、独立存储，前台按天展示；优先于库存明细里的同名列。</b>同一「日期」重复录入即覆盖更新。</p>
+        <div class="row" data-page-node-id="xpXPZOjPh30wjVoGHESXvY">
+          <span class="muted" style="font-size:12px" data-page-node-id="eswqbeSLR6awN8TrUlACZJ">品牌</span>
+          <select id="brand_spot_rate" class="secBrand" data-sec="spot_rate" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px" data-page-node-id="pyf8Nb55AJJs3s9lDQHUIm">
+            <option value="李锦记" data-page-node-id="pj1V5WbFFedjeeHO4pFnuc">李锦记</option>
+            <option value="麦维他自营" data-page-node-id="pLuVmRvVo8pKqW1DVUtHGC">麦维他自营</option>
+            <option value="麦维他POP" data-page-node-id="qlJydrgFf19bFXhsIrYBlT">麦维他POP</option>
+            <option value="丝蕴" data-page-node-id="NGGuan0whdvfKHdMlgaSkp">丝蕴</option>
+            <option value="和路雪" data-page-node-id="7m5edb9xXK43iF7FiiwAgl">和路雪</option>
+            <option value="家乐" data-page-node-id="KRMQLfLJnoXoffGNi7M9RZ">家乐</option>
+            <option value="联合利华" data-page-node-id="mYpHCOyLNycN8rx5h7Mm9z">联合利华</option>
           </select>
-          <label class="filelabel">上传文件<input type="file" id="srFile" accept=".csv,.xlsx,.xls" hidden></label>
-          <button class="btn2 ghost" id="srTplBtn">下载填写模板</button>
-          <button class="btn2 ghost clearBtn" data-which="spot_rate">清除历史</button>
+          <label class="filelabel" data-page-node-id="jEyhCHLjGYlMfBYJpzxSks">上传文件<input type="file" id="srFile" accept=".csv,.xlsx,.xls" hidden data-page-node-id="6vcdQFyMhUlFZ4SBRawNBf"></label>
+          <button class="btn2 ghost" id="srTplBtn" data-page-node-id="sQUYeaMQPPwRe0oS7QJzNG">下载填写模板</button>
+          <button class="btn2 ghost clearBtn" data-which="spot_rate" data-page-node-id="GQi4Qze6sitTnudGwj97wf">清除历史</button>
         </div>
         <textarea id="srInput" placeholder="日期&#9;PV现货率&#9;实库现货率&#9;（每日一行；比率0~1或百分比均可；缺列留空，列名自动识别）"></textarea>
-        <div class="diag" id="diagSr"></div>
+        <div class="diag" id="diagSr" data-page-node-id="mD9rIub8rbNi4ZbJl8WmE7"></div>
       </details>
 
-<details>
-        <summary>2.8 · 长库龄预警金额数据</summary>
-        <p class="hint">表头：<b>60-90天长库龄预警金额&#9;90天以上长库龄金额&#9;60-90天长库龄预警金额（基调）&#9;60-90天长库龄预警金额（复调）&#9;90天以上长库龄金额（基调）&#9;90天以上长库龄金额（复调）</b>。每日一行，列名自动识别，缺列留空。<b>该数据独立录入、独立存储，前台按天展示；优先于库存明细里的同名列。</b>同一「日期」重复录入即覆盖更新。</p>
-        <div class="row">
-          <span class="muted" style="font-size:12px">品牌</span>
-          <select id="brand_aging_warn" class="secBrand" data-sec="aging_warn" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px">
-            <option value="李锦记">李锦记</option>
-            <option value="麦维他自营">麦维他自营</option>
-            <option value="麦维他POP">麦维他POP</option>
-            <option value="丝蕴">丝蕴</option>
-            <option value="和路雪">和路雪</option>
-            <option value="家乐">家乐</option>
-            <option value="联合利华">联合利华</option>
+<details data-page-node-id="70sJQCX4v5di2FDgJ9KCXh">
+        <summary data-page-node-id="awEus7mNBtQYvsVTPvk9TR">2.8 · 长库龄预警金额数据</summary>
+        <p class="hint" data-page-node-id="oPGAPEUMSFw3a9pGOACrox">表头：<b data-page-node-id="E0nHGgWsEf4qZhXVnY459r">60-90天长库龄预警金额&#9;90天以上长库龄金额&#9;60-90天长库龄预警金额（基调）&#9;60-90天长库龄预警金额（复调）&#9;90天以上长库龄金额（基调）&#9;90天以上长库龄金额（复调）</b>。每日一行，列名自动识别，缺列留空。<b data-page-node-id="aB9rBodjq0vRLCuObJFZAo">该数据独立录入、独立存储，前台按天展示；优先于库存明细里的同名列。</b>同一「日期」重复录入即覆盖更新。</p>
+        <div class="row" data-page-node-id="G1OilDWezVcw3y67ccUUyF">
+          <span class="muted" style="font-size:12px" data-page-node-id="gVH4dEmaGcXbunB0BHLNaP">品牌</span>
+          <select id="brand_aging_warn" class="secBrand" data-sec="aging_warn" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px" data-page-node-id="p7TTPHADkEiR0XJO92GATO">
+            <option value="李锦记" data-page-node-id="RisdrhkyWIfXH1i1Y0qLQw">李锦记</option>
+            <option value="麦维他自营" data-page-node-id="MQPaIv9p2iJrBCTlvEaCH6">麦维他自营</option>
+            <option value="麦维他POP" data-page-node-id="ZlnTfltnGHYDDsYazYRItY">麦维他POP</option>
+            <option value="丝蕴" data-page-node-id="qbEHVHXUW23TiiZM87qeJ7">丝蕴</option>
+            <option value="和路雪" data-page-node-id="3QM8TJd9PFWoxK0vEfgneo">和路雪</option>
+            <option value="家乐" data-page-node-id="4WDAiVM8CcHN38YsHn3HV2">家乐</option>
+            <option value="联合利华" data-page-node-id="zBRiuOh5uJjBWECkTwjqtV">联合利华</option>
           </select>
-          <label class="filelabel">上传文件<input type="file" id="awFile" accept=".csv,.xlsx,.xls" hidden></label>
-          <button class="btn2 ghost" id="awTplBtn">下载填写模板</button>
-          <button class="btn2 ghost clearBtn" data-which="aging_warn">清除历史</button>
+          <label class="filelabel" data-page-node-id="3u39puGzqn8f8cHvYmbkis">上传文件<input type="file" id="awFile" accept=".csv,.xlsx,.xls" hidden data-page-node-id="NBH3VIwbOAgIiDAMGwKogV"></label>
+          <button class="btn2 ghost" id="awTplBtn" data-page-node-id="HGZsOFSXkumYY4a9BEun4j">下载填写模板</button>
+          <button class="btn2 ghost clearBtn" data-which="aging_warn" data-page-node-id="FWirBEW5JT8kkokCTWM5Bt">清除历史</button>
         </div>
         <textarea id="awInput" placeholder="日期&#9;60-90天长库龄预警金额&#9;90天以上长库龄金额&#9;60-90天长库龄预警金额（基调）&#9;60-90天长库龄预警金额（复调）&#9;90天以上长库龄金额（基调）&#9;90天以上长库龄金额（复调）&#9;（每日一行；缺列留空，列名自动识别）"></textarea>
-        <div class="diag" id="diagAw"></div>
+        <div class="diag" id="diagAw" data-page-node-id="fbU2BlUqVKLNsFTvSFaZBC"></div>
       </details>
 
-      <details>
-        <summary>2.9 · 系列划分数据（SKU → 大类 / 中类 / 小类 / 系列 / 产品简称 / M/C / 部门 / 是否厂直）</summary>
-        <p class="hint">表头：<b>sku&#9;大类&#9;中类&#9;小类&#9;系列&#9;产品简称&#9;M/C&#9;部门&#9;是否厂直</b>。每个 SKU 一行，用于维护商品的层级归属（大类 / 中类 / 小类 / 系列）与展示用的简短名称、M/C 标识、所属部门、是否厂直发。<b>同一 SKU 重复录入＝覆盖更新</b>（后录的覆盖先录的）。<b>按品牌分开存储</b>：切换下方「品牌」下拉可维护各品牌自己的划分表，互不影响。</p>
-        <div class="row">
-          <span class="muted" style="font-size:12px">品牌</span>
-          <select id="brand_series" class="secBrand" data-sec="series" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px">
-            <option value="李锦记">李锦记</option>
-            <option value="麦维他自营">麦维他自营</option>
-            <option value="麦维他POP">麦维他POP</option>
-            <option value="丝蕴">丝蕴</option>
-            <option value="和路雪">和路雪</option>
-            <option value="家乐">家乐</option>
-            <option value="联合利华">联合利华</option>
+      <details data-page-node-id="vNVHU2L0UUQEHscXCFSruK">
+        <summary data-page-node-id="PcA5d8nqBQmU64dMd7QQlw">2.9 · 系列划分数据（SKU → 大类 / 中类 / 小类 / 系列 / 产品简称 / M/C / 部门 / 是否厂直）</summary>
+        <p class="hint" data-page-node-id="6aAuXQ6Qtyij6SrtYfPnnE">表头：<b data-page-node-id="ZF5LuSxX5KzCnfDTnEBmpK">sku&#9;大类&#9;中类&#9;小类&#9;系列&#9;产品简称&#9;M/C&#9;部门&#9;是否厂直</b>。每个 SKU 一行，用于维护商品的层级归属（大类 / 中类 / 小类 / 系列）与展示用的简短名称、M/C 标识、所属部门、是否厂直发。<b data-page-node-id="YGcnC75c2I2s8d0GmEpgnw">同一 SKU 重复录入＝覆盖更新</b>（后录的覆盖先录的）。<b data-page-node-id="VcgiquWo4VwMYLoa4sxqLW">按品牌分开存储</b>：切换下方「品牌」下拉可维护各品牌自己的划分表，互不影响。</p>
+        <div class="row" data-page-node-id="Xf2jmkcptN1dXVGhuLWEvH">
+          <span class="muted" style="font-size:12px" data-page-node-id="pgC9p4wsKbII6aVNS9AuqH">品牌</span>
+          <select id="brand_series" class="secBrand" data-sec="series" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px" data-page-node-id="WJGcmG96DbdAmkasYCSrRn">
+            <option value="李锦记" data-page-node-id="HHIJUloCdLXmWKdJnV0VEt">李锦记</option>
+            <option value="麦维他自营" data-page-node-id="WX9Dh3jbnDIYu36xKQzAJV">麦维他自营</option>
+            <option value="麦维他POP" data-page-node-id="8qp2tSjuEEBrc1w6GzPQEf">麦维他POP</option>
+            <option value="丝蕴" data-page-node-id="uHmVsok7FTgBPET9Exu5uX">丝蕴</option>
+            <option value="和路雪" data-page-node-id="Zg2q9xDQCz7HIyZ1UjLssH">和路雪</option>
+            <option value="家乐" data-page-node-id="o0a2S6L9iNLRq6kBaxgXeO">家乐</option>
+            <option value="联合利华" data-page-node-id="y6tsChcQqsA7ZksiDXv1b7">联合利华</option>
           </select>
-          <label class="filelabel">上传文件<input type="file" id="seriesFile" accept=".csv,.xlsx,.xls" hidden></label>
-          <button class="btn2 ghost" id="seriesTplBtn">下载填写模板</button>
-          <button class="btn2 ghost clearBtn" data-which="series">清除历史</button>
-          <button class="btn2 ghost" id="seriesCopyBtn">导出为 TSV</button>
+          <label class="filelabel" data-page-node-id="MXbFufl1yJFC3G8dia06sI">上传文件<input type="file" id="seriesFile" accept=".csv,.xlsx,.xls" hidden data-page-node-id="2AZI3yYFX2bBLoltlje2AM"></label>
+          <button class="btn2 ghost" id="seriesTplBtn" data-page-node-id="ZfRqyUDDyVDFIrvdi7Ud3t">下载填写模板</button>
+          <button class="btn2 ghost clearBtn" data-which="series" data-page-node-id="FESI8QM15M2OFoXv3vAHu0">清除历史</button>
+          <button class="btn2 ghost" id="seriesCopyBtn" data-page-node-id="mj7cp1KRZmXcgRam1lDNmB">导出为 TSV</button>
         </div>
         <textarea id="seriesInput" placeholder="sku&#9;大类&#9;中类&#9;小类&#9;系列&#9;产品简称&#9;M/C&#9;部门&#9;是否厂直（列名自动识别，缺列留空）"></textarea>
-        <div class="diag" id="diagSeries"></div>
-        <div id="seriesPreview" style="margin-top:8px;max-height:240px;overflow:auto"></div>
+        <div class="diag" id="diagSeries" data-page-node-id="hly0Fjni10mAhuDryXau7Z"></div>
+        <div id="seriesPreview" style="margin-top:8px;max-height:240px;overflow:auto" data-page-node-id="uiBEJpf9UY7nX2kqwplOJa"></div>
       </details>
 
-      <details>
-        <summary>3 · 京东京准通推广数据</summary>
-        <div class="row">
-          <span class="muted" style="font-size:12px">品牌</span>
-          <select id="brand_jzt" class="secBrand" data-sec="jzt" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px">
-            <option value="李锦记">李锦记</option>
-            <option value="麦维他自营">麦维他自营</option>
-            <option value="麦维他POP">麦维他POP</option>
-            <option value="丝蕴">丝蕴</option>
-            <option value="和路雪">和路雪</option>
-            <option value="家乐">家乐</option>
-            <option value="联合利华">联合利华</option>
+      <details data-page-node-id="WQgg2S1HDACKWvOJ06Axew">
+        <summary data-page-node-id="cZ7QBcwx3JNswCW7OVHcOE">3 · 京东京准通推广数据</summary>
+        <div class="row" data-page-node-id="Dh8T6tyhde2gTbX2GFzN5N">
+          <span class="muted" style="font-size:12px" data-page-node-id="VEdnuKDGHX55pyXDTLv6FZ">品牌</span>
+          <select id="brand_jzt" class="secBrand" data-sec="jzt" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px" data-page-node-id="6HEsPgPdzbiCWqC7Gnwk6G">
+            <option value="李锦记" data-page-node-id="BCzlXrB62mBr91eCZFfzQc">李锦记</option>
+            <option value="麦维他自营" data-page-node-id="p1QMp7loADSFMNrvu7IhE6">麦维他自营</option>
+            <option value="麦维他POP" data-page-node-id="YtxX2sbnGoRlr0GME01qn4">麦维他POP</option>
+            <option value="丝蕴" data-page-node-id="OHyJLUYva4MoAZ9j4163yD">丝蕴</option>
+            <option value="和路雪" data-page-node-id="cB9RBKGa02jDJEUWAvhtIA">和路雪</option>
+            <option value="家乐" data-page-node-id="xHgXeCfvwbauvAgRo4wjm1">家乐</option>
+            <option value="联合利华" data-page-node-id="35YgXMvPFmVDpch9GJazqA">联合利华</option>
           </select>
-          <label class="filelabel">上传文件<input type="file" id="jztFile" accept=".csv,.xlsx,.xls" hidden></label>
-          <button class="btn2 ghost clearBtn" data-which="jzt">清除历史</button>
+          <label class="filelabel" data-page-node-id="Cz4YwzPKDR6rcYUOOZW5ra">上传文件<input type="file" id="jztFile" accept=".csv,.xlsx,.xls" hidden data-page-node-id="qap98RUGPN5gZJVlN3leLO"></label>
+          <button class="btn2 ghost clearBtn" data-which="jzt" data-page-node-id="BGXtqsv3RxeDs58t6wAIte">清除历史</button>
         </div>
         <textarea id="jztInput" placeholder=""></textarea>
-        <div class="diag" id="diagJzt"></div>
+        <div class="diag" id="diagJzt" data-page-node-id="Zgky92v68cR2UmOBjfyXdf"></div>
       </details>
 
-      <details>
-        <summary>4 · 目标数据（品牌/采销/内部 GMV + POS）</summary>
-        <div class="row">
-          <span class="muted" style="font-size:12px">品牌</span>
-          <select id="brand_targets" class="secBrand" data-sec="targets" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px">
-            <option value="李锦记">李锦记</option>
-            <option value="麦维他自营">麦维他自营</option>
-            <option value="麦维他POP">麦维他POP</option>
-            <option value="丝蕴">丝蕴</option>
-            <option value="和路雪">和路雪</option>
-            <option value="家乐">家乐</option>
-            <option value="联合利华">联合利华</option>
+      <details data-page-node-id="T1FhtHYWGYphEdogphdwLj">
+        <summary data-page-node-id="3b8sCMFvi8r5uvE1jWby53">4 · 目标数据（品牌/采销/内部 GMV + POS）</summary>
+        <div class="row" data-page-node-id="WZ9rPE3WM9bdhEmgFDN08Q">
+          <span class="muted" style="font-size:12px" data-page-node-id="ELmHr0NYGqp07PVLJjqlaN">品牌</span>
+          <select id="brand_targets" class="secBrand" data-sec="targets" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px" data-page-node-id="hp0hzZacQVYPLaNBVl1BTI">
+            <option value="李锦记" data-page-node-id="AG2kL1fErUCl6QKin7eBV9">李锦记</option>
+            <option value="麦维他自营" data-page-node-id="WPwqHT02DdTsYT95oK8yCQ">麦维他自营</option>
+            <option value="麦维他POP" data-page-node-id="iFu79CCmG5txdET0XNb4pc">麦维他POP</option>
+            <option value="丝蕴" data-page-node-id="3rT7vZ7QlfS2wAvN5AMtoW">丝蕴</option>
+            <option value="和路雪" data-page-node-id="Cq1ti6loRYs2pPrjNjDUfv">和路雪</option>
+            <option value="家乐" data-page-node-id="1i6WrzlZlACZZrivWnd3CT">家乐</option>
+            <option value="联合利华" data-page-node-id="TDlSwHqrHwmWN8QmG38mdK">联合利华</option>
           </select>
-          <label class="filelabel">上传文件<input type="file" id="tgtFile" accept=".csv,.xlsx,.xls" hidden></label>
-          <button class="btn2 ghost" id="tgtTplBtn">下载填写模板</button>
-          <button class="btn2 ghost clearBtn" data-which="targets">清除历史</button>
+          <label class="filelabel" data-page-node-id="NHSpcvCud0hMephfNX3AW8">上传文件<input type="file" id="tgtFile" accept=".csv,.xlsx,.xls" hidden data-page-node-id="ZVChWmnaAg1AXzuqcPZU4W"></label>
+          <button class="btn2 ghost" id="tgtTplBtn" data-page-node-id="p9VIJSZUj77vHWR1QKtKKL">下载填写模板</button>
+          <button class="btn2 ghost clearBtn" data-which="targets" data-page-node-id="l72qN2EVbkRzUGRAsievAZ">清除历史</button>
         </div>
         <textarea id="tgtInput" placeholder="类型&#9;粒度&#9;周期&#9;目标值"></textarea>
-        <div class="diag" id="diagTargets"></div>
+        <div class="diag" id="diagTargets" data-page-node-id="lmeJoIG6AXAPAWGr2zpCzq"></div>
       </details>
 
-      <details>
-        <summary>5 · 营销 / 设计 / 数据日历</summary>
-        <p class="hint">三个模块共用此框：每行用「模块」列标明 <b>营销 / 设计 / 数据</b>，系统自动分流到对应甘特图。日期=开始日；结束日期可选（留空=当天，甘特条宽=1天）；任务、负责人必填，其余留空不报错。甘特图横轴按中国法定节假日标注「休/班」（节假日淡化、调休补班正常）。同一「模块 + 日期 + 任务」重复输入=覆盖更新；不同任务同名日期=新增一行。修改后下方点「应用并更新看板」或自动保存。</p>
-        <div class="row">
-          <label class="filelabel">上传文件<input type="file" id="ganttFile" accept=".csv,.xlsx,.xls,.txt" hidden></label>
-          <button class="btn2 ghost" id="ganttTplBtn">下载填写模板</button>
-          <button class="btn2 ghost clearBtn" data-which="gantt">清除历史</button>
+      <details data-page-node-id="55aMuJbeu8D74jUm4wKU3r">
+        <summary data-page-node-id="iGctAkxjVtr6nvD7MTu6fc">5 · 营销 / 设计 / 数据日历</summary>
+        <p class="hint" data-page-node-id="zvQo6ObrwWsFsRk3LFwTkr">三个模块共用此框：每行用「模块」列标明 <b data-page-node-id="2dYcQpFSo5NddZMZkCVu5M">营销 / 设计 / 数据</b>，系统自动分流到对应甘特图。日期=开始日；结束日期可选（留空=当天，甘特条宽=1天）；任务、负责人必填，其余留空不报错。甘特图横轴按中国法定节假日标注「休/班」（节假日淡化、调休补班正常）。同一「模块 + 日期 + 任务」重复输入=覆盖更新；不同任务同名日期=新增一行。修改后下方点「应用并更新看板」或自动保存。</p>
+        <div class="row" data-page-node-id="ypBwmMkUFBVqPL6jGhjN6V">
+          <label class="filelabel" data-page-node-id="x5c0x9hLYMLIG1ehneHiGC">上传文件<input type="file" id="ganttFile" accept=".csv,.xlsx,.xls,.txt" hidden data-page-node-id="pa44FyGR5SEwcL6n3XrQ7F"></label>
+          <button class="btn2 ghost" id="ganttTplBtn" data-page-node-id="DXTKrDIheMyNIUxaigfaWb">下载填写模板</button>
+          <button class="btn2 ghost clearBtn" data-which="gantt" data-page-node-id="wPu5wquIyCHYnK6y44wb0Y">清除历史</button>
         </div>
         <textarea id="ganttInput" placeholder="模块&#9;日期&#9;结束日期&#9;开始时间&#9;结束时间&#9;任务&#9;负责人&#9;进度(%)&#9;状态&#9;备注"></textarea>
-        <div class="diag" id="diagGantt"></div>
+        <div class="diag" id="diagGantt" data-page-node-id="EOqlAdmE9IbDo0v6k1BaBH"></div>
       </details>
 
-      <div style="margin-top:14px">
-        <button class="btn2 primary" id="applyBtn" style="background:var(--blue);color:#fff;border-color:var(--blue)">应用并更新看板</button>
-        <button class="btn2 ghost" id="clearBtn">清空全部</button>
+      <div style="margin-top:14px" data-page-node-id="fHHuLUbyujTHoFMbKLPcDE">
+        <button class="btn2 primary" id="applyBtn" style="background:var(--blue);color:#fff;border-color:var(--blue)" data-page-node-id="x0RgBGxb4YLzO8Oay8XjFs">应用并更新看板</button>
+        <button class="btn2 ghost" id="clearBtn" data-page-node-id="uCDNnFHDaTlHWHNX2OCdSH">清空全部</button>
       </div>
 
-      <div style="margin-top:16px">
-        <div class="chart-title">表头模板参考</div>
-        <table class="tpl">
-          <tr><th>模块</th><th>推荐列（顺序不限，系统自动识别）</th></tr>
-          <tr><td>销售</td><td>时间 / 商品名称 / SKU / 品牌 / 类目(一二三级) / 店铺名称 / 经营模式 / 浏览量 / 访客数 / 成交人数 / 成交单量 / 成交商品件数 / 成交金额 / 加购人数 …</td></tr>
-          <tr><td>库存周转</td><td>日期 / 全国库存（件数） / 库存金额 / 库存周转（天） / 近7天销售（件数） / 近7天销售（金额） / 近14天销售（件数） / 近14天销售（金额） / 日均销售（件数） / 日均销售（金额） / 60+长库龄金额 / 60+长库龄金额（基调） / 60+长库龄金额（复调） / 滞销金额 / 滞销金额（基调） / 滞销金额（复调） / PV现货率 / 实库现货率 / 巢湖库存 / 全链路周转 —— 供应链库存周转模板（每日一行聚合），缺列留空不影响其余</td></tr>
-          <tr><td>浮码数据<br>(独立录入)</td><td>时间 / SKU / 浮码 —— <b>单独录入、单独存储</b>，不并入库存明细（李锦记）；「全国昨日出库商品件数」自动取自库存明细的「昨日出库商品件数」列（按时间+SKU匹配）；「浮码 × 昨日出库件数 ÷ 1.129」用于计算 POS 实际；同「时间+SKU」覆盖更新，缺列留空</td></tr>
-          <tr><td>京准通<br>(见「下载填写模板」导出 Excel)</td><td>日期 / 营销场景 / 计划ID / 推广计划 / 跟单SKU ID·名称 / 展现数 / 点击数 / 花费 / 直接·间接·总订单行与金额 / 加购数 / 转化率(%) / 平均订单成本 / 投产比 / 预售·新客·关注·成交用户 等（共 36 列）</td></tr>
-          <tr><td>京准通<br>(见「下载填写模板」导出 Excel)</td><td>日期 / 商品计划名称 / ID / 投放类型 / 花费 / 全站投产比 / 全站交易额 / 全站订单行 / 全站订单成本 / 核心位置展现量 / 核心位置点击量 / 180天未购新客数 / 带券展现 / 带券点击 / 智能补贴券金额 / 智能补贴券助力订单行（京东商智·京准通全站视角导出列，核心指标自动识别，后5列作辅助信息记录）</td></tr>
-          <tr><td>目标</td><td>类型(品牌GMV/采销GMV/内部GMV/POS/京准通花费即投放花费) / 粒度(day/month/year) / 周期(2026-08-01或2026-08或2026) / 目标值</td></tr>
-          <tr><td>营销/设计/数据<br>(甘特图)</td><td>模块(营销/设计/数据) / 日期(开始日) / 结束日期(可选) / <b>开始时间(可选,时:分)</b> / <b>结束时间(可选,时:分)</b> / 任务 / 负责人 / 进度(%) / 状态 / 备注　—— 三模块<b>共用一个输入框</b>，按「模块」列自动分流到对应甘特图；同「模块+日期+任务」覆盖，不同任务新增</td></tr>
+      <div style="margin-top:16px" data-page-node-id="s0ItrkUGiWMdQpZYJNVTcB">
+        <div class="chart-title" data-page-node-id="ewlJmLqCbFkNfJDk7mrqp6">表头模板参考</div>
+        <table class="tpl" data-page-node-id="iSM28NWOcBBtX3rCOXCNR5">
+          <tr data-page-node-id="MYjKAnrPsViGthN0uCoqGX"><th data-page-node-id="JbmCKrEfCZEgR9wJ5HCKSQ">模块</th><th data-page-node-id="yjSFSqDS9m6wSp3QWSJN9Z">推荐列（顺序不限，系统自动识别）</th></tr>
+          <tr data-page-node-id="ib225gfmk28B5mKkxIoK0A"><td data-page-node-id="5QehMR1stGAQLeDgaNHqWA">销售</td><td data-page-node-id="gzAthj7bvuKTVFcTg1pQRH">时间 / 商品名称 / SKU / 品牌 / 类目(一二三级) / 店铺名称 / 经营模式 / 浏览量 / 访客数 / 成交人数 / 成交单量 / 成交商品件数 / 成交金额 / 加购人数 …</td></tr>
+          <tr data-page-node-id="mI1fAPBF3n3zJ4kjTZb5Zv"><td data-page-node-id="yGaXS6OV5Rj8rvf5YvZy2p">库存周转</td><td data-page-node-id="NXfxNYPG5XqmpPUxJ6X3ok">日期 / 全国库存（件数） / 库存金额 / 库存周转（天） / 近7天销售（件数） / 近7天销售（金额） / 近14天销售（件数） / 近14天销售（金额） / 日均销售（件数） / 日均销售（金额） / 60+长库龄金额 / 60+长库龄金额（基调） / 60+长库龄金额（复调） / 滞销金额 / 滞销金额（基调） / 滞销金额（复调） / PV现货率 / 实库现货率 / 巢湖库存 / 全链路周转 —— 供应链库存周转模板（每日一行聚合），缺列留空不影响其余</td></tr>
+          <tr data-page-node-id="XTdQNzYWtbSEzTF5pse0kK"><td data-page-node-id="E84C1ugugPcRa4e6SRKkpN">浮码数据<br data-page-node-id="aaBXUdpLbvXTolru8hMlw2">(独立录入)</td><td data-page-node-id="U1f7B3g4pAAEzPEpsRw7sE">时间 / SKU / 浮码 —— <b data-page-node-id="PIGP7eLUgXijCS0AYw8Y2N">单独录入、单独存储</b>，不并入库存明细（李锦记）；「全国昨日出库商品件数」自动取自库存明细的「昨日出库商品件数」列（按时间+SKU匹配）；「浮码 × 昨日出库件数 ÷ 1.129」用于计算 POS 实际；同「时间+SKU」覆盖更新，缺列留空</td></tr>
+          <tr data-page-node-id="jdnmSIyHKc7D8wwdTjjcrX"><td data-page-node-id="ErZDwzXEV7wcSOpVazdC9Z">京准通<br data-page-node-id="Oy70uAPnJHMdP9On4ljCZb">(见「下载填写模板」导出 Excel)</td><td data-page-node-id="bxCYliyMOUIFnKAjBTDTU0">日期 / 营销场景 / 计划ID / 推广计划 / 跟单SKU ID·名称 / 展现数 / 点击数 / 花费 / 直接·间接·总订单行与金额 / 加购数 / 转化率(%) / 平均订单成本 / 投产比 / 预售·新客·关注·成交用户 等（共 36 列）</td></tr>
+          <tr data-page-node-id="1N5CU7jqaQoXEtZgixF0PY"><td data-page-node-id="F9kjuNBAJUlypmL5ARmroB">京准通<br data-page-node-id="DNwjsZo2kTyZTKottR0SIj">(见「下载填写模板」导出 Excel)</td><td data-page-node-id="ygEkhg0dCpPkU0lEjhYclw">日期 / 商品计划名称 / ID / 投放类型 / 花费 / 全站投产比 / 全站交易额 / 全站订单行 / 全站订单成本 / 核心位置展现量 / 核心位置点击量 / 180天未购新客数 / 带券展现 / 带券点击 / 智能补贴券金额 / 智能补贴券助力订单行（京东商智·京准通全站视角导出列，核心指标自动识别，后5列作辅助信息记录）</td></tr>
+          <tr data-page-node-id="xoDYxW7ZlksaaJWxFh2pBQ"><td data-page-node-id="m4bBzvBEh5nlvZ211cw7qu">目标</td><td data-page-node-id="flY69unWF89bA9CTSeXS8q">类型(品牌GMV/采销GMV/内部GMV/POS/京准通花费即投放花费) / 粒度(day/month/year) / 周期(2026-08-01或2026-08或2026) / 目标值</td></tr>
+          <tr data-page-node-id="vMItwFyAxVO9kqH4g5s7xN"><td data-page-node-id="a0ooCWoeLhJuxsO2Z0VqMH">营销/设计/数据<br data-page-node-id="FsPdxqHawWQHAEDYhp48Dn">(甘特图)</td><td data-page-node-id="JoiY6jSJ02GXpUz0Y4GLBJ">模块(营销/设计/数据) / 日期(开始日) / 结束日期(可选) / <b data-page-node-id="Uhghgy4qyQFCmUz8mgDdAm">开始时间(可选,时:分)</b> / <b data-page-node-id="occNl0wKE8cOWW8NTSwmu2">结束时间(可选,时:分)</b> / 任务 / 负责人 / 进度(%) / 状态 / 备注　—— 三模块<b data-page-node-id="FEATQ8cruS85KfUGpc1HUM">共用一个输入框</b>，按「模块」列自动分流到对应甘特图；同「模块+日期+任务」覆盖，不同任务新增</td></tr>
         </table>
-        <p class="muted" style="margin-top:8px">提示：列名不固定也没关系，系统已内置中英文同义词识别。</p>
+        <p class="muted" style="margin-top:8px" data-page-node-id="y16PGApctjwscpDm4VO5Hb">提示：列名不固定也没关系，系统已内置中英文同义词识别。</p>
       </div>
     </div>
   </section>
 </div>
 
-<div id="tooltip"></div>
-<div class="toast" id="toast"></div>
+<div id="tooltip" data-page-node-id="XJKnxo9Cth3E5eflKvvHnM"></div>
+<div class="toast" id="toast" data-page-node-id="Wjgh2QnoOKunXqzWmbIICi"></div>
 
 <!-- 甘特任务编辑弹窗 -->
-<div class="modal-mask" id="ganttModal">
-  <div class="modal-box">
-    <div class="modal-title" id="gmTitle">编辑任务</div>
-    <div class="modal-grid">
-      <label>模块
-        <select id="gm_module">
-          <option value="营销">营销</option>
-          <option value="设计">设计</option>
-          <option value="数据">数据</option>
+<div class="modal-mask" id="ganttModal" data-page-node-id="XIr4tsoQYODtk1xCLUoWnx">
+  <div class="modal-box" data-page-node-id="9CYrF3ocbHGXhGuE6C4Fif">
+    <div class="modal-title" id="gmTitle" data-page-node-id="MhsujXFMaOTxTjo8cwSi8Y">编辑任务</div>
+    <div class="modal-grid" data-page-node-id="PlAjDREiHFD7NjtLLq3NO0">
+      <label data-page-node-id="AYdAEVwfqZkBghFQg9h19V">模块
+        <select id="gm_module" data-page-node-id="bKrrfMMlM5j4KmqBVrv1Th">
+          <option value="营销" data-page-node-id="ck0OKOinEyijqfspr7HfG7">营销</option>
+          <option value="设计" data-page-node-id="bgjlcW8shL2ow1AXvqzVep">设计</option>
+          <option value="数据" data-page-node-id="iUs7i18SekXsb9QpmeNmOf">数据</option>
         </select>
       </label>
-      <label>开始日期<input id="gm_date" type="date"></label>
-      <label>结束日期（可空）<input id="gm_endDate" type="date"></label>
-      <label>开始时间（可空）<input id="gm_startTime" type="time"></label>
-      <label>结束时间（可空）<input id="gm_endTime" type="time"></label>
-      <label>任务名称<input id="gm_task" type="text" placeholder="如：双11主图改版"></label>
-      <label>负责人<input id="gm_owner" type="text" placeholder="如：张三"></label>
-      <label>进度（%）<input id="gm_progress" type="number" min="0" max="100" step="1"></label>
-      <label>状态<input id="gm_status" type="text" placeholder="如：进行中 / 已完成"></label>
+      <label data-page-node-id="ZXAGc7o5Rpq0rhSOzCKsQi">开始日期<input id="gm_date" type="date" data-page-node-id="1Q2gNOffi3dY5flvfoyjC3"></label>
+      <label data-page-node-id="BemobeRszreBgbZgHLFSr3">结束日期（可空）<input id="gm_endDate" type="date" data-page-node-id="TJmHzid3XA4sDTaJhY4Nky"></label>
+      <label data-page-node-id="STzPmcB83PirFEQzyutjU9">开始时间（可空）<input id="gm_startTime" type="time" data-page-node-id="rim7IFNRWRXrXfDXaCv6SP"></label>
+      <label data-page-node-id="jcmkUBjJQvj9WF2ne6k9NV">结束时间（可空）<input id="gm_endTime" type="time" data-page-node-id="dWoCLEaxRcUkYUfpMda3cb"></label>
+      <label data-page-node-id="JMLfo1DXjlyGD0wCgkRFTg">任务名称<input id="gm_task" type="text" placeholder="如：双11主图改版" data-page-node-id="nRy2LaGREFrVe86ROPDYbP"></label>
+      <label data-page-node-id="D1s8gP51FiGjLy0kX5ND8C">负责人<input id="gm_owner" type="text" placeholder="如：张三" data-page-node-id="rHqzSGExjEyVT0llUYxAOZ"></label>
+      <label data-page-node-id="QlAz1OmDqdmvw13hpYDdDw">进度（%）<input id="gm_progress" type="number" min="0" max="100" step="1" data-page-node-id="FKSpKznjpG3VUSs5tIrlLo"></label>
+      <label data-page-node-id="hOp0I8foV7S2GS7a3UgFn4">状态<input id="gm_status" type="text" placeholder="如：进行中 / 已完成" data-page-node-id="NLxABGTkFOsaeDgd8aAY93"></label>
     </div>
-    <label style="display:block;margin:10px 0 0;font-size:12px;color:#475569">备注
+    <label style="display:block;margin:10px 0 0;font-size:12px;color:#475569" data-page-node-id="4o6RLCaaDMmbsKkosH8fhf">备注
       <textarea id="gm_note" rows="2" style="width:100%;font-size:13px;padding:6px 8px;border:1px solid #d1d5db;border-radius:7px;color:var(--ink);resize:vertical"></textarea>
     </label>
-    <div class="modal-actions">
-      <button class="btn2 ghost" id="gm_delete" style="color:#dc2626;border-color:#fca5a5">删除</button>
-      <span class="grow"></span>
-      <button class="btn2 ghost" id="gm_cancel">取消</button>
-      <button class="btn2 primary" id="gm_save" style="background:var(--blue);color:#fff;border-color:var(--blue)">保存</button>
+    <div class="modal-actions" data-page-node-id="OGrLkrrku1IBjWoJdpD24a">
+      <button class="btn2 ghost" id="gm_delete" style="color:#dc2626;border-color:#fca5a5" data-page-node-id="wZBdl5ibEEoQmYiiLH6OrS">删除</button>
+      <span class="grow" data-page-node-id="OxB3FoP7Ye1EAUGPCrwjtf"></span>
+      <button class="btn2 ghost" id="gm_cancel" data-page-node-id="YppgcdsAClLM4nKtXDL296">取消</button>
+      <button class="btn2 primary" id="gm_save" style="background:var(--blue);color:#fff;border-color:var(--blue)" data-page-node-id="6fmlixkvEkAFq8ADtXsfYt">保存</button>
     </div>
   </div>
 </div>
 
 <!-- 清除历史数据弹窗 -->
-<div class="modal-mask" id="clearModal">
-  <div class="modal-box" style="max-width:480px">
-    <div class="modal-title" id="cmTitle">清除历史数据</div>
-    <div class="modal-grid">
-      <label>清除方式
-        <select id="cmMode">
-          <option value="day">按日清除</option>
-          <option value="month">按月清除</option>
-          <option value="all">清除全部</option>
-          <option value="type" id="cmTypeOpt" style="display:none">按类型清除（仅目标）</option>
+<div class="modal-mask" id="clearModal" data-page-node-id="BPquJhh9t0cCIVnXUJDhAu">
+  <div class="modal-box" style="max-width:480px" data-page-node-id="BsmsTn3EdwzIyZExxIne5h">
+    <div class="modal-title" id="cmTitle" data-page-node-id="NifQS79ZnJLz28MQ8xnyUX">清除历史数据</div>
+    <div class="modal-grid" data-page-node-id="vAdEdqIOYVJziT5xBvy1Qt">
+      <label data-page-node-id="MLniCM2P6GH7KziEFhbcX1">清除方式
+        <select id="cmMode" data-page-node-id="nHow09s8y5Nemju8AiuvBc">
+          <option value="day" data-page-node-id="Qmb68QDfCnFOmVht9ufvFF">按日清除</option>
+          <option value="month" data-page-node-id="ECB85Dvu0oIv2Jk7gF02Zw">按月清除</option>
+          <option value="all" data-page-node-id="tph4CtoEVR0t7Do6fIuvYm">清除全部</option>
+          <option value="type" id="cmTypeOpt" style="display:none" data-page-node-id="BxeaiVHmT5WfGQ15ehrKpI">按类型清除（仅目标）</option>
         </select>
       </label>
-      <label id="cmDateWrap">选择日期<input id="cmDate" type="date"></label>
-      <label id="cmMonthWrap" style="display:none">选择月份<input id="cmMonth" type="month"></label>
-      <label id="cmTypeWrap" style="display:none">选择类型
-        <select id="cmType"></select>
+      <label id="cmDateWrap" data-page-node-id="PZnQkPtyDZOJy1w2drjh4E">选择日期<input id="cmDate" type="date" data-page-node-id="jm5sehCVUdNB1A3xzLQSkV"></label>
+      <label id="cmMonthWrap" style="display:none" data-page-node-id="MPXg63KOC7dfPr5AekNp1q">选择月份<input id="cmMonth" type="month" data-page-node-id="L87BwMID5gHExaZQFDqnvp"></label>
+      <label id="cmTypeWrap" style="display:none" data-page-node-id="aIN3mUyNek0j6Hm7DB58IJ">选择类型
+        <select id="cmType" data-page-node-id="k7XMmBIK9ThFMD53ft0AiK"></select>
       </label>
-      <label id="cmModuleWrap" style="display:none">清除模块
-        <select id="cmModule">
-          <option value="全部">全部（营销+设计+数据）</option>
-          <option value="营销">营销</option>
-          <option value="设计">设计</option>
-          <option value="数据">数据</option>
+      <label id="cmModuleWrap" style="display:none" data-page-node-id="oCkTcBztMb3skUvlVnC4W9">清除模块
+        <select id="cmModule" data-page-node-id="VHHTWJ1wuSaekEFmG7Zoct">
+          <option value="全部" data-page-node-id="EyVuGEq5oU93z396Hxgwib">全部（营销+设计+数据）</option>
+          <option value="营销" data-page-node-id="nFB1irHNMHAUUbBT7VTiFH">营销</option>
+          <option value="设计" data-page-node-id="HnZNgAMVnfc2Jn0mgdESQR">设计</option>
+          <option value="数据" data-page-node-id="uGiFbkhId0OHi0MAnKJGLV">数据</option>
         </select>
       </label>
-      <label id="cmBrandWrap" style="display:none">选择品牌
-        <select id="cmBrand"></select>
+      <label id="cmBrandWrap" style="display:none" data-page-node-id="xqsPoiarDHVJ70AM4tOqvy">选择品牌
+        <select id="cmBrand" data-page-node-id="FAZw9Svk19Rihr5xLVSIfN"></select>
       </label>
     </div>
-    <p id="cmBrandAlert" style="margin:10px 0 0;padding:9px 11px;border-radius:8px;background:#fff4f4;color:#c0392b;font-size:13px;border:1px solid #f3c7c7;display:none"></p>
-    <p class="hint" id="cmHint" style="margin:10px 0 0"></p>
-    <div class="modal-actions">
-      <span class="grow"></span>
-      <button class="btn2 ghost" id="cm_cancel">取消</button>
-      <button class="btn2 primary" id="cm_clear" style="background:var(--red,#dc2626);color:#fff;border-color:var(--red,#dc2626)">清除</button>
+    <p id="cmBrandAlert" style="margin:10px 0 0;padding:9px 11px;border-radius:8px;background:#fff4f4;color:#c0392b;font-size:13px;border:1px solid #f3c7c7;display:none" data-page-node-id="eah53GuwmuwehDfTH6tlOz"></p>
+    <p class="hint" id="cmHint" style="margin:10px 0 0" data-page-node-id="qqW90JEuqDZ9g7glie4P5P"></p>
+    <div class="modal-actions" data-page-node-id="we5iZzW0ziSBM74ucGoCnb">
+      <span class="grow" data-page-node-id="eF3mH8yQJWfGeeeMQIb1Z6"></span>
+      <button class="btn2 ghost" id="cm_cancel" data-page-node-id="IG0VsJDhlCY2Q82USYEMi3">取消</button>
+      <button class="btn2 primary" id="cm_clear" style="background:var(--red,#dc2626);color:#fff;border-color:var(--red,#dc2626)" data-page-node-id="IBfzMaI9dJNrsdpehACr8B">清除</button>
     </div>
   </div>
 </div>
@@ -726,7 +726,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-31-fix68b-series-extra-cols';
+const APP_VERSION = '2026-08-31-fix69-local-mode';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -3850,6 +3850,14 @@ const SNAPSHOT_FALLBACK_URLS=[
 // 改为 'gitee' 即改用码云作云端后端：国内免费、可写、同事免 VPN、无 5 人限制（API 单 token 写入，不占 Git 协作者名额）。
 // 切 Gitee 前需：① 在 Gitee 建好下面的私有数据仓 + 公开快照仓；② 把右下角徽章粘贴的令牌换成 Gitee 私人令牌（repo 权限）。
 const BACKEND_TYPE='github'; // fix66l: 切回 GitHub（用户已开 VPN；Gitee 24MB 文件截断导致云端加载失败）
+
+// fix69：本地服务器模式（自托管）。用 ?local=1 或 ?local=http://host:port 开启：
+// 数据改存「本机磁盘」（由 serve_local.js 提供 /api/state），不再依赖 GitHub，适合单机/局域网内自托管。
+const LOCAL_MODE = /[?&]local(=|$)/.test(location.search);
+const LOCAL_BASE = (function(){
+  const m = location.search.match(/[?&]local=(https?:\/\/[^&\s]+)/);
+  return m ? m[1].replace(/\/$/,'') : 'http://127.0.0.1:8787';
+})();
 // GitHub 配置（沿用上方 GH_* 常量）
 const GITHUB_CFG={ owner:GH_OWNER, dataRepo:GH_REPO, pubRepo:GH_PUB_REPO, branch:GH_BRANCH,
   pagesBase:'https://'+GH_OWNER+'.github.io/'+GH_PUB_REPO+'/' }; // 查看者免令牌只读基址
@@ -4316,6 +4324,15 @@ async function saveToService(){
   // 上传后若用户立刻刷新，本地写入尚未落盘即被丢弃（无令牌或云端推送失败时就彻底丢失）→ “刷新后数据丢失”。
   await idbSet(STATE); // 浏览器本地主存储：容量大、离线可用（await 保证落盘后再继续）
   if(window.__noCloudPushOnce){ return; } // 保险丝：示例初始化只存本地，不推云端
+  if(LOCAL_MODE){
+    // fix69：本地服务器模式——整份 STATE 推到本机磁盘（serve_local.js 的 /api/state），不依赖 GitHub
+    try{
+      const res=await fetch(LOCAL_BASE+'/api/state',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(STATE)});
+      if(res.ok){ if(typeof window.clearLocalUnsynced==='function') window.clearLocalUnsynced(); }
+      else { toast('⚠️ 本地服务器保存失败（HTTP '+res.status+'），数据已存本机浏览器', true); }
+    }catch(e){ toast('⚠️ 本地服务器不可达（'+LOCAL_BASE+'），数据已存本机浏览器；请确认本地服务已启动：node serve_local.js', true); }
+    return;
+  }
   if(!ghToken()){
     // 无令牌：云端/快照均不可写，数据只在本机浏览器。明确告警一次，避免同事以为已保存（fix28）
     if(!window.__warnedNoToken){
@@ -4377,6 +4394,7 @@ async function boot(){
   // ===== fix66j 诊断：逐步记录云端加载链路，定位"徽章已连接但数据走本地缓存"的根因 =====
   (async function diagBoot(){
     try{
+      if(LOCAL_MODE) return; // fix69：本地模式跳过 GitHub 连通性诊断
       var t=ghToken()||'';
       console.log('[boot-diag] BACKEND_TYPE='+BACKEND_TYPE+' | token='+(t?t.slice(0,4)+'..'+t.slice(-4):'(empty)')+' | len='+t.length);
       // Step 1: 测试 Gitee API 基础连通性
@@ -4420,7 +4438,19 @@ async function boot(){
   // 启动数据源优先级：云端 > 本地 IndexedDB 缓存 > 示例数据。
   // 关键修复：之前不读 IndexedDB，且离线时灌示例会把真实数据覆盖成样例 → 刷新即丢失。
   let loaded=null, fromWhere='';
-  if(cloudOk){
+  // fix69：本地服务器模式——以本机磁盘文件为单一真源，跳过 GitHub 云端
+  if(LOCAL_MODE){
+    window.__hideCollabBadge=true;
+    try{
+      const res=await fetch(LOCAL_BASE+'/api/state');
+      if(res.ok){
+        const txt=await res.text();
+        if(txt && txt!=='null'){ const st=JSON.parse(txt); if(isUsableState(st)){ loaded=st; fromWhere='本地服务器'; } }
+      }
+    }catch(e){ console.warn('[boot] 本地服务器读取失败', e.message||e); }
+    if(!loaded){ try{ const lc=await idbGet(); if(lc&&isUsableState(lc)){ loaded=lc; fromWhere='本地缓存'; } }catch(_){} }
+  }
+  if(cloudOk && !LOCAL_MODE){
     try{
       const raw=await ghGetFile('dashboards/'+currentBoard.id+'.json');
       const row=await loadBoardState(currentBoard.id);
@@ -4440,7 +4470,7 @@ async function boot(){
     console.warn('[boot] cloudOk=false, 跳过云端加载. listErr=', listErr ? (listErr.message||listErr).slice(0,100) : '-');
   }
   // 云端读不到时（无令牌，或 GitHub API 被本机网络拦截）
-  if(!loaded){
+  if(!loaded && !LOCAL_MODE){
     const snap=await fetchPublicSnapshot().catch(()=>null);
     const local=await idbGet().catch(()=>null);
     const snapOk=snap&&snap.state&&isUsableState(snap.state);
@@ -4486,6 +4516,8 @@ async function boot(){
     if(fromWhere==='云端'){ toast('已从云端加载数据 · '+APP_VERSION); window.__hideCollabBadge=true; }
     else if(fromWhere==='公开快照'){ toast('已载入「'+currentBoard.name+'」最新数据（只读模式，由录入同事每日更新）'); }
     else if(fromWhere==='本地优先·与公开快照合并'){ toast('已从本机恢复并合并公开快照（未配置令牌：数据仅存本机，点右下角徽章粘贴令牌即可云端共享）'); }
+    else if(fromWhere==='本地服务器'){ toast('本地模式：已从本机服务器加载数据（'+LOCAL_BASE+'）'); }
+    else if(fromWhere==='本地缓存' && LOCAL_MODE){ toast('本地模式：本机服务器暂不可达，已从浏览器缓存恢复'); }
     else { toast('已从本地缓存恢复「'+currentBoard.name+'」（云端暂不可用，联网后将自动同步）'); }
   } else {
     // 真正的首次使用：本地与云端都无数据 → 载入示例（此分支才会写样例，不会覆盖已有数据）
@@ -4493,6 +4525,7 @@ async function boot(){
     // 防误覆盖保险丝：示例数据只供本地查看，禁止推送到云端（否则云端读取失败时会拿示例覆盖真实数据）
     window.__noCloudPushOnce=true; readInputs(); window.__noCloudPushOnce=false;
     if(cloudOk){ toast('已连接云端（GitHub）。「'+currentBoard.name+'」看板初始为示例数据，请上传你的真实数据'); }
+    else if(LOCAL_MODE){ toast('本地模式：已载入示例数据，录入后自动保存到本机服务器（'+LOCAL_BASE+'）'); }
     else { var why=listErr?errMsg(listErr):'网络异常'; toast('云端暂不可用（'+(why||'网络异常').slice(0,80)+'），已载入示例数据（离线模式）；配置好云端后会自动同步', true); }
   }
   renderAll();
