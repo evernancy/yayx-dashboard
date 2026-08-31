@@ -536,8 +536,8 @@
       </details>
 
       <details>
-        <summary>2.9 · 系列划分数据（SKU → 大类 / 中类 / 小类 / 系列 / 产品简称）</summary>
-        <p class="hint">表头：<b>sku&#9;大类&#9;中类&#9;小类&#9;系列&#9;产品简称</b>。每个 SKU 一行，用于维护商品的层级归属（大类 / 中类 / 小类 / 系列）与展示用的简短名称。<b>同一 SKU 重复录入＝覆盖更新</b>（后录的覆盖先录的）。<b>按品牌分开存储</b>：切换下方「品牌」下拉可维护各品牌自己的划分表，互不影响。</p>
+        <summary>2.9 · 系列划分数据（SKU → 大类 / 中类 / 小类 / 系列 / 产品简称 / M/C / 部门 / 是否厂直）</summary>
+        <p class="hint">表头：<b>sku&#9;大类&#9;中类&#9;小类&#9;系列&#9;产品简称&#9;M/C&#9;部门&#9;是否厂直</b>。每个 SKU 一行，用于维护商品的层级归属（大类 / 中类 / 小类 / 系列）与展示用的简短名称、M/C 标识、所属部门、是否厂直发。<b>同一 SKU 重复录入＝覆盖更新</b>（后录的覆盖先录的）。<b>按品牌分开存储</b>：切换下方「品牌」下拉可维护各品牌自己的划分表，互不影响。</p>
         <div class="row">
           <span class="muted" style="font-size:12px">品牌</span>
           <select id="brand_series" class="secBrand" data-sec="series" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px">
@@ -554,7 +554,7 @@
           <button class="btn2 ghost clearBtn" data-which="series">清除历史</button>
           <button class="btn2 ghost" id="seriesCopyBtn">导出为 TSV</button>
         </div>
-        <textarea id="seriesInput" placeholder="sku&#9;大类&#9;中类&#9;小类&#9;系列&#9;产品简称&#9;（每个 SKU 一行；缺列留空，列名自动识别）"></textarea>
+        <textarea id="seriesInput" placeholder="sku&#9;大类&#9;中类&#9;小类&#9;系列&#9;产品简称&#9;M/C&#9;部门&#9;是否厂直（列名自动识别，缺列留空）"></textarea>
         <div class="diag" id="diagSeries"></div>
         <div id="seriesPreview" style="margin-top:8px;max-height:240px;overflow:auto"></div>
       </details>
@@ -726,7 +726,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-31-fix68-series-section';
+const APP_VERSION = '2026-08-31-fix68b-series-extra-cols';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -825,6 +825,9 @@ const ALIAS = {
   catS:['小类','三级分类','小分类','small_cat','cat_s','category_s','cate_s'],
   series:['系列','series','product_series','产品线','product_line'],
   shortName:['产品简称','简称','商品简称','short_name','abbr','alias_name'],
+  mc:['M/C','m/c','mc','mc_code','m_c','mc分类','mc_category'],
+  dept:['部门','dept','department','事业部','bu','business_unit'],
+  factoryDirect:['是否厂直','厂直','factory_direct','factorydirect','is_factory_direct','厂直发','是否厂直发'],
   // —— 仓库维度（fix43：纳入去重键，避免「同 SKU 同日期不同配送中心/大区」被折叠成 1 行）——
   warehouse:['配送中心','仓库','中心仓','城市仓','warehouse','storehouse','dc','distributioncenter'],
   rdc:['RDC','rdc','区域配送中心','大区仓','区域仓'],
@@ -2817,7 +2820,7 @@ function renderSeriesPreview(){
   const bn=(sel&&STATE.brands[sel.value])?sel.value:STATE.currentBrand;
   const rows=(STATE.brands[bn]&&STATE.brands[bn].series)||[];
   if(!rows.length){ el.innerHTML=''; return; }
-  const cols=[['sku','sku'],['catL','大类'],['catM','中类'],['catS','小类'],['series','系列'],['shortName','产品简称']];
+  const cols=[['sku','sku'],['catL','大类'],['catM','中类'],['catS','小类'],['series','系列'],['shortName','产品简称'],['mc','M/C'],['dept','部门'],['factoryDirect','是否厂直']];
   let h='<div style="font-size:12px;color:var(--muted,#6b7280);margin:6px 0 4px">已录入 <b>'+rows.length+'</b> 个 SKU（品牌：'+bn+'）· 展示前 200 行</div>';
   h+='<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr>';
   cols.forEach(c=>{ h+='<th style="text-align:left;padding:4px 6px;border-bottom:1px solid var(--border,#e5e7eb);white-space:nowrap">'+c[1]+'</th>'; });
@@ -2969,15 +2972,15 @@ $('#seriesInput').addEventListener('input',()=>{ clearTimeout(deb); deb=setTimeo
 // 系列划分：下载填写模板（真实 .xlsx，含示例行 + 填写说明 Sheet）
 const seriesTplBtn=$('#seriesTplBtn'); if(seriesTplBtn) seriesTplBtn.addEventListener('click',()=>{
   const rows=[
-    ['sku','大类','中类','小类','系列','产品简称'],
-    ['100051893732','饼干','酥性饼干','夹心','夹心系列','夹心饼干'],
-    ['100051893733','饼干','韧性饼干','消化','消化系列','消化饼'],
-    ['100051893734','饮料','即饮茶','乌龙','乌龙系列','乌龙茶饮'],
-    ['','','','','',''],
-    ['','','','','','']
+    ['sku','大类','中类','小类','系列','产品简称','M/C','部门','是否厂直'],
+    ['100051893732','饼干','酥性饼干','夹心','夹心系列','夹心饼干','M','饼干事业部','否'],
+    ['100051893733','饼干','韧性饼干','消化','消化系列','消化饼','M','饼干事业部','否'],
+    ['100051893734','饮料','即饮茶','乌龙','乌龙系列','乌龙茶饮','C','饮料事业部','是'],
+    ['','','','','','','',''],
+    ['','','','','','','','']
   ];
   const ws=XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols']=[{wch:18},{wch:12},{wch:14},{wch:12},{wch:14},{wch:20}];
+  ws['!cols']=[{wch:18},{wch:12},{wch:14},{wch:12},{wch:14},{wch:20},{wch:8},{wch:16},{wch:12}];
   const wsHelp=XLSX.utils.aoa_to_sheet([
     ['列','说明','必填','示例'],
     ['sku','商品编码（商品编号 / 货号 亦可自动识别）','是','100051893732'],
@@ -2986,6 +2989,9 @@ const seriesTplBtn=$('#seriesTplBtn'); if(seriesTplBtn) seriesTplBtn.addEventLis
     ['小类','三级品类','否','夹心'],
     ['系列','系列名称','否','夹心系列'],
     ['产品简称','产品短名，用于看板展示','否','夹心饼干'],
+    ['M/C','M/C 分类标识（如 M / C）','否','M'],
+    ['部门','所属部门 / 事业部','否','饼干事业部'],
+    ['是否厂直','是否厂直发：是 / 否','否','否'],
     ['','','',''],
     ['提示','每个 SKU 一行；重复上传同一个 sku 会自动覆盖旧记录（按 sku 去重）','',''],
     ['提示','请先在数据输入区右上角的品牌下拉选择目标品牌，再上传/粘贴','','']
@@ -3007,7 +3013,7 @@ const seriesCopyBtn=$('#seriesCopyBtn'); if(seriesCopyBtn) seriesCopyBtn.addEven
   const b=STATE.brands[bn];
   const rows=(b&&b.series)||[];
   if(!rows.length){ toast('当前品牌还没有系列划分数据'); return; }
-  const cols=[['sku','sku'],['catL','大类'],['catM','中类'],['catS','小类'],['series','系列'],['shortName','产品简称']];
+  const cols=[['sku','sku'],['catL','大类'],['catM','中类'],['catS','小类'],['series','系列'],['shortName','产品简称'],['mc','M/C'],['dept','部门'],['factoryDirect','是否厂直']];
   const esc=v=>String(v===undefined||v===null?'':v).replace(/[\t\r\n]+/g,' ');
   const tsv=[cols.map(c=>c[1]).join('\t')].concat(rows.map(r=>cols.map(c=>esc(r[c[0]])).join('\t'))).join('\n');
   const fname='系列划分_'+bn+'.tsv';
