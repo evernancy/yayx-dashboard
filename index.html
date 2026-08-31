@@ -702,7 +702,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-28-fix66x-chaohu-intr-date-serial-bug';
+const APP_VERSION = '2026-08-31-fix66y-gantt-legend-color';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -2187,7 +2187,7 @@ function renderGantt(module, elId, ym){
     let lx=x0, ly=H-18;
     g+=`<text x="${x0-4}" y="${ly+10}" text-anchor="end" font-size="9" fill="#9ca3af">负责人：</text>`;
     owners.slice(0,8).forEach(o=>{
-      const c=ownerColor(o);
+      const c=modColor; // fix66y: 图例与条形一致（均按模块着色），不再按负责人哈希
       g+=`<rect x="${lx}" y="${ly}" width="12" height="10" rx="2" fill="${c}" fill-opacity="0.7"/>`;
       const ol=o.length>5?o.slice(0,4)+'…':o;
       g+=`<text x="${lx+15}" y="${ly+9}" font-size="9" fill="#4b5563">${esc(ol)}</text>`;
