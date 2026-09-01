@@ -2054,7 +2054,7 @@ function posActualSum(start,end){
 }
 /* fix69bl：京准通关键词数据聚合（3.2 输入区）。
    过滤条件：营销场景 = 关键词；按日期范围过滤后，按关键词名聚合。
-   返回 {byKeyword, byCategory, totals} —— byCategory 含 品牌词(含李锦记)/类目词 两组汇总。 */
+   返回 {byKeyword, byCategory, totals} —— byCategory 含 品牌词(含李锦记)/品类词 两组汇总。 */
 function computeJztKw(start,end){
   const all=B().jzt_kw||[];
   if(!all.length) return null;
@@ -2084,12 +2084,12 @@ function computeJztKw(start,end){
   rows=rows.filter(r=>{ const sc=String(get(r,'scene','ext_营销场景','营销场景')||'').trim(); return sc.includes('关键词'); });
   if(!rows.length) return null;
   const byKeyword={};
-  const byCategory={'品牌词':{spend:0,clicks:0,gmv:0,imp:0,orders:0},'类目词':{spend:0,clicks:0,gmv:0,imp:0,orders:0}};
+  const byCategory={'品牌词':{spend:0,clicks:0,gmv:0,imp:0,orders:0},'品类词':{spend:0,clicks:0,gmv:0,imp:0,orders:0}};
   rows.forEach(r=>{
     let kw=String(get(r,'ext_关键词','关键词','keyword')||'').trim();
     if(!kw) kw='(空关键词)';
     const isBrand=kw.includes('李锦记');
-    const cat=isBrand?'品牌词':'类目词';
+    const cat=isBrand?'品牌词':'品类词';
     const sp=numOf(r,'spend','ext_花费','花费'); const cl=numOf(r,'clicks','ext_点击数','点击数');
     const gm=numOf(r,'gmv','ext_总订单金额','总订单金额'); const im=numOf(r,'impressions','ext_展现数','展现数');
     const or=numOf(r,'orders','ext_总订单行','总订单行');
@@ -2227,7 +2227,7 @@ function renderJzt(){
   t+='</tr></tbody></table>';
 
   /* fix69bl：关键词数据（词类汇总 + TOP50）——从 3.2 京准通关键词数据取 营销场景=关键词 的行，
-     判定规则：关键词含「李锦记」= 品牌词，其余 = 类目词；TOP 按花费降序取前 50。 */
+     判定规则：关键词含「李锦记」= 品牌词，其余 = 品类词；TOP 按花费降序取前 50。 */
   t+='<h3 style="color:#dc2626;margin:18px 0 10px;font-size:15px">关键词数据</h3>';
 
   // 三期数据：本期 / 同比 / 环比
@@ -2236,7 +2236,7 @@ function renderJzt(){
   const kwM=computeJztKw(mStart,mEnd);
 
   if(kwC){
-    // ===== 词类表：类目词 / 品牌词 / 总计 =====
+    // ===== 词类表：品类词 / 品牌词 / 总计 =====
     t+='<table class="tpl" style="margin-top:8px">';
     t+='<thead><tr><th rowspan="2">词类</th>';
     ['花费','点击','成交','CPC','ROI'].forEach(k=>{ t+=`<th colspan="3">${esc(k)}</th>`; });
@@ -2244,7 +2244,7 @@ function renderJzt(){
     for(let i=0;i<5;i++){ t+='<th style="font-size:11px">本期</th><th style="font-size:11px">同比</th><th style="font-size:11px">环比</th>'; }
     t+='</tr></thead><tbody>';
 
-    const cats=['类目词','品牌词'];
+    const cats=['品类词','品牌词'];
     cats.forEach(cat=>{
       const c=kwC.byCategory[cat]||{spend:0,clicks:0,gmv:0,imp:0,orders:0};
       const y=kwY?(kwY.byCategory[cat]||{spend:0,clicks:0,gmv:0,imp:0,orders:0}):null;
