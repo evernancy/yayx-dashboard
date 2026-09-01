@@ -193,7 +193,7 @@
 <body data-page-node-id="TnJopYRx03FYyUEAnM7EON">
 <!-- fix69af 版本标记：厂直值改"厂直"+系列明细时间联动 -->
 <div id="versionMarker" style="background:linear-gradient(135deg,#16a34a,#2563eb);color:#fff;text-align:center;padding:4px 10px;font:bold 13px system-ui;position:relative;z-index:99998;">
-  🟢 fix69bn · <span id="vmMode"></span> v2026-09-01 · <span id="vmTime"></span> · <span id="vmDebug" style="font-weight:normal;opacity:.9;background:rgba(0,0,0,.2);padding:1px 6px;border-radius:3px"></span>
+  🟢 fix69bo · <span id="vmMode"></span> v2026-09-01 · <span id="vmTime"></span> · <span id="vmDebug" style="font-weight:normal;opacity:.9;background:rgba(0,0,0,.2);padding:1px 6px;border-radius:3px"></span>
 </div>
 <!-- fix69aa 终极诊断：独立小脚本（不在主282KB块内），测试JS能否执行 -->
 <script>
@@ -859,7 +859,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-09-01-fix69bn-input-section-fix';
+const APP_VERSION = '2026-09-01-fix69bo-jztkw-parse-perf';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -1065,16 +1065,20 @@ function parseTable(text){
 /* parseTable 的行解析核心：表头映射 + 过滤 + 对象构建 */
 function _parseRows(headers, lines, delim){
   const rows=[];
+  /* fix69bo：别名映射表一次建好（O(1) 查找）。
+     原实现在每行每列都 `for(const f in ALIAS){ if(ALIAS[f].includes(lk)) ... }` 线性扫描，
+     200K 行 × 28 列 × 132 个别名 ≈ 7.4 亿次字符串匹配 → parseTable 耗时 85 秒、主线程冻结、浏览器误判「解析失败」。
+     现改为：进入行循环前用 headers 建 lk→标准key 映射表（headers 对全表一致，只算一次），行内直接 O(1) 取值。 */
+  const aliasMap={};
+  for(const f in ALIAS){ for(const a of (ALIAS[f]||[])){ const al=String(a).trim().toLowerCase(); if(!(al in aliasMap)) aliasMap[al]=f; } }
+  const colKeys=headers.map(h=>{ const lk=String(h||'').trim().toLowerCase(); return aliasMap[lk]||('ext_'+lk.replace(/\s+/g,'')); });
   for(let i=1;i<lines.length;i++){
     const cells=lines[i].split(delim);
     if(cells.length<headers.length-1) continue;
     const o={};
     // 保留所有列：ALIAS 命中用标准 key，未命中用 ext_<列名> 保留原始维度（用于追加合并的业务键区分，且不影响数值计算）
     for(let ci=0; ci<headers.length; ci++){
-      const lk=String(headers[ci]||'').trim().toLowerCase();
-      let key=null;
-      for(const f in ALIAS){ if(ALIAS[f].includes(lk)){ key=f; break; } }
-      if(!key) key='ext_'+lk.replace(/\s+/g,'');
+      const key=colKeys[ci];
       const raw=cells[ci]!==undefined?cells[ci]:'';
       let v;
       if(raw instanceof Date){ const y=raw.getFullYear(),mo=String(raw.getMonth()+1).padStart(2,'0'),dd=String(raw.getDate()).padStart(2,'0'); v=`${y}-${mo}-${dd}`; }
