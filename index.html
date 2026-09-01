@@ -4136,6 +4136,8 @@ function renderAll(){
   refreshInvDateOptions();
   renderSales(); renderInv(); renderJzt(); renderJztTargets(); renderTargets(); renderOverview();
   populateGanttMonth('营销','#ganttMkt'); populateGanttMonth('设计','#ganttDesign');
+  /* fix69bz：数据日历（飞书式）需在每次 renderAll 时同步刷新 */
+  if(typeof renderFeishuCalendar==='function') renderFeishuCalendar();
   /* fix69bv：数据日历已改飞书式，不再需要月份下拉 */
   updateTimeProgress();
   // fix69w：#lastUpdate 已替换为 #saveStatus（由 updateSaveStatus 管理），此处不再单独更新
