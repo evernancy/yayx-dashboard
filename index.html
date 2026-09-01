@@ -193,7 +193,7 @@
 <body data-page-node-id="TnJopYRx03FYyUEAnM7EON">
 <!-- fix69af 版本标记：厂直值改"厂直"+系列明细时间联动 -->
 <div id="versionMarker" style="background:linear-gradient(135deg,#16a34a,#2563eb);color:#fff;text-align:center;padding:4px 10px;font:bold 13px system-ui;position:relative;z-index:99998;">
-  🟢 fix69bm · <span id="vmMode"></span> v2026-09-01 · <span id="vmTime"></span> · <span id="vmDebug" style="font-weight:normal;opacity:.9;background:rgba(0,0,0,.2);padding:1px 6px;border-radius:3px"></span>
+  🟢 fix69bn · <span id="vmMode"></span> v2026-09-01 · <span id="vmTime"></span> · <span id="vmDebug" style="font-weight:normal;opacity:.9;background:rgba(0,0,0,.2);padding:1px 6px;border-radius:3px"></span>
 </div>
 <!-- fix69aa 终极诊断：独立小脚本（不在主282KB块内），测试JS能否执行 -->
 <script>
@@ -385,6 +385,7 @@
     </div>
     <div class="panel" data-page-node-id="8vIP0hEH1LdLq9YDAaMTHM"><div class="chart-title" data-page-node-id="XmVnIyBfAUiCTutmHyLciN">事项（上周 / 本周）</div><div class="todo-grid" id="todo_jzt" data-page-node-id="wT9xC9uur6EAEnuOixcPTl"></div></div>
     <div class="panel" data-page-node-id="69yzky8pxPbGxVbyHgmZL1"><div class="chart-title" data-page-node-id="g2D5SlFi2ypaHR8jKu9iVN">各渠道花费（MTD）</div><div id="jztScene" data-page-node-id="QTFYkw8v3Q4DBzhB86Ln1y"></div></div>
+  </section>
   </section>
 
   <!-- GANTT 营销 -->
@@ -858,7 +859,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-09-01-fix69bm-jzt-kw-fix';
+const APP_VERSION = '2026-09-01-fix69bn-input-section-fix';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
