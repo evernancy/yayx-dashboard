@@ -210,10 +210,7 @@
   </div>
   <div class="actions" data-page-node-id="2ZEKgMWtNB1y6XDxB0Jo3A">
     <span id="saveStatus" class="warn" title="保存状态：点击查看详情"><span class="dot"></span><span id="saveStatusText">检测中…</span></span>
-    <button class="btn" id="syncCloudBtn" data-page-node-id="L2VIKGYPwwAKgW1f4FRBom">强制同步到云端</button>
-    <button class="btn" id="resetBtn" data-page-node-id="uqFFJI4Bjif04yYCR4RtgD">恢复示例数据</button>
-    <button class="btn primary" id="exportBtn" data-page-node-id="E5Pqfttz3FarI0igVT5u0z">导出数据包</button>
-    <label class="btn" id="importBtnLabel" data-page-node-id="p19xwDnaVCTmwN60e3Jqph">导入数据包<input type="file" id="importBtn" accept=".json,application/json" hidden data-page-node-id="AkVrhswwC19MQWOc2VZgIU"></label>
+    <button class="btn primary" id="exportBtn" data-page-node-id="E5Pqfttz3FarI0igVT5u0z">导出报告</button>
   </div>
 </header>
 
@@ -4891,29 +4888,177 @@ function setupFile(id,key){ const inp=$(id); const ta=()=>{ const t=$('#'+key+'I
 function loadScript(src){ return new Promise((res,rej)=>{ const s=document.createElement('script'); s.src=src; s.onload=res; s.onerror=()=>rej(new Error('CDN加载失败')); document.head.appendChild(s); }); }
 setupFile('#salesFile','sales'); setupFile('#invFile','inv'); setupFile('#jztFile','jzt'); setupFile('#jztKwFile','jzt_kw'); setupFile('#tgtFile','tgt'); setupFile('#ganttFile','gantt'); setupFile('#ppFile','pp'); setupFile('#poFile','po'); setupFile('#srFile','sr'); setupFile('#awFile','aw'); setupFile('#invFullFile','invFull'); setupFile('#invSiyunFile','invSiyun'); setupFile('#chaohuFile','chaohu'); setupFile('#seriesFile','series');
 
-$('#resetBtn').addEventListener('click',()=>{ $('#salesInput').value=sampleSales(); $('#invInput').value=sampleInv(); $('#jztInput').value=sampleJzt(); $('#jzt_kwInput').value=''; $('#tgtInput').value=sampleTargets(); $('#ganttInput').value=sampleGantt(); $('#ppInput').value=samplePurchase(); $('#poInput').value=samplePurchaseOrder(); $('#srInput').value=sampleSpotRate(); $('#awInput').value=sampleAgingWarn(); $('#invFullInput').value=sampleInvFull(); $('#invSiyunInput').value=sampleInvSiyun(); $('#chaohuInput').value=sampleChaohu(); readInputs('replace'); syncBrandUI(); toast('已恢复示例数据（写入品牌「'+STATE.currentBrand+'」，历史已清空，重新计算）'); });
 $('#clearBtn').addEventListener('click',()=>{ const bn=STATE.currentBrand; if(confirm('确认清空品牌「'+bn+'」的全部数据？（甘特图与事项除外）')){ const b=B(); b.sales=[];b.inventory=[];b.inv_full=[];b.inv_siyun=[];b.chaohu=[];b.jzt=[];b.jzt_kw=[];b.targets=[];b.purchase=[];b.purchase_order=[];b.spot_rate=[];b.aging_warn=[]; b._raw={sales:'',inventory:'',inv_full:'',inv_siyun:'',chaohu:'',jzt:'',jzt_kw:'',targets:'',purchase:'',purchase_order:'',spot_rate:'',aging_warn:''}; b.todo=freshTodo(); $('#salesInput').value='';$('#invInput').value='';$('#invFullInput').value='';$('#invSiyunInput').value='';$('#chaohuInput').value='';$('#jztInput').value='';$('#jzt_kwInput').value='';$('#tgtInput').value='';$('#ppInput').value='';$('#poInput').value='';$('#srInput').value='';$('#awInput').value=''; syncBrandUI(); readInputs('replace', true); saveState(); renderAll(); saveToService(); setupTodoAll(); toast('已清空品牌「'+bn+'」的数据'); } });
-// 导出数据包：把完整 STATE（含解析结果与原始输入）存成 JSON 文件，刷新/换机后可「导入数据包」还原
-$('#exportBtn').addEventListener('click',()=>{
-  const pkg={ version:3, exportedAt:new Date().toISOString(), state:STATE };
-  const blob=new Blob([JSON.stringify(pkg,null,2)],{type:'application/json;charset=utf-8'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
-  const ts=new Date().toISOString().slice(0,16).replace(/[:T]/g,'-');
-  a.download='电商看板数据包_'+ts+'.json'; a.click();
-  toast('已导出数据包(JSON)——可保存到本地，下次用「导入数据包」还原');
-});
-// 导入数据包：从 JSON 文件恢复全部数据与看板，不依赖浏览器本地存储
-$('#importBtn').addEventListener('change',async e=>{
-  const f=e.target.files&&e.target.files[0]; if(!f) return;
-  try{
-    const txt=await f.text(); const pkg=JSON.parse(txt);
-    const st=pkg&&pkg.state?pkg.state:pkg;
-    if(!st || typeof st!=='object' || !isUsableState(st)){ toast('数据包格式不正确，无法导入'); e.target.value=''; return; }
-    STATE=normalizeState(st);
-    if(typeof markAllDirty==='function') markAllDirty(); // fix27：导入恢复全部品牌
-    fillInputsForCurrentBrand(); saveState(); renderAll(); saveToService(); setupTodoAll(); toast('已导入数据包，看板已还原（已自动存储）'); e.target.value='';
-  }catch(err){ toast('导入失败：'+err.message); e.target.value=''; }
-});
+
+/* ---------- 导出报告弹窗（fix69bs）---------- */
+const EXPORT_MODULES=['销售数据','京准通推广数据','库存数据','中台'];
+const EXPORT_MT_MODULES=['营销','设计','数据日历'];
+function showExportDialog(){
+  // 已有弹窗则不重复创建
+  if($('#exportDlgOverlay')) return;
+  const now=new Date();
+  const y=now.getFullYear(), m=now.getMonth()+1, d=now.getDate();
+  const t1=new Date(y,m-1,1);  // 当月1号
+  const t1s=fmtDate(t1);
+  const t2=new Date(y,m,d-1); // T-1
+  const t2s=fmtDate(t2);
+
+  const brandOpts=BRANDS.map(b=>'<option value="'+escAttr(b)+'">'+escAttr(b)+'</option>').join('');
+  const mtOpts=EXPORT_MT_MODULES.map(n=>'<option value="mt_'+n+'">'+escAttr(n)+'</option>').join('');
+  const modOpts=EXPORT_MODULES.map(n=>'<option value="'+escAttr(n)+'">'+escAttr(n)+'</option>').join('');
+
+  const html='<div id="exportDlgOverlay" style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center">'
+    +'<div id="exportDlg" style="background:#fff;border-radius:12px;width:520px;max-width:92vw;max-height:88vh;overflow-y:auto;padding:24px;box-shadow:0 8px 32px rgba(0,0,0,.18)">'
+    +'<h3 style="margin:0 0 16px;font-size:17px;color:#111">📤 导出报告</h3>'
+
+    /* 行1：选择品牌/模块 */
+    +'<label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:#333">1. 选择导出范围</label>'
+    +'<select id="expBrand" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;margin-bottom:4px;background:#fafafa">'
+    +'<option value="">— 请选择 —</option>'
+    +'<optgroup label="品牌数据">'
+    +brandOpts
+    +'</optgroup>'
+    +'<optgroup label="中台模块">'
+    +mtOpts
+    +'</optgroup>'
+    +'</select>'
+
+    /* 行2：时间范围 */
+    +'<label style="display:block;margin-top:14px;margin-bottom:6px;font-size:13px;font-weight:600;color:#333">2. 时间范围</label>'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px">'
+    +'<label style="flex:1;min-width:140px"><input type="radio" name="expTimeRange" value="custom" checked style="margin-right:4px"> 自定义日期</label>'
+    +'<label style="flex:1;min-width:100px"><input type="radio" name="expTimeRange" value="mtd" style="margin-right:4px"> MTD（月初~昨天）</label>'
+    +'<label style="flex:1;min-width:80px"><input type="radio" name="expTimeRange" value="fullmonth" style="margin-right:4px"> 整月</label>'
+    +'</div>'
+    +'<div id="expCustomDates" style="display:flex;gap:8px;align-items:center;margin-top:6px">'
+    +'<input type="date" id="expDateFrom" value="'+t1s+'" style="flex:1;padding:7px 9px;border:1px solid #d1d5db;border-radius:7px;font-size:13px">'
+    +'<span style="color:#888">~</span>'
+    +'<input type="date" id="expDateTo" value="'+t2s+'" style="flex:1;padding:7px 9px;border:1px solid #d1d5db;border-radius:7px;font-size:13px">'
+    +'</div>'
+
+    /* 行3：数据范围（选了品牌后才显示） */
+    +'<div id="expModuleRow" style="display:none;margin-top:14px">'
+    +'<label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:#333">3. 数据范围</label>'
+    +'<select id="expModule" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;background:#fafafa">'
+    +'<option value="all">全部数据</option>'
+    +modOpts
+    +'</select>'
+    +'</div>'
+
+    /* 按钮 */
+    +'<div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px">'
+    +'<button id="expCancelBtn" style="padding:8px 20px;border:1px solid #d1d5db;border-radius:8px;background:#f9fafb;font-size:13px;cursor:pointer">取消</button>'
+    +'<button id="expOkBtn" style="padding:8px 22px;border:none;border-radius:8px;background:#2563eb;color:#fff;font-size:13px;cursor:pointer;font-weight:600">导出</button>'
+    +'</div>'
+    +'</div></div>';
+
+  document.body.insertAdjacentHTML('beforeend',html);
+
+  /* 事件：品牌选择 → 切换是否显示数据范围行 */
+  var brandSel=$('#expBrand');
+  var modRow=$('#expModuleRow');
+  brandSel.addEventListener('change',function(){
+    var v=this.value;
+    modRow.style.display=(v && !v.startsWith('mt_'))?'':'none';
+  });
+  /* 事件：时间范围 radio → 显示/隐藏自定义日期 */
+  document.querySelectorAll('input[name="expTimeRange"]').forEach(function(r){
+    r.addEventListener('change',function(){
+      $('#expCustomDates').style.display=(this.value==='custom')?'':'none';
+    });
+  });
+  /* 取消 */
+  $('#expCancelBtn').addEventListener('click',closeExportDialog);
+  $('#exportDlgOverlay').addEventListener('click',function(e){ if(e.target===this) closeExportDialog(); });
+  /* 导出 */
+  $('#expOkBtn').addEventListener('click',doExportReport);
+}
+function closeExportDialog(){ var d=$('#exportDlgOverlay'); if(d) d.remove(); }
+function fmtDate(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+
+/* 执行导出报告 */
+function doExportReport(){
+  var brand=$('#expBrand').value;
+  if(!brand){ toast('请先选择要导出的品牌或模块'); return; }
+
+  /* 时间范围 */
+  var timeType=document.querySelector('input[name="expTimeRange"]:checked').value;
+  var start,end;
+  if(timeType==='mtd'){
+    var now=new Date();
+    var t1=new Date(now.getFullYear(),now.getMonth(),1);
+    var t2=new Date(now.getFullYear(),now.getMonth(),now.getDate()-1);
+    start=fmtDate(t1); end=fmtDate(t2);
+  }else if(timeType==='fullmonth'){
+    var now=new Date();
+    var t1=new Date(now.getFullYear(),now.getMonth(),1);
+    var t2=new Date(now.getFullYear(),now.getMonth()+1,0);
+    start=fmtDate(t1); end=fmtDate(t2);
+  }else{
+    start=$('#expDateFrom').value||''; end=$('#expDateTo').value||'';
+  }
+
+  /* 组装数据 */
+  var reportData={ exportedAt:new Date().toISOString(), brand:brand, timeRange:{type:timeType,start:start,end:end} };
+  var isMt=brand.startsWith('mt_');
+
+  if(isMt){
+    /* 中台模块：取 todo 数据 */
+    var mtKey=brand; // mt_营销 / mt_设计 / mt_数据日历
+    reportData.module='中台';
+    reportData.todo=(STATE.brands['李锦记']&&STATE.brands['李锦记'].todo)?(STATE.brands['李锦记'].todo[mtKey]||{last:[],this:[]}):{last:[],this:[]};
+    reportData.title='中台·'+(mtKey.replace('mt_',''))+' 报告 ('+start+' ~ '+end+')';
+  }else{
+    /* 品牌数据 */
+    var b=STATE.brands[brand];
+    if(!b){ toast('品牌「'+brand+'」暂无数据'); return; }
+    var module=$('#expModule')?$('#expModule').value:'all';
+    reportData.module=module;
+    reportData.title=brand+(module==='all'?' 全部数据':' '+module)+' 报告 ('+start+' ~ '+end+')';
+
+    /* 按模块提取 */
+    if(module==='all'||module==='销售数据'){
+      reportData.sales=(b.sales||[]).filter(function(r){ var rd=r.date||r['日期']||''; return (!start||!end)||(rd>=start&&rd<=end); });
+      reportData.targets=b.targets||[];
+      reportData.series=b.series||[];
+      reportData._raw_sales=b._raw?b._raw.sales:'';
+      reportData._raw_targets=b._raw?b._raw.targets:'';
+    }
+    if(module==='all'||module==='京准通推广数据'){
+      reportData.jzt=(b.jzt||[]).filter(function(r){ var rd=r.date||r['日期']||''; return (!start||!end)||(rd>=start&&rd<=end); });
+      reportData.jzt_kw=(b.jzt_kw||[]);
+      reportData._raw_jzt=b._raw?b._raw.jzt:'';
+      reportData._raw_jzt_kw=b._raw?b._raw.jzt_kw:'';
+    }
+    if(module==='all'||module==='库存数据'){
+      reportData.inventory=(b.inventory||[]).filter(function(r){ var rd=r.date||r['日期']||''; return (!start||!end)||(rd>=start&&rd<=end); });
+      reportData.inv_full=b.inv_full||[];
+      reportData.inv_siyun=b.inv_siyun||[];
+      reportData.purchase=b.purchase||[];
+      reportData.purchase_order=b.purchase_order||[];
+      reportData.spot_rate=b.spot_rate||[];
+      reportData.aging_warn=b.aging_warn||[];
+      reportData.chaohu=b.chaohu||[];
+      reportData._raw_inventory=b._raw?b._raw.inventory:'';
+      reportData._raw_inv_full=b._raw?b._raw.inv_full:'';
+      reportData._raw_purchase=b._raw?b._raw.purchase:'';
+      reportData._raw_po=b._raw?b._raw.purchase_order:'';
+    }
+    if(module==='all'||module==='中台'){
+      reportData.todo=b.todo||freshTodo();
+    }
+  }
+
+  /* 生成文件并下载 */
+  var blob=new Blob([JSON.stringify(reportData,null,2)],{type:'application/json;charset=utf-8'});
+  var a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  var ts=new Date().toISOString().slice(0,16).replace(/[:T]/g,'-');
+  a.download='看板报告_'+(isMt?brand.replace('mt_','中台_'):brand)+'_'+ts+'.json'; a.click();
+  toast('已导出报告：'+reportData.title);
+  closeExportDialog();
+}
+
+$('#exportBtn').addEventListener('click',showExportDialog);
 
 let toastT; function toast(msg,persist){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastT); if(!persist) toastT=setTimeout(()=>t.classList.remove('show'),1800); }
 
@@ -5716,32 +5861,6 @@ async function saveToService(){
   }
   try{ if(ghToken()) await ghPutPublicSnapshot(); }catch(e){ /* 快照失败不影响主存储 */ }
 }
-// fix63/fix65b：强制把本地全量数据推送到云端共享看板；据 ghUpsertBoard 真实返回结果提示「是否同步成功」
-$('#syncCloudBtn').addEventListener('click',async()=>{
-  if(!ghToken()){ toast('⚠️ 请先配置'+cloudLabel()+'令牌（点右下角徽章粘贴）才能同步到云端', true); return; }
-  toast('🔄 正在把本地数据同步到云端共享看板「'+currentBoard.name+'」('+currentBoard.id+')…');
-  try{
-    if(typeof markAllDirty==='function') markAllDirty(); // 全品牌推送，确保完全一致
-    const res = await ghUpsertBoard(currentBoard.id, currentBoard.name, STATE);
-    try{ if(ghToken()) await ghPutPublicSnapshot(); }catch(_){}
-    if(typeof window.clearLocalUnsynced==='function') window.clearLocalUnsynced();
-    // 依据真实上传结果给提示（fix65b：杜绝假成功）
-    if(res && res.ok){
-      toast('✅ 同步成功！已写入云端共享看板「'+currentBoard.name+'」('+currentBoard.id+')，同事刷新页面即可看到你的数据');
-    } else {
-      const failed = (res && res.failedBrands || []).join('、');
-      if(failed && !(res && res.manifestOk)){
-        toast('❌ 同步失败：所有品牌及清单都未写入云端（多半是网络无法访问 '+cloudHost()+'，请检查网络后重试）', true);
-      } else if(failed){
-        toast('⚠️ 部分同步成功，但以下品牌写入云端失败：'+failed+'。请检查网络后重试', true);
-      } else {
-        toast('⚠️ 各品牌已写入，但看板清单(索引)写入失败，同事可能卡不到。请检查网络后重试', true);
-      }
-    }
-  }catch(e){
-    toast('❌ 同步失败：'+(errMsg(e)||('网络无法访问 '+cloudHost()))+'。请确认浏览器能连上'+cloudLabel()+'后重试', true);
-  }
-});
 
 /* ---------- 初始化 ---------- */
 function init(){
