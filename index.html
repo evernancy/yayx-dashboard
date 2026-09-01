@@ -4906,6 +4906,14 @@ function showExportDialog(){
   const brandOpts=BRANDS.map(b=>'<option value="'+escAttr(b)+'">'+escAttr(b)+'</option>').join('');
   const mtOpts=EXPORT_MT_MODULES.map(n=>'<option value="mt_'+n+'">'+escAttr(n)+'</option>').join('');
   const modOpts=EXPORT_MODULES.map(n=>'<option value="'+escAttr(n)+'">'+escAttr(n)+'</option>').join('');
+  // 整月选项：最近 12 个月（含当前月），默认当前月
+  let monthOpts='';
+  for(let i=11;i>=0;i--){
+    const md=new Date(y, m-1-i, 1);
+    const val=md.getFullYear()+'-'+String(md.getMonth()+1).padStart(2,'0');
+    const label=md.getFullYear()+'年'+(md.getMonth()+1)+'月';
+    monthOpts+='<option value="'+val+'"'+(i===0?' selected':'')+'>'+label+'</option>';
+  }
 
   const html='<div id="exportDlgOverlay" style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center">'
     +'<div id="exportDlg" style="background:#fff;border-radius:12px;width:520px;max-width:92vw;max-height:88vh;overflow-y:auto;padding:24px;box-shadow:0 8px 32px rgba(0,0,0,.18)">'
@@ -4935,6 +4943,11 @@ function showExportDialog(){
     +'<span style="color:#888">~</span>'
     +'<input type="date" id="expDateTo" value="'+t2s+'" style="flex:1;padding:7px 9px;border:1px solid #d1d5db;border-radius:7px;font-size:13px">'
     +'</div>'
+    +'<div id="expMonthRow" style="display:none;margin-top:6px">'
+    +'<select id="expMonth" style="width:100%;padding:7px 9px;border:1px solid #d1d5db;border-radius:7px;font-size:13px;background:#fafafa">'
+    +monthOpts
+    +'</select>'
+    +'</div>'
 
     /* 行3：数据范围（选了品牌后才显示） */
     +'<div id="expModuleRow" style="display:none;margin-top:14px">'
@@ -4961,10 +4974,11 @@ function showExportDialog(){
     var v=this.value;
     modRow.style.display=(v && !v.startsWith('mt_'))?'':'none';
   });
-  /* 事件：时间范围 radio → 显示/隐藏自定义日期 */
+  /* 事件：时间范围 radio → 显示/隐藏自定义日期 / 月份选择 */
   document.querySelectorAll('input[name="expTimeRange"]').forEach(function(r){
     r.addEventListener('change',function(){
       $('#expCustomDates').style.display=(this.value==='custom')?'':'none';
+      $('#expMonthRow').style.display=(this.value==='fullmonth')?'':'none';
     });
   });
   /* 取消 */
@@ -4990,9 +5004,11 @@ function doExportReport(){
     var t2=new Date(now.getFullYear(),now.getMonth(),now.getDate()-1);
     start=fmtDate(t1); end=fmtDate(t2);
   }else if(timeType==='fullmonth'){
-    var now=new Date();
-    var t1=new Date(now.getFullYear(),now.getMonth(),1);
-    var t2=new Date(now.getFullYear(),now.getMonth()+1,0);
+    var mv=$('#expMonth').value||''; // YYYY-MM
+    var my=parseInt(mv.slice(0,4),10), mm=parseInt(mv.slice(5,7),10)-1;
+    if(isNaN(my)||isNaN(mm)){ var n2=new Date(); my=n2.getFullYear(); mm=n2.getMonth(); }
+    var t1=new Date(my,mm,1);
+    var t2=new Date(my,mm+1,0);
     start=fmtDate(t1); end=fmtDate(t2);
   }else{
     start=$('#expDateFrom').value||''; end=$('#expDateTo').value||'';
