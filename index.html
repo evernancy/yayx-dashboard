@@ -6281,7 +6281,8 @@ function lineChart(elId,{labels,series,yFmt=fmt,height=300}){
   bindTips(el);
 }
 
-/* fix69j：混合趋势图 —— 柱状(实际值，左轴) + 折线(同比%/环比%，右轴)，用于 GMV/POS 月度达成趋势 */
+/* fix69bu：混合趋势图 —— 柱状(实际值，左轴) + 折线(同比%/环比%，右轴），用于 GMV/POS 月度达成趋势 */
+/* 改进：① 每天都画柱子（不再跳过）；② 悬停任一元素显示当日全部指标(GMV+同比+环比) */
 function trendChart(elId,{labels,barSeries,lineSeries,barFmt=fmt,pctFmt=v=>(v*100).toFixed(1)+'%',height=340}){
   const el=$(elId); if(!el) return;
   if(!labels||!labels.length){ el.innerHTML='<div class="empty">暂无数据</div>'; return; }
@@ -6296,35 +6297,49 @@ function trendChart(elId,{labels,barSeries,lineSeries,barFmt=fmt,pctFmt=v=>(v*10
   const yPctAt=v=> padT+ih-((v+maxPct)/(2*maxPct))*ih;
   const groupW=iw/n, barW=Math.min(40,groupW*0.55), gap=4;
   const xAt=i=> padL+groupW*i+groupW/2;
-  // 标签步进：每日数据密集时跳显，最多显示约 12 个标签
+  // 标签步进：每日数据密集时跳显文字标签，最多显示约 12 个
   const lblStep=Math.max(1,Math.ceil(n/12));
-  let g='';
-  const barTicks=4;
-  for(let t=0;t<=barTicks;t++){ const v=maxBar*t/barTicks; const y=yBarAt(v); g+=`<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="#eef0f4"/>`; g+=`<text x="${padL-8}" y="${y+4}" text-anchor="end" font-size="11" fill="#9ca3af">${barFmt(v)}</text>`; }
-  const pctTicks=4;
-  for(let t=0;t<=pctTicks;t++){ const v=maxPct*(1-2*t/pctTicks); const y=yPctAt(v); g+=`<text x="${W-padR+6}" y="${y+4}" text-anchor="start" font-size="11" fill="#9ca3af">${pctFmt(v)}</text>`; }
-  { const y0=yPctAt(0); g+=`<line x1="${padL}" y1="${y0}" x2="${W-padR}" y2="${y0}" stroke="#e5e7eb" stroke-dasharray="4,3"/>`; }
-  labels.forEach((l,i)=>{
-    if(i%lblStep!==0&&i!==n-1) return; // 跳过非步进点（末尾始终显示）
-    const cx=xAt(i);
-    const m=String(l).match(/^(\d{4})-(\d{1,2})(?:-(\d{1,2}))?/);
-    g+=`<text x="${cx}" y="${H-padB+18}" text-anchor="middle" font-size="10" fill="#9ca3af">${m?(m[3]?m[2]+'/'+m[3].padStart(2,'0'):m[2]+'月'):esc(String(l).slice(-10))}</text>`;
-    (barSeries||[]).forEach((s,si)=>{
-      const v=s.data[i]; if(v==null||isNaN(v)) return;
-      const h=(Math.abs(v)/maxBar)*ih; const y=padT+ih-h; const startX=cx-barW/2;
-      const color=PALETTE[si%PALETTE.length];
-      g+=`<rect x="${startX}" y="${y}" width="${barW}" height="${h}" rx="2" fill="${color}" opacity="0.82" data-tip="${esc(l)}<br>${esc(s.name)}: ${barFmt(v)}" style="cursor:pointer"/>`;
+  /* 预构建每列的完整 tooltip（日期 + GMV + 同比 + 环比） */
+  var colTips=[];
+  for(var ti=0;ti<n;ti++){
+    var tl=labels[ti], parts=[esc(tl)];
+    (barSeries||[]).forEach(function(s){ var sv=s.data[ti]; if(sv!=null&&isNaN(sv)!==true) parts.push(esc(s.name)+': '+barFmt(sv)); });
+    (lineSeries||[]).forEach(function(s){ var sv=s.data[ti]; if(sv!=null&&isNaN(sv)!==true) parts.push(esc(s.name)+': '+pctFmt(sv)); });
+    colTips[ti]=parts.join('<br>');
+  }
+  var g='';
+  var barTicks=4;
+  for(var bt=0;bt<=barTicks;bt++){ var bv=maxBar*bt/barTicks; var by=yBarAt(bv); g+='<line x1="'+padL+'" y1="'+by+'" x2="'+(W-padR)+'" y2="'+by+'" stroke="#eef0f4"/>'; g+='<text x="'+(padL-8)+'" y="'+(by+4)+'" text-anchor="end" font-size="11" fill="#9ca3af">'+barFmt(bv)+'</text>'; }
+  var pctTicks=4;
+  for(var pt=0;pt<=pctTicks;pt++){ var pv=maxPct*(1-2*pt/pctTicks); var py=yPctAt(pv); g+='<text x="'+(W-padR+6)+'" y="'+(py+4)+'" text-anchor="start" font-size="11" fill="#9ca3af">'+pctFmt(pv)+'</text>'; }
+  { var y0=yPctAt(0); g+='<line x1="'+padL+'" y1="'+y0+'" x2="'+(W-padR)+'" y2="'+y0+'" stroke="#e5e7eb" stroke-dasharray="4,3"/>'; }
+  /* 第一遍：画所有柱子（每一天都画，不跳过） */
+  labels.forEach(function(l,i){
+    var cx=xAt(i);
+    (barSeries||[]).forEach(function(s,si){
+      var v=s.data[i]; if(v==null||isNaN(v)) return;
+      var h=(Math.abs(v)/maxBar)*ih, y=padT+ih-h, startX=cx-barW/2;
+      var color=PALETTE[si%PALETTE.length];
+      g+='<rect x="'+startX+'" y="'+y+'" width="'+barW+'" height="'+h+'" rx="2" fill="'+color+'" opacity="0.82" data-tip="'+colTips[i]+'" style="cursor:pointer"/>';
     });
   });
-  (lineSeries||[]).forEach((s,si)=>{
-    const color=PALETTE[(barSeries?.length||0)+si];
-    let d=''; s.data.forEach((v,i)=>{ if(v==null||isNaN(v)) return; d+=(d===''?'M':'L')+xAt(i)+' '+yPctAt(v)+' '; });
-    if(d) g+=`<path d="${d}" fill="none" stroke="${color}" stroke-width="2.2" stroke-linejoin="round"/>`;
-    s.data.forEach((v,i)=>{ if(v==null||isNaN(v)) return; g+=`<circle cx="${xAt(i)}" cy="${yPctAt(v)}" r="3.2" fill="${color}" data-tip="${esc(labels[i])}<br>${esc(s.name)}: ${pctFmt(v)}" style="cursor:pointer"/>`; });
+  /* 第二遍：画 X 轴日期标签（仅步进位置显示文字） */
+  labels.forEach(function(l,i){
+    if(i%lblStep!==0&&i!==n-1) return;
+    var cx=xAt(i);
+    var m=String(l).match(/^(\d{4})-(\d{1,2})(?:-(\d{1,2}))?/);
+    g+='<text x="'+cx+'" y="'+(H-padB+18)+'" text-anchor="middle" font-size="10" fill="#9ca3af">'+(m?(m[3]?m[2]+'/'+m[3].padStart(2,'0'):m[2]+'月'):esc(String(l).slice(-10)))+'</text>';
   });
-  const legendItems=[];
-  (barSeries||[]).forEach((s,si)=>legendItems.push({name:s.name,color:PALETTE[si%PALETTE.length]}));
-  (lineSeries||[]).forEach((s,si)=>legendItems.push({name:s.name,color:PALETTE[(barSeries?.length||0)+si],dash:true}));
+  /* 折线与圆点（全部数据点） */
+  (lineSeries||[]).forEach(function(s,si){
+    var color=PALETTE[(barSeries?barSeries.length:0)+si];
+    var d=''; s.data.forEach(function(v,i){ if(v==null||isNaN(v)) return; d+=(d===''?'M':'L')+xAt(i)+' '+yPctAt(v)+' '; });
+    if(d) g+='<path d="'+d+'" fill="none" stroke="'+color+'" stroke-width="2.2" stroke-linejoin="round"/>';
+    s.data.forEach(function(v,i){ if(v==null||isNaN(v)) return; g+='<circle cx="'+xAt(i)+'" cy="'+yPctAt(v)+'" r="3.2" fill="'+color+'" data-tip="'+colTips[i]+'" style="cursor:pointer"/>'; });
+  });
+  var legendItems=[];
+  (barSeries||[]).forEach(function(s,si){ legendItems.push({name:s.name,color:PALETTE[si%PALETTE.length]}); });
+  (lineSeries||[]).forEach(function(s,si){ legendItems.push({name:s.name,color:PALETTE[(barSeries?barSeries.length:0)+si],dash:true}); });
   el.innerHTML=svgEl(W,H,g)+legendHTML(legendItems);
   bindTips(el);
 }
