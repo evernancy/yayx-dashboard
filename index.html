@@ -193,7 +193,7 @@
 <body data-page-node-id="TnJopYRx03FYyUEAnM7EON">
 <!-- fix69af 版本标记：厂直值改"厂直"+系列明细时间联动 -->
 <div id="versionMarker" style="background:linear-gradient(135deg,#16a34a,#2563eb);color:#fff;text-align:center;padding:4px 10px;font:bold 13px system-ui;position:relative;z-index:99998;">
-  🟢 fix69bl · <span id="vmMode"></span> v2026-09-01 · <span id="vmTime"></span> · <span id="vmDebug" style="font-weight:normal;opacity:.9;background:rgba(0,0,0,.2);padding:1px 6px;border-radius:3px"></span>
+  🟢 fix69bm · <span id="vmMode"></span> v2026-09-01 · <span id="vmTime"></span> · <span id="vmDebug" style="font-weight:normal;opacity:.9;background:rgba(0,0,0,.2);padding:1px 6px;border-radius:3px"></span>
 </div>
 <!-- fix69aa 终极诊断：独立小脚本（不在主282KB块内），测试JS能否执行 -->
 <script>
@@ -258,7 +258,6 @@
       <div class="subtabs" data-page-node-id="1u54Xjgt15Q0i2A3Y8mUr9">
         <div class="subtab active" data-view="sales" data-page-node-id="H03kwUpic97xJmvGkJCkCy">销售数据</div>
         <div class="subtab" data-view="jzt" data-page-node-id="xG1Y1VqgQK38ha64dx2BdJ">京准通推广</div>
-        <div class="subtab" data-view="jztkw" data-page-node-id="jztKwSubtab">京准通关键词</div>
         <div class="subtab" data-view="inventory" data-page-node-id="nJfbxFC5YvaCGx9E9tBfnB">库存周转</div>
         <div class="subtab" data-view="zhongtai" data-page-node-id="GpFQIicoTxHBhMFXCH0h3X">中台</div>
       </div>
@@ -386,23 +385,6 @@
     </div>
     <div class="panel" data-page-node-id="8vIP0hEH1LdLq9YDAaMTHM"><div class="chart-title" data-page-node-id="XmVnIyBfAUiCTutmHyLciN">事项（上周 / 本周）</div><div class="todo-grid" id="todo_jzt" data-page-node-id="wT9xC9uur6EAEnuOixcPTl"></div></div>
     <div class="panel" data-page-node-id="69yzky8pxPbGxVbyHgmZL1"><div class="chart-title" data-page-node-id="g2D5SlFi2ypaHR8jKu9iVN">各渠道花费（MTD）</div><div id="jztScene" data-page-node-id="QTFYkw8v3Q4DBzhB86Ln1y"></div></div>
-  </section>
-
-  <!-- JZT KEYWORD 京准通关键词分析（fix69bk） -->
-  <section data-sub="jztkw" data-page-node-id="jztKwAnalysisSection" style="display:none">
-    <div class="panel" style="border-top:3px solid var(--blue)" data-page-node-id="jztKwAnalysisPanel">
-      <h2 data-page-node-id="jztKwTitle">京准通关键词分析</h2>
-      <p class="hint" data-page-node-id="jztKwHint">筛选「营销场景 = 关键词」的数据；判定规则：关键词含「李锦记」= <b style="color:#dc2626">品牌词</b>，其余为 <b style="color:#16a34a">品类词</b>；下方按花费从高到低展示 TOP 50 关键词（点击「京准通关键词」标签即可查看）。</p>
-      <div id="jztKwBody" data-page-node-id="jztKwBody"></div>
-    </div>
-    <style>
-      .kw-badge{display:inline-block;padding:1px 9px;border-radius:11px;font-size:12px;font-weight:700;line-height:18px}
-      .kw-brand{background:#fee2e2;color:#dc2626;border:1px solid #fecaca}
-      .kw-cat{background:#dcfce7;color:#16a34a;border:1px solid #bbf7d0}
-      .kw-spend{position:relative;text-align:right;white-space:nowrap}
-      .kw-bar{height:4px;background:#2563eb;opacity:.35;border-radius:2px;margin-top:3px}
-    </style>
-  </section>
   </section>
 
   <!-- GANTT 营销 -->
@@ -876,7 +858,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-09-01-fix69bl-jzt-kw-live';
+const APP_VERSION = '2026-09-01-fix69bm-jzt-kw-fix';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -2077,7 +2059,7 @@ function computeJztKw(start,end){
   let rows=all;
   if(start&&end) rows=rows.filter(r=>{ const d=String(r.date||'').slice(0,10); return d>=start&&d<=end; });
   // 只保留 营销场景=关键词
-  rows=rows.filter(r=>{ const sc=String(get(r,'scene','ext_营销场景','营销场景')||'').trim(); return sc==='关键词'; });
+  rows=rows.filter(r=>{ const sc=String(get(r,'scene','ext_营销场景','营销场景')||'').trim(); return sc.includes('关键词'); });   // 匹配「关键词」「常规推广-关键词」等含"关键词"的场景值
   if(!rows.length) return null;
   // 按关键词聚合
   const byKeyword={};
@@ -2372,84 +2354,6 @@ function renderJzt(){
     $('#jztScene').innerHTML='<div class="empty" style="color:red">renderJzt 崩溃: '+e.message+' (stack: '+(e.stack||'').split('\\n').slice(0,5).join(' | ')+')</div>';
     throw e; // re-throw so boot's FATAL handler also catches it
   }
-}
-
-/* ---------- 京准通关键词分析（fix69bk）：营销场景=关键词，品牌词/品类词分类，TOP50 按花费降序 ---------- */
-function renderJztKw(){
-  const el=document.getElementById('jztKwBody'); if(!el) return;
-  const all=(B().jzt_kw||[]);
-  // 1) 过滤：营销场景 = 关键词
-  const rows=all.filter(r=>{ const sc=String(r.scene!=null?r.scene:(r['ext_营销场景']!=null?r['ext_营销场景']:'')).trim(); return sc==='关键词'; });
-  if(!rows.length){
-    el.innerHTML='<div class="empty">未找到「营销场景 = 关键词」的数据。请先在「数据输入区 → 3.2 京东京准通关键词数据」粘贴含「营销场景」列（值为「关键词」）的明细（表头：日期 / 营销场景 / 计划ID / 推广计划 / 跟单SKU ID / 跟单SKU名称 / 搜索词 / 关键词 / 展现数 / 点击数 / 花费 / …）。<br>当前品牌「'+(STATE.currentBrand||'')+'」的京准通关键词数据共 '+all.length+' 行（其中 营销场景=关键词 0 行）。</div>';
-    return;
-  }
-  // 字段读取：优先标准 key，回退 ext_ 前缀（兼容别名差异）
-  const get=(r,...keys)=>{ for(const k of keys){ if(r[k]!==undefined && r[k]!==null && r[k]!=='') return r[k]; } return ''; };
-  const numOf=(r,...keys)=>{ const v=parseFloat(get(r,...keys)); return isNaN(v)?0:v; };
-  // 2) 按关键词聚合（同关键词跨日期/计划求和）
-  const map={};
-  rows.forEach(r=>{
-    let kw=String(get(r,'ext_关键词','关键词','keyword')||'').trim();
-    if(!kw) kw='(空关键词)';
-    const type = kw.includes('李锦记') ? '品牌词' : '品类词';   // 判定规则：含李锦记=品牌词
-    if(!map[kw]) map[kw]={kw,type,spend:0,imp:0,clk:0,gmv:0,orders:0,dirOrders:0,indirOrders:0,dirAmt:0,indirAmt:0,preOrders:0,preAmt:0,cart:0};
-    const o=map[kw];
-    o.spend+=numOf(r,'spend','ext_花费','花费');
-    o.imp+=numOf(r,'impressions','ext_展现数','展现数');
-    o.clk+=numOf(r,'clicks','ext_点击数','点击数');
-    o.gmv+=numOf(r,'gmv','ext_总订单金额','总订单金额');
-    o.orders+=numOf(r,'orders','ext_总订单行','总订单行');
-    o.dirOrders+=numOf(r,'dirOrders','ext_直接订单行','直接订单行');
-    o.indirOrders+=numOf(r,'indirOrders','ext_间接订单行','间接订单行');
-    o.dirAmt+=numOf(r,'dirAmt','ext_直接订单金额','直接订单金额');
-    o.indirAmt+=numOf(r,'indirAmt','ext_间接订单金额','间接订单金额');
-    o.preOrders+=numOf(r,'preOrders','ext_预售订单行','预售订单行');
-    o.preAmt+=numOf(r,'preAmt','ext_预售订单金额','预售订单金额');
-    o.cart+=numOf(r,'totalCart','ext_总加购数','总加购数');
-  });
-  const list=Object.values(map);
-  // 3) TOP 50 按花费降序
-  list.sort((a,b)=>b.spend-a.spend);
-  const top=list.slice(0,50);
-  const maxSpend=top.length?top[0].spend:1;
-  const brand=list.filter(o=>o.type==='品牌词');
-  const cat=list.filter(o=>o.type==='品类词');
-  const totalSpend=sum(list.map(o=>o.spend));
-  const topSpend=sum(top.map(o=>o.spend));
-  const fmtInt=n=>Math.round(n).toLocaleString('zh-CN');
-  const pct=n=>(Number(n)||0).toFixed(2)+'%';
-  const ctr=o=>o.imp>0?(o.clk/o.imp*100):0;
-  const roi=o=>o.spend>0?(o.gmv/o.spend):0;
-  // 汇总 KPI
-  let html='<div class="kpis" style="margin-bottom:12px">';
-  html+='<div class="kpi"><div class="kpi-label">关键词总数</div><div class="kpi-val">'+list.length+'</div><div class="kpi-sub">营销场景=关键词</div></div>';
-  html+='<div class="kpi"><div class="kpi-label">品牌词</div><div class="kpi-val" style="color:#dc2626">'+brand.length+'</div><div class="kpi-sub">含「李锦记」 · 花费 '+fmtMoney(sum(brand.map(o=>o.spend)))+'</div></div>';
-  html+='<div class="kpi"><div class="kpi-label">品类词</div><div class="kpi-val" style="color:#16a34a">'+cat.length+'</div><div class="kpi-sub">其他 · 花费 '+fmtMoney(sum(cat.map(o=>o.spend)))+'</div></div>';
-  html+='<div class="kpi"><div class="kpi-label">TOP50 总花费</div><div class="kpi-val">'+fmtMoney(topSpend)+'</div><div class="kpi-sub">占全部 '+pct(totalSpend?topSpend/totalSpend*100:0)+'</div></div>';
-  html+='</div>';
-  // TOP 50 表
-  html+='<div style="overflow-x:auto"><table class="tbl" style="min-width:940px"><thead><tr>'
-      +'<th style="width:46px">排名</th><th>关键词</th><th style="width:92px">类型</th><th style="text-align:right">花费</th><th style="text-align:right">展现</th><th style="text-align:right">点击</th><th style="text-align:right">点击率</th><th style="text-align:right">GMV</th><th style="text-align:right">投产比</th><th style="text-align:right">订单行</th></tr></thead><tbody>';
-  top.forEach((o,i)=>{
-    const barW=maxSpend>0?Math.max(2,Math.round(o.spend/maxSpend*100)):0;
-    const typeCls=o.type==='品牌词'?'kw-brand':'kw-cat';
-    html+='<tr>'
-      +'<td style="text-align:center;color:#94a3b8;font-weight:600">'+(i+1)+'</td>'
-      +'<td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+o.kw.replace(/"/g,'')+'">'+o.kw+'</td>'
-      +'<td><span class="kw-badge '+typeCls+'">'+o.type+'</span></td>'
-      +'<td style="text-align:right;white-space:nowrap"><div class="kw-spend">'+fmtMoney(o.spend)+'<div class="kw-bar" style="width:'+barW+'%"></div></div></td>'
-      +'<td style="text-align:right">'+fmtInt(o.imp)+'</td>'
-      +'<td style="text-align:right">'+fmtInt(o.clk)+'</td>'
-      +'<td style="text-align:right">'+pct(ctr(o))+'</td>'
-      +'<td style="text-align:right">'+fmtMoney(o.gmv)+'</td>'
-      +'<td style="text-align:right;color:'+(roi(o)>=1?'#16a34a':'#dc2626')+'">'+roi(o).toFixed(2)+'</td>'
-      +'<td style="text-align:right">'+fmtInt(o.orders)+'</td>'
-      +'</tr>';
-  });
-  html+='</tbody></table></div>';
-  if(list.length>50) html+='<div class="muted" style="margin-top:6px;font-size:12px">仅展示花费最高的 50 个关键词（共 '+list.length+' 个，已按花费降序）。</div>';
-  el.innerHTML=html;
 }
 
 /* ---------- 京准通：投放目标 + MTD 同比 ---------- */
@@ -3952,7 +3856,7 @@ $$('.clearBtn').forEach(b=>b.addEventListener('click',()=>openClearModal(b.datas
 
 function renderAll(){
   refreshInvDateOptions();
-  renderSales(); renderInv(); renderJzt(); renderJztKw(); renderJztTargets(); renderTargets(); renderOverview();
+  renderSales(); renderInv(); renderJzt(); renderJztTargets(); renderTargets(); renderOverview();
   populateGanttMonth('营销','#ganttMkt'); populateGanttMonth('设计','#ganttDesign'); populateGanttMonth('数据','#ganttData');
   updateTimeProgress();
   // fix69w：#lastUpdate 已替换为 #saveStatus（由 updateSaveStatus 管理），此处不再单独更新
