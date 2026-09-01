@@ -44,12 +44,50 @@
   .diag.ok{display:block;color:#15803d;background:#f0fdf4;border:1px solid #bbf7d0}
   .diag.err{display:block;color:#b91c1c;background:#fef2f2;border:1px solid #fecaca}
   .diag b{font-weight:600}
+  /* fix69w：保存状态指示器（永久显示在 header，让用户随时知道数据保存在哪、是否成功） */
+  #saveStatus{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);padding:4px 10px;border-radius:8px;font-size:12px;white-space:nowrap;max-width:320px;overflow:hidden;text-overflow:ellipsis;transition:all .3s}
+  #saveStatus.ok{background:rgba(22,163,74,.2);border-color:rgba(22,163,74,.5)}
+  #saveStatus.err{background:rgba(220,38,38,.2);border-color:rgba(220,38,38,.5);animation:pulse-red 1.5s infinite}
+  #saveStatus.warn{background:rgba(217,119,6,.2);border-color:rgba(217,119,06,.5)}
+  #saveStatus .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  #saveStatus.ok .dot{background:#4ade80}
+  #saveStatus.err .dot{background:#f87171}
+  #saveStatus.warn .dot{background:#fbbf24}
+  @keyframes pulse-red{0%,100%{opacity:1}50%{opacity:.5}}
   .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:6px}
+  /* fix69am：京准通推广 KPI（8 张卡）强制单行等宽 */
+  #jztTargetKpis{grid-template-columns:repeat(8,minmax(0,1fr))}
   .kpi-sep{grid-column:1/-1;font-weight:700;font-size:14px;color:var(--blue,#2563eb);border-left:4px solid var(--blue,#2563eb);padding-left:8px;margin-top:6px}
   .kpi{background:linear-gradient(180deg,#fff,#fafbff);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
-  .kpi .label{color:var(--muted);font-size:12px}
+  .kpi .label{color:var(--muted);font-size:12px;white-space:nowrap}
   .kpi .value{font-size:20px;font-weight:700;margin-top:3px}
   .kpi .value.green{color:var(--green)} .kpi .value.red{color:var(--red)} .kpi .value.blue{color:var(--blue)} .kpi .value.amber{color:var(--amber)}
+  /* fix69f：李锦记销售目标达成 —— 竖版三栏：左=目标KPI竖排，中=本周事项，右=上周事项 */
+  .zy-sales-grid{display:flex;flex-wrap:wrap;gap:16px;align-items:stretch;margin-top:8px}
+  .zy-kpi-col{flex:1 1 340px;min-width:260px;display:flex;flex-direction:column}
+  .zy-kpi-title{font-size:15px;font-weight:600;color:var(--text,#1f2937);margin-bottom:10px}
+  .kpis-vertical{grid-template-columns:1fr}
+  /* fix69i：右侧本周/上周保持并排（左中右三栏），输入框拉高对齐左侧底部 */
+  .zy-sales-grid #todo_sales{flex:2 1 500px;min-width:400px;margin:0}
+  .zy-sales-grid #todo_sales .todo-col{display:flex;flex-direction:column}
+  .zy-sales-grid #todo_sales .todo-box{flex:1 1 0;min-height:0;max-height:none}
+  /* fix69l：系列明细树形表格 */
+  .sd-tree-table{width:100%;border-collapse:collapse;font-size:13px}
+  .sd-tree-table th{background:#f8fafc;padding:8px 10px;text-align:left;border-bottom:2px solid var(--border,#e5e7eb);font-weight:600;white-space:nowrap;position:sticky;top:0;z-index:1}
+  .sd-tree-table td{padding:5px 10px;border-bottom:1px solid #f0f0f0;white-space:nowrap;vertical-align:middle}
+  .sd-tree-table tr:hover td{background:#f8fafc}
+  .sd-tree-table .sd-gmv{text-align:right;font-variant-numeric:tabular-nums}
+  .sd-tree-table .sd-yoy{text-align:right;font-weight:600}
+  .sd-tree-table .sd-yoy.pos{color:#dc2626}
+  .sd-tree-table .sd-yoy.neg{color:#16a34a}
+  .sd-toggle{display:inline-block;width:16px;text-align:center;cursor:pointer;color:#6b7280;font-size:12px;user-select:none;margin-right:2px;flex-shrink:0}
+  .sd-toggle:hover{color:#2563eb}
+  .sd-indent{padding-left:20px}
+  .sd-indent-l2{padding-left:40px}
+  .sd-indent-l3{padding-left:60px}
+  .sd-row-group{font-weight:600;background:#fafbfc}
+  .sd-row-leaf{font-size:12.5px}
+  .sd-hidden{display:none}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
   @media(max-width:860px){.grid2{grid-template-columns:1fr}}
   .chart-title{font-weight:600;font-size:13px;margin:6px 0 2px}
@@ -119,25 +157,68 @@
   .ganttTask{cursor:pointer}
   .ganttTask:hover{stroke:#111827;stroke-width:2}
   .ganttAddBtn{margin-left:10px}
+  /* fix69az→fix69bb：低/高周转系列表 + 长库龄预警表（库存周转模块） */
+  .turn-tbl{width:100%;border-collapse:collapse;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;font-size:12px}
+  .turn-tbl thead{background:#f8fafc}
+  .turn-tbl th{padding:7px 10px;text-align:left;font-weight:600;color:#334155;border-bottom:2px solid #e2e8f0;font-size:11px;white-space:nowrap}
+  .turn-tbl td{padding:5px 10px;border-bottom:1px solid #f1f5f9;color:#374151}
+  .turn-tbl tbody tr:last-child td{border-bottom:none}
+  .turn-tbl td,.turn-tbl th{font-variant-numeric:tabular-nums}
+  .turn-tbl .turn-ser{background:#eef2ff;cursor:pointer;font-weight:600}
+  .turn-tbl .turn-ser:hover{background:#e0e7ff}
+  .turn-tbl .turn-prod{background:#fafbff;cursor:pointer}
+  .turn-tbl .turn-prod:hover{background:#f1f5ff}
+  .turn-tbl .turn-wh{background:#fff}
+  .turn-tbl .turn-wh:nth-child(even){background:#fafcff}
+  .turn-tbl .tw{display:inline-block;width:14px;color:#3b82f6;font-size:11px;margin-right:4px}
+  .turn-tbl .turn-val.low{color:#dc2626;font-weight:700}
+  .turn-tbl .turn-val.high{color:#ea580c;font-weight:700}
+  .turn-tbl .bad{padding:1px 7px;border-radius:6px;font-size:11px;font-weight:600}
+  .turn-tbl .bad.red{background:#fee2e2;color:#b91c1c}
+  .turn-tbl .bad.green{background:#dcfce7;color:#15803d}
+  .turn-tbl .rem{color:#64748b;max-width:240px;word-break:break-word;font-size:11px}
+  .turn-tbl .rem-edit{display:inline-block;min-width:48px;min-height:14px;padding:1px 4px;border-radius:4px;outline:none;cursor:text;color:#334155;font-size:11px;line-height:1.4;word-break:break-word;white-space:pre-wrap}
+  .turn-tbl .rem-edit:hover{background:#f1f5ff}
+  .turn-tbl .rem-edit:focus{background:#fff7ed;border:1px solid #fb923c;box-shadow:0 0 0 2px rgba(251,146,60,.18)}
+  .turn-tbl .rem-edit:empty:before{content:'点击填写';color:#94a3b8;font-style:italic;cursor:text}
+  .turn-tbl .num{text-align:right;font-variant-numeric:tabular-nums}
+  .turn-summary{font-size:12px;color:#64748b;margin:8px 0 4px;padding:6px 10px;background:#f8fafc;border-radius:6px;border-left:3px solid #3b82f6;font-weight:600}
+  .save-rem-btn{flex-shrink:0;padding:3px 10px;border:1px solid #fb923c;background:#fff7ed;color:#c2410c;border-radius:5px;font-size:11px;cursor:pointer;font-weight:600;white-space:nowrap;line-height:1.6}
+  .save-rem-btn:hover{background:#ffedd5}
 </style>
 <script src="xlsx.full.min.js"></script>
 <!-- GitHub 存储后端使用浏览器原生 fetch，无需额外 SDK 脚本 -->
 <!--SHEETJS_INLINE-->
 </head>
 <body data-page-node-id="TnJopYRx03FYyUEAnM7EON">
+<!-- fix69af 版本标记：厂直值改"厂直"+系列明细时间联动 -->
+<div id="versionMarker" style="background:linear-gradient(135deg,#16a34a,#2563eb);color:#fff;text-align:center;padding:4px 10px;font:bold 13px system-ui;position:relative;z-index:99998;">
+  🟢 fix69bh · <span id="vmMode"></span> v2026-09-01 · <span id="vmTime"></span> · <span id="vmDebug" style="font-weight:normal;opacity:.9;background:rgba(0,0,0,.2);padding:1px 6px;border-radius:3px"></span>
+</div>
+<!-- fix69aa 终极诊断：独立小脚本（不在主282KB块内），测试JS能否执行 -->
+<script>
+(function(){
+  var d=document.getElementById('vmDebug');
+  if(d) d.textContent='✅ JS可执行! LOCAL_MODE='+(typeof LOCAL_MODE!=='undefined'?String(LOCAL_MODE):'UNDEF')+' time='+new Date().toLocaleTimeString('zh-CN');
+  else document.body.insertAdjacentHTML('afterbegin','<div style="background:red;color:#fff;padding:10px;font:bold 16px">❌ vmDebug元素不存在! JS时间='+new Date().toLocaleTimeString('zh-CN')+'</div>');
+})();
+</script>
 <header data-page-node-id="Ga9C2hOEsJ1kc9ZcrA2GBM">
   <div data-page-node-id="hgBqtPPakQD5m3PWstrT5i">
     <h1 data-page-node-id="fg5DOI2AMlCsBXlnIPDeM6">金致数据看板</h1>
     <div class="sub" data-page-node-id="bDUL6ngn6Dq4ElxNUHYFIi">销售(含目标达成) · 库存周转 · 京东京准通 &nbsp;|&nbsp; 提供表格即实时更新</div>
   </div>
   <div class="actions" data-page-node-id="2ZEKgMWtNB1y6XDxB0Jo3A">
-    <span class="muted" id="lastUpdate" style="color:rgba(255,255,255,.85);font-size:12px" data-page-node-id="49tzhbUZLpPVnxMpDBplkg"></span>
+    <span id="saveStatus" class="warn" title="保存状态：点击查看详情"><span class="dot"></span><span id="saveStatusText">检测中…</span></span>
     <button class="btn" id="syncCloudBtn" data-page-node-id="L2VIKGYPwwAKgW1f4FRBom">强制同步到云端</button>
     <button class="btn" id="resetBtn" data-page-node-id="uqFFJI4Bjif04yYCR4RtgD">恢复示例数据</button>
     <button class="btn primary" id="exportBtn" data-page-node-id="E5Pqfttz3FarI0igVT5u0z">导出数据包</button>
     <label class="btn" id="importBtnLabel" data-page-node-id="p19xwDnaVCTmwN60e3Jqph">导入数据包<input type="file" id="importBtn" accept=".json,application/json" hidden data-page-node-id="AkVrhswwC19MQWOc2VZgIU"></label>
   </div>
 </header>
+
+<!-- fix69w：模式横幅——让用户一眼知道当前是哪种模式、数据保存在哪 -->
+<div id="modeBanner" style="display:none;padding:8px 16px;font-size:13px;text-align:center;font-weight:600;border-bottom:1px solid var(--line)"></div>
 
 <div class="wrap" data-page-node-id="2744HA3elrNoF00DkxNx3x">
   <div class="boardbar" id="boardBar" style="display:none" data-page-node-id="YG9uamCZpgwjcUYGvRolpd"></div>
@@ -191,22 +272,46 @@
         <span data-page-node-id="5wlmn7LFI0h2Ft5i6MmIFB">结束</span><input type="date" id="tvEnd" data-page-node-id="QQBheCYMNWsYSlkhTFMglw">
         <button class="btn2 primary" id="tvApplyBtn" style="background:var(--blue);color:#fff;border-color:var(--blue)" data-page-node-id="Yz5JeQaeeskbTV7z57mjuJ">应用日期</button>
         <button class="btn2 ghost" id="tvResetBtn" data-page-node-id="lXXG1WsFqCJWjIwDO3qzPZ">恢复全部</button>
+        <button class="btn2" id="exportDetailBtn" style="border-color:var(--blue);color:var(--blue)" onclick="exportAchievementDetail()">📥 导出达成明细</button>
         <span class="muted" data-page-node-id="hRHZ96TV8SeniE9p9yiLvN">只选一端=查看单日；两端都空=默认全部日期</span>
       </div>
       <div class="timeProgress" id="tvTimeProgress" data-page-node-id="A0uYhUeGQVX13yZ863L14g"></div>
-      <div class="kpis" id="zyTargetKpis" data-page-node-id="QUFVBFpS2uHPapypX3vf5L"></div>
+      <div class="zy-sales-grid">
+        <div class="zy-kpi-col"><div class="zy-kpi-title">目标达成情况</div><div class="kpis kpis-vertical" id="zyTargetKpis" data-page-node-id="QUFVBFpS2uHPapypX3vf5L"></div></div>
+        <div class="todo-grid" id="todo_sales" data-page-node-id="hlaa0TCQWevzQNcTJsBsqS"></div>
+      </div>
     </div>
     <div class="panel" id="popTargetPanel" data-page-node-id="VLQ1e0DgUpxX0klWg3IoUU">
       <h2 id="popTargetTitle" data-page-node-id="6dEmpmPMjBAoXmGpdOqzTU">POP销售目标达成</h2>
       <p class="hint" data-page-node-id="EN29OD9WXIIjJSgvItlJud">麦维他POP GMV（销售成交金额）目标达成追踪（按月累计 MTD）。</p>
       <div class="kpis" id="popTargetKpis" data-page-node-id="T3nPyWlc4pixIq7xTB92Nk"></div>
     </div>
-    <div class="panel" data-page-node-id="myjbSok8e50SicRsOtDA8k"><div class="chart-title" data-page-node-id="BXr3aJF4gN2UKNbZViQGb5">事项（上周 / 本周）</div><div class="todo-grid" id="todo_sales" data-page-node-id="hlaa0TCQWevzQNcTJsBsqS"></div></div>
     <div class="grid2" data-page-node-id="uG7CYqt1exj6YYXV23GYMS">
       <div class="panel" data-page-node-id="pPjEJTdej36RE7u3h4DOhB"><div class="chart-title" id="targetGmvTitle" data-page-node-id="iEMfGFHq3EpG8eONGpMurR">自营GMV实际 vs 品牌目标</div><div id="targetGmv" data-page-node-id="0db517LEvBPs5fQ7GCpitH"></div></div>
       <div class="panel" data-page-node-id="TjXwiBCo5q3WjcZHrfeFaS"><div class="chart-title" id="targetPosTitle" data-page-node-id="pBqr4NGqKsrKEQ3fScsmR7">POP GMV实际 vs 品牌目标</div><div id="targetPos" data-page-node-id="zuxhnRwfnITEkulqYW0UmE"></div></div>
     </div>
     <div class="panel" data-page-node-id="ZHsXL1iB3nu0C8uFRG0PZ8"><div class="chart-title" id="targetTableTitle" data-page-node-id="dnANBsw1G3Y46CelyAUFD0">达成明细（按日：时间 / 自营目标(by day) / 自营实际GMV / 自营GMV达成率 / POP目标(by day) / POP实际GMV / POPGMV达成率）</div><div id="targetTable" data-page-node-id="YrHRCyPVDPW9xmLz3ZzkJB"></div></div>
+    <!-- 系列明细（fix69af）：按 SKU×系列划分聚合的树形表格 · 大类→中类→产品简称 · 联动销售目标达成时间筛选 -->
+    <div class="panel" id="seriesDetailPanel" data-page-node-id="sDp001">
+      <h2 style="display:flex;align-items:center;gap:8px">
+        <span>系列明细</span>
+        <span class="muted" style="font-size:12px;font-weight:400">按 SKU × 系列划分聚合 · 大类 → 中类 → 产品简称</span>
+      </h2>
+      <div id="seriesDetailBody" style="display:block;overflow-x:auto;margin-top:8px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap">
+          <label style="font-size:13px;display:flex;align-items:center;gap:4px">厂直
+            <select id="sdFilterFactory" onchange="renderSeriesDetail()" style="padding:4px 6px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);font-size:13px">
+              <option value="">(全部)</option>
+              <option value="厂直">仅厂直</option>
+              <option value="__nonfactory__">非厂直</option>
+            </select>
+          </label>
+          <span class="muted" style="font-size:12px" id="sdDateRange"></span>
+          <span class="muted" style="font-size:12px" id="sdSummary"></span>
+        </div>
+        <table class="tbl sd-tree-table" id="seriesDetailTable"><colgroup><col style="width:36px"><col style="width:90px"><col style="width:180px"><col style="width:130px"><col style="width:110px"><col style="width:80px"><col style="width:110px"></colgroup><thead><tr><th></th><th>大类</th><th>中类</th><th>系列</th><th>GMV</th><th>YOY%</th><th>去年GMV</th></tr></thead><tbody id="seriesDetailTbody"></tbody></table>
+      </div>
+    </div>
   </section>
 
   <!-- INVENTORY -->
@@ -230,6 +335,13 @@
         <span data-page-node-id="25HTPbIjJybTvPDiprTOek">查看日期</span>
         <select id="invDate" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px" data-page-node-id="TQGeyxX6tAvRZocHjhJJLi"></select>
         <button class="btn2 primary" id="invDateApplyBtn" style="background:var(--blue);color:#fff;border-color:var(--blue)" data-page-node-id="Ibm75IYHZx1BEdjCgfbPEi">应用日期</button>
+        <span style="margin:0 8px;color:#d1d5db">|</span>
+        <span>部门</span>
+        <select id="invDept" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px">
+          <option value="">全部</option>
+          <option value="复合调味品组">复合调味组</option>
+          <option value="基础调味品组">基础调味组</option>
+        </select>
         <span class="muted" data-page-node-id="C9zELjVbAG1BzME3QqYhJl">选某天查看该日全量库存快照；默认显示最新一天</span>
       </div>
       <div class="kpis" id="invKpis" data-page-node-id="7HLI1nsRIrVMHabIokisbX"></div>
@@ -241,10 +353,10 @@
     </div>
     <div class="panel" data-page-node-id="FwdGeyUdDIHA6H9tWW8Gdh"><div class="chart-title" data-page-node-id="beeIACht713fiaud67X5cm">事项（上周 / 本周）</div><div class="todo-grid" id="todo_inventory" data-page-node-id="ePVsJ7EyRgskls54xLwkTh"></div></div>
     <div class="grid2" data-page-node-id="ZgPmiGWGiS6oebyd8bbYv6">
-      <div class="panel" data-page-node-id="tEmfKzvZVHis93QoX8ZdDU"><div class="chart-title" data-page-node-id="NVZmEZ7lCsi7r8zTVAUr5q">库存周转（天）趋势（含全链路周转）</div><div id="invRate" data-page-node-id="2DWUhJWuCBWrGlXGvsUqaS"></div></div>
-      <div class="panel" data-page-node-id="uQGQNt0p5txCAC3ASujqiF"><div class="chart-title" data-page-node-id="6mP8jaBAmrvw4z7ZbdqKjP">全国库存（件）与日均销售（件）趋势</div><div id="invDays" data-page-node-id="rrWQimMPYOMSX54DHRDl8H"></div></div>
+      <div class="panel" data-page-node-id="tEmfKzvZVHis93QoX8ZdDU"><div style="display:flex;align-items:center;gap:8px"><div class="chart-title" id="invRateTitle" data-page-node-id="NVZmEZ7lCsi7r8zTVAUr5q" style="margin:0">低周转系列（周转天数 &lt; 15天）</div><button id="saveTurnRemark" class="save-rem-btn">保存备注</button></div><div id="invRate" data-page-node-id="2DWUhJWuCBWrGlXGvsUqaS"></div></div>
+      <div class="panel" data-page-node-id="uQGQNt0p5txCAC3ASujqiF"><div style="display:flex;align-items:center;gap:8px"><div class="chart-title" id="invDaysTitle" data-page-node-id="6mP8jaBAmrvw4z7ZbdqKjP" style="margin:0">高周转系列（周转天数 &gt; 45天）</div><button id="saveHighTurnRemark" class="save-rem-btn">保存备注</button></div><div id="invDays" data-page-node-id="rrWQimMPYOMSX54DHRDl8H"></div></div>
     </div>
-    <div class="panel" data-page-node-id="5DbKXH4DBFoMzLgZt17vSq"><div class="chart-title" data-page-node-id="4UEEhrJideth0FD7RESylt">库存结构明细</div><div id="invTable" data-page-node-id="yteDG4wKsbCMrxjJteGh3a"></div></div>
+    <div class="panel" data-page-node-id="5DbKXH4DBFoMzLgZt17vSq"><div style="display:flex;align-items:center;gap:8px"><div class="chart-title" id="invTableTitle" data-page-node-id="4UEEhrJideth0FD7RESylt" style="margin:0">库存结构明细</div><button id="saveAgingRemark" class="save-rem-btn">保存备注</button></div><div id="invTable" data-page-node-id="yteDG4wKsbCMrxjJteGh3a"></div></div>
   </section>
 
   <!-- ZHONGTAI 中台 -->
@@ -252,6 +364,7 @@
     <div class="panel" data-page-node-id="XBfPSV8vX0WLezu8JBQt12"><h2 data-page-node-id="FPfEmuof5oWdwNam8ncwtu">中台 · 营销</h2><div class="chart-title" data-page-node-id="QJQNOWqqeYq0QSs6EpuCeG">事项（上周 / 本周）</div><div class="todo-grid" id="todo_mt_marketing" data-page-node-id="bQuDjrEiKsGFVlA13liwXc"></div></div>
     <div class="panel" data-page-node-id="kap6rHlidF823Ap6MZuJEU"><h2 data-page-node-id="Dygyi3LihkgMMoHdd0npGX">中台 · 设计</h2><div class="chart-title" data-page-node-id="HpR0QyjCsyKk3IVKOwHPgn">事项（上周 / 本周）</div><div class="todo-grid" id="todo_mt_design" data-page-node-id="SkdkLAIGVefuztZqRzJ8qJ"></div></div>
     <div class="panel" data-page-node-id="ZQ58BhD65qlhjtCUB0ilZ0"><h2 data-page-node-id="g7UIBceRqBUtvCLMrTGUQw">中台 · 数据</h2><div class="chart-title" data-page-node-id="sypjSGgEfnCQpKCkznM0gc">事项（上周 / 本周）</div><div class="todo-grid" id="todo_mt_data" data-page-node-id="OSJHVs3jE8JzSkzX5RThh1"></div></div>
+    <div class="panel" data-page-node-id="aMtSvcPnl01XLezu8J"><h2 data-page-node-id="aMtSvcHd02WdwNam8n">中台 · 客服</h2><div class="chart-title" data-page-node-id="aMtSvcCt03QpKzCkz">事项（上周 / 本周）</div><div class="todo-grid" id="todo_mt_service" data-page-node-id="aMtSvcGd04SkzX5R"></div></div>
   </section>
 
   <!-- JZT -->
@@ -515,7 +628,7 @@
 
 <details data-page-node-id="70sJQCX4v5di2FDgJ9KCXh">
         <summary data-page-node-id="awEus7mNBtQYvsVTPvk9TR">2.8 · 长库龄预警金额数据</summary>
-        <p class="hint" data-page-node-id="oPGAPEUMSFw3a9pGOACrox">表头：<b data-page-node-id="E0nHGgWsEf4qZhXVnY459r">60-90天长库龄预警金额&#9;90天以上长库龄金额&#9;60-90天长库龄预警金额（基调）&#9;60-90天长库龄预警金额（复调）&#9;90天以上长库龄金额（基调）&#9;90天以上长库龄金额（复调）</b>。每日一行，列名自动识别，缺列留空。<b data-page-node-id="aB9rBodjq0vRLCuObJFZAo">该数据独立录入、独立存储，前台按天展示；优先于库存明细里的同名列。</b>同一「日期」重复录入即覆盖更新。</p>
+        <p class="hint" data-page-node-id="oPGAPEUMSFw3a9pGOACrox">表头（逐 SKU 一行）：<b data-page-node-id="E0nHGgWsEf4qZhXVnY459r">商品&#9;商品名称&#9;配送中心&#9;长库龄数量&#9;0-30天&#9;31-60天&#9;61-90天&#9;91-120天&#9;121-150天&#9;151-180天&#9;181-365天&#9;1年以上&#9;品牌&#9;类目</b>。列名自动识别，缺列留空。<b data-page-node-id="aB9rBodjq0vRLCuObJFZAo">该数据独立录入、独立存储，前台按 SKU 汇总展示；库龄金额 = Σ(对应区间天数 × 该 SKU 浮码价格 × 1.129)。</b></p>
         <div class="row" data-page-node-id="G1OilDWezVcw3y67ccUUyF">
           <span class="muted" style="font-size:12px" data-page-node-id="gVH4dEmaGcXbunB0BHLNaP">品牌</span>
           <select id="brand_aging_warn" class="secBrand" data-sec="aging_warn" style="padding:5px 8px;border:1px solid var(--border,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;font-size:13px" data-page-node-id="p7TTPHADkEiR0XJO92GATO">
@@ -531,7 +644,7 @@
           <button class="btn2 ghost" id="awTplBtn" data-page-node-id="HGZsOFSXkumYY4a9BEun4j">下载填写模板</button>
           <button class="btn2 ghost clearBtn" data-which="aging_warn" data-page-node-id="FWirBEW5JT8kkokCTWM5Bt">清除历史</button>
         </div>
-        <textarea id="awInput" placeholder="日期&#9;60-90天长库龄预警金额&#9;90天以上长库龄金额&#9;60-90天长库龄预警金额（基调）&#9;60-90天长库龄预警金额（复调）&#9;90天以上长库龄金额（基调）&#9;90天以上长库龄金额（复调）&#9;（每日一行；缺列留空，列名自动识别）"></textarea>
+        <textarea id="awInput" placeholder="商品&#9;商品名称&#9;配送中心&#9;长库龄数量&#9;0-30天&#9;31-60天&#9;61-90天&#9;91-120天&#9;121-150天&#9;151-180天&#9;181-365天&#9;1年以上&#9;品牌&#9;类目&#9;（逐SKU一行；库龄金额=区间天数×浮码价×1.129，列名自动识别）"></textarea>
         <div class="diag" id="diagAw" data-page-node-id="fbU2BlUqVKLNsFTvSFaZBC"></div>
       </details>
 
@@ -626,7 +739,7 @@
           <tr data-page-node-id="XTdQNzYWtbSEzTF5pse0kK"><td data-page-node-id="E84C1ugugPcRa4e6SRKkpN">浮码数据<br data-page-node-id="aaBXUdpLbvXTolru8hMlw2">(独立录入)</td><td data-page-node-id="U1f7B3g4pAAEzPEpsRw7sE">时间 / SKU / 浮码 —— <b data-page-node-id="PIGP7eLUgXijCS0AYw8Y2N">单独录入、单独存储</b>，不并入库存明细（李锦记）；「全国昨日出库商品件数」自动取自库存明细的「昨日出库商品件数」列（按时间+SKU匹配）；「浮码 × 昨日出库件数 ÷ 1.129」用于计算 POS 实际；同「时间+SKU」覆盖更新，缺列留空</td></tr>
           <tr data-page-node-id="jdnmSIyHKc7D8wwdTjjcrX"><td data-page-node-id="ErZDwzXEV7wcSOpVazdC9Z">京准通<br data-page-node-id="Oy70uAPnJHMdP9On4ljCZb">(见「下载填写模板」导出 Excel)</td><td data-page-node-id="bxCYliyMOUIFnKAjBTDTU0">日期 / 营销场景 / 计划ID / 推广计划 / 跟单SKU ID·名称 / 展现数 / 点击数 / 花费 / 直接·间接·总订单行与金额 / 加购数 / 转化率(%) / 平均订单成本 / 投产比 / 预售·新客·关注·成交用户 等（共 36 列）</td></tr>
           <tr data-page-node-id="1N5CU7jqaQoXEtZgixF0PY"><td data-page-node-id="F9kjuNBAJUlypmL5ARmroB">京准通<br data-page-node-id="DNwjsZo2kTyZTKottR0SIj">(见「下载填写模板」导出 Excel)</td><td data-page-node-id="ygEkhg0dCpPkU0lEjhYclw">日期 / 商品计划名称 / ID / 投放类型 / 花费 / 全站投产比 / 全站交易额 / 全站订单行 / 全站订单成本 / 核心位置展现量 / 核心位置点击量 / 180天未购新客数 / 带券展现 / 带券点击 / 智能补贴券金额 / 智能补贴券助力订单行（京东商智·京准通全站视角导出列，核心指标自动识别，后5列作辅助信息记录）</td></tr>
-          <tr data-page-node-id="xoDYxW7ZlksaaJWxFh2pBQ"><td data-page-node-id="m4bBzvBEh5nlvZ211cw7qu">目标</td><td data-page-node-id="flY69unWF89bA9CTSeXS8q">类型(品牌GMV/采销GMV/内部GMV/POS/京准通花费即投放花费) / 粒度(day/month/year) / 周期(2026-08-01或2026-08或2026) / 目标值</td></tr>
+          <tr data-page-node-id="xoDYxW7ZlksaaJWxFh2pBQ"><td data-page-node-id="m4bBzvBEh5nlvZ211cw7qu">目标</td><td data-page-node-id="flY69unWF89bA9CTSeXS8q">类型(品牌GMV/采销GMV/内部GMV/GS/POS/京准通花费即投放花费) / 粒度(day/month/year) / 周期(2026-08-01或2026-08或2026) / 目标值</td></tr>
           <tr data-page-node-id="vMItwFyAxVO9kqH4g5s7xN"><td data-page-node-id="a0ooCWoeLhJuxsO2Z0VqMH">营销/设计/数据<br data-page-node-id="FsPdxqHawWQHAEDYhp48Dn">(甘特图)</td><td data-page-node-id="JoiY6jSJ02GXpUz0Y4GLBJ">模块(营销/设计/数据) / 日期(开始日) / 结束日期(可选) / <b data-page-node-id="Uhghgy4qyQFCmUz8mgDdAm">开始时间(可选,时:分)</b> / <b data-page-node-id="occNl0wKE8cOWW8NTSwmu2">结束时间(可选,时:分)</b> / 任务 / 负责人 / 进度(%) / 状态 / 备注　—— 三模块<b data-page-node-id="FEATQ8cruS85KfUGpc1HUM">共用一个输入框</b>，按「模块」列自动分流到对应甘特图；同「模块+日期+任务」覆盖，不同任务新增</td></tr>
         </table>
         <p class="muted" style="margin-top:8px" data-page-node-id="y16PGApctjwscpDm4VO5Hb">提示：列名不固定也没关系，系统已内置中英文同义词识别。</p>
@@ -726,7 +839,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-08-31-fix69b-local-autodetect';
+const APP_VERSION = '2026-09-01-fix69bh-remark-buttons-per-table';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -825,6 +938,7 @@ const ALIAS = {
   catS:['小类','三级分类','小分类','small_cat','cat_s','category_s','cate_s'],
   series:['系列','series','product_series','产品线','product_line'],
   shortName:['产品简称','简称','商品简称','short_name','abbr','alias_name'],
+  remark:['备注','备注列','备注说明','remark','notes','note'],
   mc:['M/C','m/c','mc','mc_code','m_c','mc分类','mc_category'],
   dept:['部门','dept','department','事业部','bu','business_unit'],
   factoryDirect:['是否厂直','厂直','factory_direct','factorydirect','is_factory_direct','厂直发','是否厂直发'],
@@ -890,11 +1004,25 @@ function normDate(s){
   if(s===undefined||s===null) return s;
   s=String(s).trim();
   if(!s) return s;
+  /* fix69n：仅当字符串以数字开头（日期特征，如 2026-08-01 / 8/31/26 / 46265）才进入归一化；
+     其余（含空格的品牌名「李锦记（LEE KUM KEE）」、店铺名、商品名等）原样返回，
+     避免被下方 split(/[ \tT]/)[0] 截断到首个空格导致数据损坏。该截断此前经 sheetToTsv 兜底分支
+     误伤所有含空格文本字段，使李锦记品牌名变「李锦记（LEE」，系列划分等关联全部失效。 */
+  if(!/^\d/.test(s)) return s;
   s=s.split(/[ \tT]/)[0]; // 去掉时间后缀
   let m;
   if((m=s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/))) return `${m[1]}-${String(m[2]).padStart(2,'0')}-${String(m[3]).padStart(2,'0')}`;
   if((m=s.match(/^(\d{4})年(\d{1,2})月(\d{1,2})日?$/))) return `${m[1]}-${String(m[2]).padStart(2,'0')}-${String(m[3]).padStart(2,'0')}`;
   if((m=s.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{2,4})$/))){ let y=+m[3]; if(y<100) y+=(y<70?2000:1900); return `${y}-${String(m[1]).padStart(2,'0')}-${String(m[2]).padStart(2,'0')}`; }
+  /* fix69aq：YYYYMMDD 紧凑格式（京准通推广导出的原生格式，如 20260830 → 2026-08-30）。
+     必须带严格合法性校验（年 1900~2100 / 月 01~12 / 日 01~31），
+     否则 8 位纯数字 SKU / 条码（如 12345678、69012345）会被误转成日期。
+     不合法则原样返回，不落到此分支下游。 */
+  if((m=s.match(/^(\d{8})$/))){
+    const _y=+m[1].slice(0,4), _mo=+m[1].slice(4,6), _dd=+m[1].slice(6,8);
+    if(_y>=1900 && _y<=2100 && _mo>=1 && _mo<=12 && _dd>=1 && _dd<=31)
+      return `${_y}-${String(_mo).padStart(2,'0')}-${String(_dd).padStart(2,'0')}`;
+  }
   /* Excel 日期序列号（纯数字，如 46265 → 2026-08-27）。范围约 30000~60000 对应 1982~2064 年 */
   if((m=s.match(/^(\d{4,5})$/))){ const n=+m[1]; if(n>25000&&n<70000){ const d=new Date(Math.round((n-25569)*86400000)); const y=d.getFullYear(),mo=d.getMonth()+1,dd=d.getDate(); if(y>1980&&y<2100) return `${y}-${String(mo).padStart(2,'0')}-${String(dd).padStart(2,'0')}`; } }
   return s;
@@ -946,6 +1074,18 @@ function _parseRows(headers, lines, delim){
     rows.push(o);
   }
   return rows;
+}
+/* fix69j：解析历史月度数据（TSV 格式：YYYY-MM\t数值，首行可选表头）→ { '2026-01': 12345, ... } */
+function parseHistoricalMonthly(text){
+  const out={};
+  if(!text||!text.trim()) return out;
+  const lines=text.replace(/\r/g,'').split('\n').filter(l=>l.trim());
+  lines.forEach((line,idx)=>{
+    if(idx===0 && /^[^\d]/.test(line.trim())) return; // 跳过表头行
+    const parts=line.split(/\t|,/);
+    if(parts.length>=2){ const m=String(parts[0]).trim(), v=Number(String(parts[1]).replace(/[^\d.\-]/g,'')); if(/^\d{4}-\d{1,2}$/.test(m)&&!isNaN(v)) out[m]=v; }
+  });
+  return out;
 }
 
 /* ---------- 追加式合并：导入新数据时不清空历史，按业务键去重（同日同维度覆盖、不同则追加） ---------- */
@@ -1030,7 +1170,14 @@ function splitJztSections(text){
     const delim=detectDelimOf(line);
     const cells=line.split(delim).map(c=>c.trim());
     const first=String(cells[0]||'').trim();
-    const firstIsDate=/^\d{4}[-/]\d{1,2}[-/]\d{1,2}$/.test(first)||/^\d{1,2}[-/]\d{1,2}$/.test(first);
+    /* fix69aq：新增 ^\d{8}$（YYYYMMDD 紧凑格式，京准通原生导出）。
+       若不识别，20260830 开头的**数据行**会掉到下方关键词检测——
+       推广计划名含「计划 / 商品 / 渠道 / 场景」等词时整行会被误判成表头，导致该行数据丢失。 */
+    let firstIsDate=/^\d{4}[-/]\d{1,2}[-/]\d{1,2}$/.test(first)||/^\d{1,2}[-/]\d{1,2}$/.test(first);
+    if(!firstIsDate && /^\d{8}$/.test(first)){
+      const _y=+first.slice(0,4), _mo=+first.slice(4,6), _dd=+first.slice(6,8);
+      firstIsDate=(_y>=1900&&_y<=2100&&_mo>=1&&_mo<=12&&_dd>=1&&_dd<=31);
+    }
     if(firstIsDate) return false; // 首格是日期 → 数据行，非表头
     return cells.some(c=>knownKw.some(k=>String(c).toLowerCase().includes(k.toLowerCase())));
   };
@@ -1296,12 +1443,18 @@ function computeThreePart(asOf){
   //   Excel 末行常为「合计」行，仅品牌采购在途有值、其余列空→此前整日聚合全变 NaN 导致巢湖库存显示 —）
   const chByDate={};
   (B().chaohu||[]).forEach(r=>{ const d=String(r.date||'').slice(0,10); if(!d) return; chByDate[d]=chByDate[d]||{qty:0,amt:0,intr:0}; chByDate[d].qty+=(num(chGet(r,'可发库存'))||0); chByDate[d].amt+=(num(chGet(r,'可发金额'))||0); chByDate[d].intr+=(num(chGet(r,'品牌采购在途'))||0); });
-  // 长库龄预警按日
-  const awByDate={};
-  (B().aging_warn||[]).forEach(r=>{ const d=String(r.date||'').slice(0,10); if(!d) return; const g=k=>num(r[k]); awByDate[d]={ age60:g('age60')||num(r['60-90天长库龄预警金额']), age90:g('age90')||num(r['90天以上长库龄金额']) }; });
-  // fix56：长库龄预警按「最新值」展示（同 computeInv）——无对应日期时回退最新快照
-  let latestAwKey=null, latestAw={age60:0,age90:0};
-  (B().aging_warn||[]).forEach(r=>{ const d=String(r.date||'').slice(0,10); if(!d) return; const g=k=>num(r[k]); const o={age60:g('age60')||num(r['60-90天长库龄预警金额']), age90:g('age90')||num(r['90天以上长库龄金额'])}; if(!latestAwKey || d>latestAwKey){ latestAwKey=d; latestAw=o; } });
+  // 长库龄预警（fix69al：新表头逐SKU明细，按 SKU 汇总 Σ(区间天数×浮码价×1.129)）
+  const agingAll=(B().aging_warn||[]);
+  const agingSumForDate=d=>{
+    const dated=agingAll.filter(r=>r.date);
+    const list = dated.length
+      ? (dated.filter(r=>r.date===d).length ? dated.filter(r=>r.date===d)
+        : (dated.filter(r=>r.date<=d).length ? dated.filter(r=>r.date<=d) : dated))
+      : agingAll;
+    let age60=0, age90=0;
+    list.forEach(r=>{ const sku=String(r['商品']||r.sku||'').trim(); const p=priceOf(d,sku); if(p===undefined) return; const a=num(r['61-90天']||r['ext_61-90天']); const q=num(r['长库龄数量']||r['ext_长库龄数量']); if(a) age60+=a*p*1.129; if(q) age90+=q*p*1.129; });
+    return {age60,age90};
+  };
   // fix66s：现货率按日索引（来自 2.7 现货率数据录入区），供京仓卡片展示 PV/实库现货率
   const srByDate={}; (B().spot_rate||[]).forEach(r=>{ const d=String(r.date||'').slice(0,10); if(d) srByDate[d]=r; });
   /* fix66v：日期轴 ds 必须是「所有每日数据源的并集」，否则当某一类数据（如京仓库存明细 inv_full）缺失时，
@@ -1326,12 +1479,13 @@ function computeThreePart(asOf){
     // fix66r：京仓真实在途金额 = Σ(采购单采购数量 × 浮码单价)。采购单按「订购时间」下单，与库存快照日(如8-28)通常不同，
     // 原精确日期匹配 poDate(r)===d 恒成立 0（永不匹配）→ 在途金额恒为 0。改按用户公式对全部采购单行求和：采购数量(R列) × 浮码价格，
     // priceOf(d,sku) 优先取当日期单价、否则以 sku 兜底取浮码数据中的浮码价格
-    let jcIntr=0; (B().purchase_order||[]).forEach(r=>{ const sku=poSku(r); if(!sku) return; const p=priceOf(d,sku); const q=poQty(r); if(p!==undefined && q) jcIntr+=q*p; });
+    // fix69bc②：在途金额 = 仅 5 个有效状态（等待入库/等待签收/部分收货/待发货确认/等待下传）的采购单采购数量 × 浮码价，其余状态只存储不参与
+    let jcIntr=0; (B().purchase_order||[]).forEach(r=>{ if(!poStatusValid(r)) return; const sku=poSku(r); if(!sku) return; const p=priceOf(d,sku); const q=poQty(r); if(p!==undefined && q) jcIntr+=q*p; });
     const ch=chByDate[d]||{qty:0,amt:0,intr:0};
     const fcAmt=jcAmt+jcIntr+ch.amt+ch.intr;
     const jcTurn=s30>0? jcAmt/s30*30 : null;
     const fcTurn=s30>0? fcAmt/s30*30 : null;
-    const aw=awByDate[d]||latestAw;
+    const aw=agingSumForDate(d);
     // fix66s：PV/实库现货率按天匹配（来自 2.7 现货率数据录入区）
     const sr=srByDate[d]; let pvRate=undefined, realRate=undefined;
     if(sr){ const pv=num(sr.pvRate!==undefined?sr.pvRate:sr.PV现货率), rr=num(sr.realRate!==undefined?sr.realRate:sr.实库现货率); if(pv||rr){ pvRate=pv; realRate=rr; } }
@@ -1341,8 +1495,61 @@ function computeThreePart(asOf){
   return {all, cur, dates:ds, target, hasData:true};
 }
 /* ---------- 计算：李锦记 / 通用库存周转（数据来自 2.1 库存明细（李锦记）= B().inventory）---------- */
-function computeInv(asOf){
-  const rows=B().inventory;
+// fix69bc：两条数据过滤规则
+// ① 库存明细：配送中心 = '全国' 的数据只存储、不参与任何计算（库金额/现货/周转/销售/日期集合全部排除）
+// ② 采购单（B().purchase_order）：仅「等待入库/等待签收/部分收货/待发货确认/等待下传」5 个状态的采购金额参与计算，其余只存储
+const PO_VALID_STATUS=['等待入库','等待签收','部分收货','待发货确认','等待下传'];
+function isNationwideWh(r){ const w=String(r.warehouse||r.rdc||'').trim(); return w==='全国'||w==='全国仓'||w==='全国配送中心'||w==='全国配送'; }
+function poStatusOf(r){ return String(r['ext_订单状态']!==undefined?r['ext_订单状态']:(r['订单状态']!==undefined?r['订单状态']:(r.orderStatus!==undefined?r.orderStatus:(r.status||'')))||'').trim(); }
+function poStatusValid(r){ return PO_VALID_STATUS.includes(poStatusOf(r)); }
+// fix69ai：deptFilter 可选，传 '' 或不传 = 全部；传 '复合调味品组'/'基础调味品组' 则按系列数据 dept 字段过滤 SKU
+function computeInv(asOf, deptFilter){
+  let rows=B().inventory;
+  // fix69bc①：库存明细中配送中心='全国' 的行不参与任何计算（仍保留在 B().inventory 中存储）
+  rows=rows.filter(r=>!isNationwideWh(r));
+  // fix69ai：按部门过滤 —— 从 series 数据构建 {dept → Set<SKU>} 映射，仅保留匹配 SKU 的库存行
+  // fix69ak：deptSkus 提升到函数作用域，供库存明细 + 长库龄两套数据共用同一套 SKU→部门映射
+  const deptSkus=new Set();
+  if(deptFilter){
+    (B().series||[]).forEach(function(sr){ if(String(sr.dept||'').trim()===deptFilter){ deptSkus.add(String(sr.sku||'').trim()); } });
+    if(deptSkus.size) rows=rows.filter(function(r){ return deptSkus.has(String(r.sku||'').trim()); });
+  }
+  // 浮码价格索引（用于长库龄金额：区间天数 × 浮码价 × 1.129）：优先 日期|SKU，回退 SKU 最新价
+  const ppBySku={}, ppByDS={};
+  (B().purchase||[]).forEach(r=>{ const d=String(r.date||'').slice(0,10); const sku=String(r.sku||'').trim(); const p=num(r.purchase); if(isNaN(p)) return; if(sku) ppBySku[sku]=p; if(d&&sku) ppByDS[d+'|'+sku]=p; });
+  const priceOf=(d,sku)=>{ const k=d+'|'+sku; if(ppByDS[k]!==undefined) return ppByDS[k]; if(ppBySku[sku]!==undefined) return ppBySku[sku]; return undefined; };
+  // fix69be：产品全名→数字SKU映射（aging_warn 用 product 全名，purchase 用数字 SKU，需桥接查价）
+  const prodNameToSku={};
+  (B().series||[]).forEach(function(sr){
+    const k=String(sr.sku||'').trim(); if(!k) return;
+    const sn=String(sr.shortName||sr['产品简称']||'').trim();
+    const pn=String(sr.product||sr['商品名称']||sr['商品']||'').trim();
+    if(sn) prodNameToSku[sn]=k;
+    if(pn) prodNameToSku[pn]=k;
+  });
+  // 长库龄：按部门过滤 SKU（与库存同一套 deptSkus 映射）；新表头为逐 SKU 明细，无日期列视为整表快照
+  // fix69be：aging_warn 的 SKU 键是 product 全名（非数字），用 agingSkuOf 提取 + deptSkus 匹配
+  function agingSkuForFilter(r){ return String(r['商品']||r.sku||r.product||'').trim(); }
+  const agingAll = deptSkus.size
+    ? (B().aging_warn||[]).filter(function(r){
+        const sk=agingSkuForFilter(r);
+        if(!sk) return false;
+        if(deptSkus.has(sk)) return true;
+        const mapped=prodNameToSku[sk];
+        if(mapped && deptSkus.has(mapped)) return true;
+        // 子串匹配：aging product全名 包含/被包含于 series shortName/product
+        for(const pn in prodNameToSku){ if((sk.includes(pn)||pn.includes(sk)) && deptSkus.has(prodNameToSku[pn])) return true; }
+        return false;
+      })
+    : (B().aging_warn||[]);
+  // fix69al：长库龄快照选取——有日期则取当日/最新≤当日，无日期(逐SKU明细)则整表作为当前快照
+  function agingRowsForDate(d){
+    const dated=agingAll.filter(r=>r.date);
+    if(!dated.length) return agingAll;
+    const onD=dated.filter(r=>r.date===d); if(onD.length) return onD;
+    const leD=dated.filter(r=>r.date<=d); if(leD.length) return leD;
+    return dated;
+  }
   // 库存明细为空时，仍允许现货率/长库龄预警等独立每日快照驱动展示（这些录入区不依赖库存明细行）
   const hasInv=!!rows.length;
   if(!hasInv && !(B().spot_rate||[]).length && !(B().aging_warn||[]).length) return null;
@@ -1356,15 +1563,15 @@ function computeInv(asOf){
   const target=asOf||maxDate;                              // 选定查看日（默认最新）
   // 采购单：按「订购时间」归到对应【月份】(月至今口径)，与库存金额/周转的月至今逻辑一致。
   // fix51：原按「订购日期精确匹配」库存快照日，但采购单日期与库存快照日(如8-25)通常不同 → poByDate[快照日]=0 → 采购金额整体漏加，库存金额偏低。改为同月聚合。
+  // fix69be：采购单也按部门过滤（否则切换复调/基调时在途库存不变）
+  const poRows = deptSkus.size
+    ? (B().purchase_order||[]).filter(function(r){ return deptSkus.has(String(r.sku||'').trim()); })
+    : (B().purchase_order||[]);
   const poByMonth={};
-  (B().purchase_order||[]).forEach(r=>{ const d=String(r.date||r.订购时间||'').slice(0,10); if(!d||d.length<7) return; const m=d.slice(0,7); poByMonth[m]=(poByMonth[m]||0)+num(r.poAmt!==undefined?r.poAmt:r.采购金额); });
+  // fix69bc②：仅取 5 个有效状态的采购金额（其余状态只存储、不参与计算）
+  poRows.forEach(r=>{ if(!poStatusValid(r)) return; const d=String(r.date||r.订购时间||'').slice(0,10); if(!d||d.length<7) return; const m=d.slice(0,7); poByMonth[m]=(poByMonth[m]||0)+num(r.poAmt!==undefined?r.poAmt:r.采购金额); });
   // 独立录入区（直接录入、按天展示）：优先取这两张表；缺则回退库存明细读列
   const srByDate={}; (B().spot_rate||[]).forEach(r=>{ const d=String(r.date||'').slice(0,10); if(d) srByDate[d]=r; });
-  const awByDate={}; (B().aging_warn||[]).forEach(r=>{ const d=String(r.date||'').slice(0,10); if(d) awByDate[d]=r; });
-  // fix56：长库龄预警按「最新值」展示——长库龄为周期性报告，录入日通常滞后于库存快照日；
-  // 当所查看日期无独立长库龄录入时，回退到最新一条长库龄快照，确保 KPI 始终显示最新值而非 0/空白。
-  let latestAwKey=null, latestAw=null;
-  (B().aging_warn||[]).forEach(r=>{ const d=String(r.date||'').slice(0,10); if(d && (!latestAwKey || d>latestAwKey)){ latestAwKey=d; latestAw=r; } });
   // 每个日期：派生 13 项指标（库存金额/周转天/各销售金额按公式计算，库龄/现货率优先独立录入区）
   // 采购金额是「月至今」口径的月度总额，只需并入该月【最新快照日】一次；否则逐日重复累加会虚高库存金额
   const monthMaxDate={}; dates.forEach(d=>{ const m=d.slice(0,7); if(!monthMaxDate[m]||d>monthMaxDate[m]) monthMaxDate[m]=d; });
@@ -1374,7 +1581,12 @@ function computeInv(asOf){
     // 库存金额 = Σ(现货库存×全国采购价) + 当月采购单采购金额（仅并入月内最新快照日）
     let sumSpot=0, mtdOutAmt=0, biAmt=0, bjAmt=0;
     dr.forEach(r=>{ const p=num(r.purPrice!==undefined?r.purPrice:r.purchase); if(p){ const sq=num(r.spotQty!==undefined?r.spotQty:r.end); sumSpot+=sq*p; mtdOutAmt+=num(r.outBO)*p; biAmt+=num(r.outBI)*p; bjAmt+=num(r.outBJ)*p; } });
-    const invAmt = sumSpot + (d===monthMaxDate[d.slice(0,7)] ? (poByMonth[d.slice(0,7)]||0) : 0);
+    const poAmtMonth = (d===monthMaxDate[d.slice(0,7)] ? (poByMonth[d.slice(0,7)]||0) : 0);
+    const invAmt = sumSpot + poAmtMonth;
+    // fix69ah：新增「现货库存」与「在途库存」两个独立指标（计算逻辑与原库存金额拆分的两部分完全一致，库存周转其余计算不变）
+    // 现货库存 = Σ(库存明细:现货数量(AN)×全国采购价(W))；在途库存 = Σ(采购单:采购金额(Y)，按订购时间同月归并)
+    x.spotInv = sumSpot;
+    x.intrInv = poAmtMonth;
     // 月至今 T-1 天 = 当月已过天数（不含当天）
     const dt=new Date(d+'T00:00:00'); const T1=dt.getDate()-1;
     x.invAmount = invAmt;
@@ -1384,15 +1596,36 @@ function computeInv(asOf){
     x.turnDays = (T1>0 && mtdOutAmt>0)? invAmt/mtdOutAmt*T1 : null;  // 周转(天) = 库存金额 / 月至今出库额 × T-1天
     // 现货率 / 长库龄预警：优先独立录入区，按天覆盖；缺则保留库存明细读列（x 已读列）
     const sr=srByDate[d]; if(sr){ const pv=num(sr.pvRate!==undefined?sr.pvRate:sr.PV现货率), rr=num(sr.realRate!==undefined?sr.realRate:sr.实库现货率); if(pv||rr){ x.pvRate=pv; x.realRate=rr; } }
-    const aw=awByDate[d]||latestAw; if(aw){
-      const g=k=>num(aw[k]);
-      x.age60=g('age60')||num(aw['60-90天长库龄预警金额']);
-      x.age60_j=g('age60_j')||num(aw['60-90天长库龄预警金额（基调）']);
-      x.age60_f=g('age60_f')||num(aw['60-90天长库龄预警金额（复调）']);
-      x.age90=g('age90')||num(aw['90天以上长库龄金额']);
-      x.age90_j=g('age90_j')||num(aw['90天以上长库龄金额（基调）']);
-      x.age90_f=g('age90_f')||num(aw['90天以上长库龄金额（复调）']);
-    }
+    // fix69al：长库龄金额按 SKU 汇总（与部门过滤同一套 deptSkus 映射）
+    //   60-90预警金额 = Σ(61-90天(G列) × 浮码价 × 1.129)
+    //   90+金额      = Σ(长库龄数量(D列) × 浮码价 × 1.129)
+    //   PV/实库现货率(spot_rate) 不随部门过滤，保持原值
+    // fix69be：长库龄金额 KPI —— aging_warn 用 product 全名作键，需经 prodNameToSku 桥接到数字 SKU 查浮码价
+    // 匹配三阶：①数字SKU直查 → ②产品全名/简称精确映射 → ③子串匹配（shortName⊂product 全名）
+    const awRows=agingRowsForDate(d);
+    let age60=0, age90=0;
+    awRows.forEach(r=>{
+      const rawSku=String(r['商品']||r.sku||r.product||'').trim();
+      let lookupSku = rawSku;
+      if(lookupSku && ppBySku[lookupSku]===undefined){
+        // 阶段2：精确映射（product全名→sku 或 shortName→sku）
+        if(prodNameToSku[lookupSku]) lookupSku = prodNameToSku[lookupSku];
+        else{
+          // 阶段3：子串匹配（aging_warn的product全名包含series的shortName）
+          let found=false;
+          for(const pn in prodNameToSku){ if(lookupSku.includes(pn)||pn.includes(lookupSku)){ lookupSku=prodNameToSku[pn]; found=true; break; } }
+          if(!found) return;
+        }
+      }
+      const p=priceOf(d,lookupSku);
+      if(p===undefined) return;
+      const g61_90=num(r['61-90天']||r['ext_61-90天']);
+      const gLongQty=num(r['长库龄数量']||r['ext_长库龄数量']);
+      if(g61_90) age60 += g61_90 * p * 1.129;
+      if(gLongQty) age90 += gLongQty * p * 1.129;
+    });
+    x.age60=age60;
+    x.age90=age90;
     return x;
   });
   const cur=all.find(x=>x.date===target)||all[all.length-1];
@@ -1403,7 +1636,286 @@ function computeInv(asOf){
   return {all, cur, dates, maxDate, target, avgDays, slow};
 }
 
+/* ---------- fix69az：低/高周转系列表（替换库存周转两张趋势图） ----------
+   数据来源：B().inventory（逐 SKU 每日快照，列名自动识别）。
+   维度：SKU → 系列/产品简称（来自 B().series 映射）。
+   周转天数：取「预计可售天数 / 库存周转（天）/ 数量周转」等列（优先可用列），同 SKU 多仓按库存加权。
+   断货：该仓 可用库存(缺则现货库存/库存件数) ≤ 0。
+   各仓配比：该仓库存 ÷ 同 SKU 各仓库存之和。
+   低周转 = 周转天数 < 15（不含）；高周转 = 周转天数 > 45（不含）。 */
+function invTurnDays(r){
+  const c=['turnDays','invDays','ext_预计可售天数','ext_数量周转','ext_库存周转天','ext_周转天数','ext_可售天数','ext_周转'];
+  for(const k of c){ const raw=r[k]; if(raw===''||raw===undefined||raw===null) continue; const v=num(raw); if(!isNaN(v) && v>=0) return v; }
+  return NaN;
+}
+function invStockBase(r){
+  const c=['ext_可用库存','spotQty','ext_库存件数'];
+  for(const k of c){ const raw=r[k]; if(raw===''||raw===undefined||raw===null) continue; const v=num(raw); if(!isNaN(v)) return v; }
+  return NaN;
+}
+// 各仓配比：用现货库存（缺则库存件数）反映各仓实物占比，与断货判定（用可用库存）解耦——
+// 这样「断货仓（可用=0）」仍能展示其占有的现货库存份额。
+function invStockRatio(r){
+  const c=['spotQty','ext_库存件数','ext_可用库存'];
+  for(const k of c){ const raw=r[k]; if(raw===''||raw===undefined||raw===null) continue; const v=num(raw); if(!isNaN(v)) return v; }
+  return NaN;
+}
+function invWhName(r){ return String(r.warehouse||r.rdc||'').trim() || '未知仓'; }
+function buildTurnoverDetail(asOf, deptFilter){
+  let rows=B().inventory||[];
+  // fix69bc①：库存明细中配送中心='全国' 的行不参与任何计算（低/高周转表也排除）
+  rows=rows.filter(r=>!isNationwideWh(r));
+  if(deptFilter){
+    const ds=new Set();
+    (B().series||[]).forEach(sr=>{ if(String(sr.dept||'').trim()===deptFilter) ds.add(String(sr.sku||'').trim()); });
+    if(ds.size) rows=rows.filter(r=>ds.has(String(r.sku||'').trim()));
+  }
+  if(!rows.length) return null;
+  const serMap={};
+  (B().series||[]).forEach(r=>{
+    const k=String((r.sku!==undefined?r.sku:(r.货号!==undefined?r.货号:''))||'').trim();
+    if(!k) return;
+    const s=String((r.series!==undefined?r.series:(r.系列!==undefined?r.系列:''))||'').trim();
+    const sn=String((r.shortName!==undefined?r.shortName:(r.产品简称!==undefined?r.产品简称:''))||'').trim();
+    serMap[k]={series:s||'(未匹配系列)', shortName:sn};
+  });
+  const dates=[...new Set(rows.map(r=>String(r.date||'').slice(0,10)))].filter(Boolean).sort();
+  const target=asOf||dates[dates.length-1];
+  const dayRows=rows.filter(r=>String(r.date||'').slice(0,10)===target);
+  const bySku={};
+  dayRows.forEach(r=>{ const sku=String(r.sku||'').trim(); if(sku) (bySku[sku]=bySku[sku]||[]).push(r); });
+  const products=[]; let unclassified=0;
+  Object.keys(bySku).forEach(sku=>{
+    const rs=bySku[sku];
+    let tw=0,wsum=0,any=false;
+    rs.forEach(r=>{ const td=invTurnDays(r); const w=invStockBase(r); const ww=(!isNaN(w)&&w>0)?w:1; if(!isNaN(td)){ any=true; tw+=td*ww; wsum+=ww; } });
+    if(!any){ unclassified++; return; }
+    const turnDays=tw/wsum;
+    const whMap={};
+    rs.forEach(r=>{
+      const wn=invWhName(r); if(!wn) return;
+      const e=whMap[wn]=whMap[wn]||{name:wn, sku, stock:0, out:false, hasStock:false, remark:(r.remark!==undefined?String(r.remark):'')};
+      const sb=invStockBase(r); if(!isNaN(sb)){ e.hasStock=true; if(sb<=0) e.out=true; }
+      const sr=invStockRatio(r); if(!isNaN(sr)){ e.stock+=sr; }
+    });
+    const whs=Object.keys(whMap).map(k=>whMap[k]);
+    const tot=whs.reduce((s,w)=>s+w.stock,0);
+    whs.forEach(w=>{ w.ratio = tot>0 ? w.stock/tot*100 : 0; });
+    const m=serMap[sku]||{series:'(未匹配系列)', shortName:''};
+    const shortName=m.shortName || String(rs[0].product||sku);
+    products.push({sku, series:m.series||'(未匹配系列)', shortName, turnDays, warehouses:whs});
+  });
+  const bySeries={};
+  products.forEach(p=>{ (bySeries[p.series]=bySeries[p.series]||[]).push(p); });
+  return {target, bySeries, products, unclassified};
+}
+function renderTurnTable(el, detail, kind){
+  if(!detail){ el.innerHTML='<div class="empty">请在「数据输入区 → 库存周转数据」粘贴供应链库存周转模板（含表头），低/高周转表需要逐 SKU 库存快照。</div>'; return; }
+  const low = kind==='low';
+  const pred = low ? (d)=> d<15 : (d)=> d>45;
+  const label = low ? '低周转（周转天数 &lt; 15天）' : '高周转（周转天数 &gt; 45天）';
+  let serHtml='', prodCount=0, whCount=0, outCount=0, serIdx=0;
+  Object.keys(detail.bySeries).sort().forEach(sn=>{
+    if(sn==='(未匹配系列)') return;   // fix69bf：隐藏无法匹配到系列的品
+    const prods=detail.bySeries[sn].filter(p=>pred(p.turnDays));
+    if(!prods.length) return;
+    const serId='s'+serIdx++;
+    serHtml+=`<tr class="turn-ser" data-tid="${serId}" onclick="turnToggle('${serId}')"><td colspan="7"><span class="tw">▶</span> ${esc(sn)} <span class="muted">（${prods.length} 品）</span></td></tr>`;
+    prods.forEach(p=>{
+      prodCount++;
+      const pId=serId+'_p'+p.sku.replace(/[^a-zA-Z0-9]/g,'_');
+      serHtml+=`<tr class="turn-prod" data-toggle="${serId}" data-tid="${pId}" onclick="turnToggle('${pId}')" style="display:none"><td></td><td><span class="tw">▶</span> ${esc(p.shortName)}</td><td class="turn-val ${low?'low':'high'}">${p.turnDays.toFixed(1)}</td><td colspan="4" class="muted">点击展开 ${p.warehouses.length} 个仓明细</td></tr>`;
+      p.warehouses.forEach(w=>{
+        whCount++; if(w.out) outCount++;
+        const rk='turn|'+w.sku+'|'+w.name;
+        const outTxt = w.hasStock ? (w.out?'<span class="bad red">断货</span>':'<span class="bad green">有货</span>') : '<span class="muted">—</span>';
+        serHtml+=`<tr class="turn-wh" data-toggle="${pId}" style="display:none"><td></td><td></td><td></td><td>${esc(w.name)}</td><td>${outTxt}</td><td>${w.ratio.toFixed(1)}%</td><td class="rem"><span class="rem-edit" contenteditable="true" spellcheck="false" data-rk="${rk}">${w.remark?esc(w.remark):''}</span></td></tr>`;
+      });
+    });
+  });
+  const uncl = detail.unclassified ? ` · 另 ${detail.unclassified} 个品缺周转天数未分类` : '';
+  const head=`<div class="turn-summary">${label}：共 ${prodCount} 个品 · ${whCount} 个仓记录 · 其中断货仓 ${outCount} 个（数据日期 ${esc(detail.target)||'—'}）${uncl}</div>`;
+  const tbl=`<table class="tpl turn-tbl"><thead><tr><th>系列</th><th>品（产品简称）</th><th>周转天数</th><th>仓</th><th>断货</th><th>各仓配比</th><th>备注</th></tr></thead><tbody>${serHtml||'<tr><td colspan="7" class="empty">无符合条件的品</td></tr>'}</tbody></table>`;
+  el.innerHTML=head+tbl;
+}
+function turnToggle(id){
+  const isSer = id.indexOf('_p')<0;
+  const direct=document.querySelectorAll('[data-toggle="'+id+'"]');
+  if(!direct.length) return;
+  const show = direct[0].style.display==='none';
+  direct.forEach(e=>{ e.style.display = show ? '' : 'none'; });
+  if(isSer && !show){ document.querySelectorAll('[data-toggle^="'+id+'_"]').forEach(e=>{ e.style.display='none'; }); }
+  const tri=document.querySelector('[data-tid="'+id+'"] .tw');
+  if(tri) tri.textContent = show ? '▼' : '▶';
+}
+
+/* ---------- fix69ba：长库龄预警表（替换库存结构明细） ----------
+   数据来源：B().aging_warn（逐 SKU 逐仓长库龄快照，列名自动识别）。
+   维度：SKU → 系列/产品简称（来自 B().series 映射）。
+   长库龄件数 = 长库龄数量 + 61-90天数量。
+   长库龄金额 = 长库龄件数 × 浮码价格(B().purchase) × 1.129。
+   结构：系列(常驻) → 产品简称(默认折叠) → 各仓(默认折叠，展示件数/金额)。 */
+function agingSkuOf(r){ return String(r['商品']||r.sku||r.product||'').trim(); }
+function agingWhOf(r){ return String(r['warehouse']||r['配送中心']||r['仓库']||r['rdc']||'').trim() || '未知仓'; }
+function buildAgingDetail(deptFilter){
+  let rows=B().aging_warn||[];
+  if(!rows.length) return null;
+  const serMap={};
+  const prodNameMap={}; // fix69bd：长库龄数据用 product 全名（非数字 SKU），需额外建产品名→系列映射
+  (B().series||[]).forEach(r=>{
+    const k=String((r.sku!==undefined?r.sku:(r.货号!==undefined?r.货号:''))||'').trim();
+    if(!k) return;
+    const s=String((r.series!==undefined?r.series:(r.系列!==undefined?r.系列:''))||'').trim();
+    const sn=String((r.shortName!==undefined?r.shortName:(r.产品简称!==undefined?r.产品简称:''))||'').trim();
+    const info={series:s||'(未匹配系列)', shortName:sn};
+    serMap[k]=info;
+    // 产品名/产品简称/商品名 都可作为匹配键（长库龄 aging_warn 用 product 全名）
+    if(sn) prodNameMap[sn]=info;
+    const pn=String(r.product||r.商品名称||r.商品||'').trim();
+    if(pn) prodNameMap[pn]=info;
+  });
+  if(deptFilter){
+    const ds=new Set();
+    (B().series||[]).forEach(sr=>{ if(String(sr.dept||'').trim()===deptFilter) ds.add(String(sr.sku||'').trim()); });
+    if(ds.size) rows=rows.filter(r=>ds.has(agingSkuOf(r)));
+  }
+  // 浮码价格索引（按 SKU 兜底；长库龄预警无日期列）
+  const ppBySku={};
+  (B().purchase||[]).forEach(r=>{ const sku=String(r.sku||'').trim(); const p=num(r.purchase); if(!isNaN(p)&&sku) ppBySku[sku]=p; });
+  const priceOf=sku=> ppBySku[sku]!==undefined ? ppBySku[sku] : undefined;
+  const bySku={};
+  rows.forEach(r=>{ const sku=agingSkuOf(r); if(sku) (bySku[sku]=bySku[sku]||[]).push(r); });
+  const products=[]; let unclassified=0;
+  Object.keys(bySku).forEach(sku=>{
+    const rs=bySku[sku];
+    const whMap={};
+    let totalQty=0, totalAmt=0, hasPrice=false;
+    rs.forEach(r=>{
+      const qty=(num(r['长库龄数量']||r['ext_长库龄数量'])||0)+(num(r['61-90天']||r['ext_61-90天'])||0);
+      const p=priceOf(sku);
+      const amt = p!==undefined ? qty*p*1.129 : NaN;
+      if(p!==undefined) hasPrice=true;
+      totalQty+=qty;
+      if(!isNaN(amt)) totalAmt+=amt;
+      const wn=agingWhOf(r);
+      const e=whMap[wn]=whMap[wn]||{name:wn, sku, qty:0, amt:0, remark:''};
+      e.qty+=qty;
+      if(!isNaN(amt)) e.amt+=amt;
+      const rm=r['备注']!==undefined?String(r['备注']):(r['remark']!==undefined?String(r['remark']):'');
+      if(rm) e.remark=rm;
+    });
+    if(!totalQty && !totalAmt){ unclassified++; return; }
+    const whs=Object.keys(whMap).map(k=>({name:whMap[k].name, qty:whMap[k].qty, amt:isNaN(whMap[k].amt)?NaN:whMap[k].amt, remark:whMap[k].remark}));
+    // fix69bd：系列匹配三阶回退 —— ①数字SKU精确 → ②产品名精确 → ③子串匹配（长库龄product全名包含系列shortName）
+    let m=serMap[sku]||prodNameMap[sku]||null;
+    if(!m){
+      for(const pn in prodNameMap){ if(sku.includes(pn)||pn.includes(sku)){ m=prodNameMap[pn]; break; } }
+    }
+    if(!m) m={series:'(未匹配系列)', shortName:''};
+    const shortName=m.shortName || String(rs[0]['商品名称']||sku);
+    products.push({sku, series:m.series||'(未匹配系列)', shortName, qty:totalQty, amt:hasPrice?totalAmt:NaN, warehouses:whs});
+  });
+  const bySeries={};
+  products.forEach(p=>{ (bySeries[p.series]=bySeries[p.series]||[]).push(p); });
+  return {bySeries, products, unclassified};
+}
+function renderAgingTable(el, detail){
+  if(!detail){ el.innerHTML='<div class="empty">请在「数据输入区 → 2.8 长库龄预警金额数据」粘贴长库龄预警模板（商品/SKU + 配送中心 + 长库龄数量 + 61-90天 …），长库龄预警表需要该数据。</div>'; return; }
+  const fmtAmt=v=> isNaN(v)?'—':fmtMoney(v);
+  let serHtml='', prodCount=0, whCount=0, serIdx=0, totalQty=0, totalAmt=0;
+  Object.keys(detail.bySeries).sort().forEach(sn=>{
+    if(sn==='(未匹配系列)') return;   // fix69bf：隐藏无法匹配到系列的品
+    const prods=detail.bySeries[sn];
+    if(!prods.length) return;
+    const serId='a'+serIdx++;
+    serHtml+=`<tr class="turn-ser" data-tid="${serId}" onclick="turnToggle('${serId}')"><td colspan="6"><span class="tw">▶</span> ${esc(sn)} <span class="muted">（${prods.length} 品）</span></td></tr>`;
+    prods.forEach(p=>{
+      prodCount++; totalQty+=p.qty; if(!isNaN(p.amt)) totalAmt+=p.amt;
+      const pId=serId+'_p'+p.sku.replace(/[^a-zA-Z0-9]/g,'_');
+      const prk='ageprod|'+p.sku;
+      serHtml+=`<tr class="turn-prod" data-toggle="${serId}" data-tid="${pId}" onclick="turnToggle('${pId}')" style="display:none"><td></td><td><span class="tw">▶</span> ${esc(p.shortName)}</td><td class="num">${p.qty}</td><td class="num">${fmtAmt(p.amt)}</td><td></td><td class="rem"><span class="rem-edit" contenteditable="true" spellcheck="false" data-rk="${prk}">${p.remark?esc(p.remark):''}</span></td></tr>`;
+      p.warehouses.forEach(w=>{
+        whCount++;
+        const wrk='agewh|'+w.sku+'|'+w.name;
+        serHtml+=`<tr class="turn-wh" data-toggle="${pId}" style="display:none"><td></td><td></td><td class="num">${w.qty}</td><td class="num">${fmtAmt(w.amt)}</td><td>${esc(w.name)}</td><td class="rem"><span class="rem-edit" contenteditable="true" spellcheck="false" data-rk="${wrk}">${w.remark?esc(w.remark):''}</span></td></tr>`;
+      });
+    });
+  });
+  const uncl = detail.unclassified ? ` · 另 ${detail.unclassified} 个品无长库龄件数` : '';
+  const head=`<div class="turn-summary">长库龄预警：共 ${prodCount} 个品 · ${whCount} 个仓记录 · 合计长库龄件数 ${totalQty} · 合计长库龄金额 ${fmtMoney(totalAmt)}${uncl}</div>`;
+  const tbl=`<table class="tpl turn-tbl"><thead><tr><th>系列</th><th>产品简称</th><th>长库龄件数</th><th>长库龄金额</th><th>仓</th><th>备注</th></tr></thead><tbody>${serHtml||'<tr><td colspan="6" class="empty">无长库龄数据</td></tr>'}</tbody></table>`;
+  el.innerHTML=head+tbl;
+}
+
+/* fix69bh：备注列前台可编辑 + 按钮保存
+   单元格 .rem-edit(contenteditable) 失焦时仅缓存到 pendingRemarks（不自动保存）。
+   点击各表旁「保存备注」按钮才回写数据并持久化。 */
+var _pendingRemarks={};  // rk -> 文本值（失焦时缓存）
+function onRemarkEdit(e){
+  const el=e.target;
+  if(!el || !el.classList || !el.classList.contains('rem-edit')) return;
+  const rk=(el.getAttribute('data-rk')||'').trim();
+  if(!rk) return;
+  let val=el.textContent.replace(/ /g,' ').replace(/\n/g,' ').trim();
+  if(val==='点击填写') val='';
+  _pendingRemarks[rk]=val;  // 仅缓存，不保存
+}
+document.addEventListener('blur', onRemarkEdit, true);
+
+/* 按表类型保存备注：遍历该表容器内所有 .rem-edit，将当前文本回写到数据源 */
+function saveTableRemarks(tableType){
+  /* tableType: 'turn'(低/高周转共用) | 'aging'(长库龄预警) */
+  var containers = tableType==='turn'
+    ? [$('#invRate'), $('#invDays')]
+    : [$('#invTable')];
+  var rkPrefixes = tableType==='turn' ? ['turn|'] : ['ageprod|','agewh|'];
+  var n=0, savedRks=[];
+  containers.forEach(function(container){
+    if(!container) return;
+    var edits=container.querySelectorAll('.rem-edit');
+    edits.forEach(function(el){
+      var rk=(el.getAttribute('data-rk')||'').trim();
+      if(!rk) return;
+      var match=false;
+      rkPrefixes.forEach(function(p){ if(rk.indexOf(p)===0) match=true; });
+      if(!match) return;
+      var val=el.textContent.replace(/ /g,' ').replace(/\n/g,' ').trim();
+      if(val==='点击填写') val='';
+      if(_pendingRemarks.hasOwnProperty(rk)) val=_pendingRemarks[rk];
+      var parts=rk.split('|'); var type=parts[0];
+      try{
+        if(type==='turn'){
+          var sku=parts[1]||'', wh=parts[2]||'';
+          (B().inventory||[]).forEach(function(r){ if(String(r.sku||'').trim()===sku && invWhName(r)===wh && !isNationwideWh(r)){ r.remark=val; n++; } });
+        } else if(type==='ageprod'){
+          var sku2=parts[1]||'';
+          (B().aging_warn||[]).forEach(function(r){ if(agingSkuOf(r)===sku2){ r.remark=val; n++; } });
+        } else if(type==='agewh'){
+          var sku3=parts[1]||'', wh2=parts[2]||'';
+          (B().aging_warn||[]).forEach(function(r){ if(agingSkuOf(r)===sku3 && agingWhOf(r)===wh2){ r.remark=val; n++; } });
+        }
+        savedRks.push(rk);
+      }catch(err){ console.error('saveTableRemarks', err); }
+    });
+  });
+  savedRks.forEach(function(k){ delete _pendingRemarks[k]; });
+  if(n>0){
+    if(typeof markDirty==='function') markDirty(STATE.currentBrand);
+    saveToService();
+    toast('✅ 备注已保存（'+n+' 行）');
+  } else {
+    toast('⚠️ 无需保存的备注修改');
+  }
+}
 function renderInv(){
+  // fix69az：两张面板统一为低/高周转系列表（所有品牌共用）
+  const td=buildTurnoverDetail(invAsOf, $('#invDept')?.value||'');
+  renderTurnTable($('#invRate'), td, 'low');
+  renderTurnTable($('#invDays'), td, 'high');
+  // fix69ba：库存结构明细面板 → 长库龄预警表（默认所有品牌；丝蕴/麦维他三部分如需覆盖可在各自分支重设）
+  $('#invTableTitle').textContent='长库龄预警';
+  const ad=buildAgingDetail($('#invDept')?.value||'');
+  renderAgingTable($('#invTable'), ad);
   // 丝蕴：独立「库存周转」视图（库存明细(丝蕴) + 采购单在途 + 现货率）
   if(STATE.currentBrand==='丝蕴'){
     const tp=computeSiyunTurnover(invAsOf);
@@ -1452,39 +1964,28 @@ function renderInv(){
     t+='</table>'; $('#invTable').innerHTML=t;
     return;
   }
-  const c=computeInv(invAsOf);
-  if(!c){ el.style.display=''; panel.style.display='none'; el.innerHTML='<div class="empty">请在「数据输入区 → 库存周转数据」粘贴供应链库存周转模板（含表头）</div>'; $('#invRate').innerHTML=$('#invDays').innerHTML=$('#invTable').innerHTML=''; return; }
+  const c=computeInv(invAsOf, $('#invDept')?.value||'');
+  if(!c){ el.style.display=''; panel.style.display='none'; el.innerHTML='<div class="empty">请在「数据输入区 → 库存周转数据」粘贴供应链库存周转模板（含表头）</div>'; $('#invTable').innerHTML=''; return; }
   const x=c.cur;
   const pctShow=v=>{ if(v===undefined||isNaN(v)||v===0) return '—'; const p=v>1? v : v*100; return p.toFixed(1)+'%'; };
   const pctCls=v=>{ if(v===undefined||isNaN(v)) return ''; const p=v>1? v : v*100; return p>=90?'green':(p>=70?'amber':'red'); };
+  const sep=t=>`<div class="kpi-sep">${t}</div>`;
   el.style.display=''; panel.style.display='none'; $('#invThreePart').innerHTML='';
-  el.innerHTML=kpiHTML([
+  // fix69ai→fix69aj：KPI 分两行 —— 红框(库存+库龄总览) + 绿框(销售+现货率)，删掉4个基调/复调子项
+  el.innerHTML=sep('库存')+kpiHTML([
       {label:'库存金额',value:fmtMoney(x.invAmount),cls:'blue'},
+      {label:'现货库存',value:fmtMoney(x.spotInv),cls:'blue',sub:'Σ 现货数量×全国采购价'},
+      {label:'在途库存',value:fmtMoney(x.intrInv),sub:'Σ 采购单采购金额'},
       {label:'库存周转(天)',value:x.turnDays?x.turnDays.toFixed(1):'—',sub:'库存周转（天）'},
+      {label:'60-90天长库龄预警金额',value:fmtMoney(x.age60),cls:x.age60>0?'red':''},
+      {label:'90天以上长库龄金额',value:fmtMoney(x.age90),cls:x.age90>0?'red':''},
+    ])+sep('销售 / 库龄 / 现货率')+kpiHTML([
       {label:'近7天销售(金额)',value:fmtMoney(x.s7amt)},
       {label:'近14天销售(金额)',value:fmtMoney(x.s14amt)},
       {label:'日均销售(金额)',value:fmtMoney(x.damt)},
-      {label:'60-90天长库龄预警金额',value:fmtMoney(x.age60),cls:x.age60>0?'red':''},
-      {label:'90天以上长库龄金额',value:fmtMoney(x.age90),cls:x.age90>0?'red':''},
-      {label:'60-90天预警(基调)',value:fmtMoney(x.age60_j),cls:x.age60_j>0?'red':''},
-      {label:'60-90天预警(复调)',value:fmtMoney(x.age60_f),cls:x.age60_f>0?'red':''},
-      {label:'90天以上(基调)',value:fmtMoney(x.age90_j),cls:x.age90_j>0?'red':''},
-      {label:'90天以上(复调)',value:fmtMoney(x.age90_f),cls:x.age90_f>0?'red':''},
       {label:'PV现货率',value:pctShow(x.pvRate),cls:pctCls(x.pvRate)},
       {label:'实库现货率',value:pctShow(x.realRate),cls:pctCls(x.realRate)},
     ]);
-  lineChart('#invRate',{labels:c.dates, series:[
-    {name:'库存金额',data:c.all.map(x=>x.invAmount||null)},
-    {name:'库存周转(天)',data:c.all.map(x=>x.turnDays||null)},
-  ], yFmt:v=>v==null?'—':(v>1000?fmt(v,0):v.toFixed(1))});
-  lineChart('#invDays',{labels:c.dates, series:[
-    {name:'近7天销售(额)',data:c.all.map(x=>x.s7amt||null)},
-    {name:'近14天销售(额)',data:c.all.map(x=>x.s14amt||null)},
-    {name:'日均销售(额)',data:c.all.map(x=>x.damt||null)},
-  ], yFmt:v=>v==null?'—':fmt(v,0)});
-  let t='<table class="tpl" style="margin-top:8px"><tr><th>日期</th><th>库存金额</th><th>周转(天)</th><th>近7天销(额)</th><th>近14天销(额)</th><th>日均销(额)</th><th>60-90天预警</th><th>90天以上</th><th>60-90(基调)</th><th>60-90(复调)</th><th>90+(基调)</th><th>90+(复调)</th><th>PV现货率</th><th>实库现货率</th></tr>';
-  c.all.forEach(x=>{ t+=`<tr><td>${esc(x.date)}</td><td>${fmtMoney(x.invAmount)}</td><td>${x.turnDays?x.turnDays.toFixed(1):'—'}</td><td>${fmtMoney(x.s7amt)}</td><td>${fmtMoney(x.s14amt)}</td><td>${fmtMoney(x.damt)}</td><td>${fmtMoney(x.age60)}</td><td>${fmtMoney(x.age90)}</td><td>${fmtMoney(x.age60_j)}</td><td>${fmtMoney(x.age60_f)}</td><td>${fmtMoney(x.age90_j)}</td><td>${fmtMoney(x.age90_f)}</td><td>${pctShow(x.pvRate)}</td><td>${pctShow(x.realRate)}</td></tr>`; });
-  t+='</table>'; $('#invTable').innerHTML=t;
 }
 
 /* ---------- 计算：京准通 ---------- */
@@ -1496,6 +1997,20 @@ function salesGmvSum(start,end){
     return d>=start && d<=end;
   });
   return sum(rows.map(r=>num(r.amount)));
+}
+// GS 实际金额（未税）：与「销售目标达成」中的 GS实际达成口径一致。
+// GS 数据源 pending（后续录入逻辑），当前返回 0 → GS未税费比卡片显示「—」。
+// 一旦 GS 实际金额数据源接入，此处返回与销售 GS实际达成一致的金额即可自动驱动费比。
+function gsActualSum(start,end){
+  // TODO(后续录入逻辑): 接入 GS 实际金额数据源后，返回与「销售 GS实际达成」一致的金额（按 [start,end] 区间加总）
+  return 0;
+}
+// POS 实际金额（未税）：与「销售目标达成」中的 POS实际达成口径一致 = posDailyMap() 区间求和
+// （posDailyMap 已含 Σ(浮码×昨日出库件数)÷1.129 逻辑，按 [start,end] 加总即得 POS未税金额）。
+function posActualSum(start,end){
+  const m=posDailyMap();
+  const ds=dateRange(start,end);
+  return sum(ds.map(d=>m[d]||0));
 }
 function computeJzt(start,end){
   let rows=B().jzt;
@@ -1528,24 +2043,213 @@ function computeJzt(start,end){
   const byScene={}; rows.forEach(r=>{ const k=((r.channel||'').trim()||(r.scene||'').trim()||'未知'); const s=byScene[k]=byScene[k]||{spend:0,clicks:0,gmv:0}; s.spend+=num(r.spend); s.clicks+=num(r.clicks); s.gmv+=num(r.gmv); });
   return {totalSpend,totalImp,totalClk,totalOrd,totalGmv,dirAmt,indirAmt,preAmt,totalCart,newCustOrders,newCustAmt,favItem,favShop,dealUsers,ctr,cpc,cpm,cvr,cpa,roi,feeRatio:feeDenom>0?totalSpend/feeDenom:0,byDate,byPlan,byScene};
 }
+/* fix69at：京准通按「SKU → 系列」聚合（系列来源 = B().series 的 sku→series 映射）。
+   仅统计能匹配上系列的京准通行；未匹配的行不计入，也不单列。 */
+function jztSkuOf(r){ return String(r.followSkuId||'').trim(); }
+function jztBuildSeriesMap(){
+  const m={};
+  (B().series||[]).forEach(r=>{
+    const k=String((r.sku!==undefined?r.sku:(r.货号!==undefined?r.货号:''))||'').trim();
+    if(!k) return;
+    const s=String((r.series!==undefined?r.series:(r.系列!==undefined?r.系列:''))||'').trim();
+    if(!s) return; // 没有系列的 SKU 不参与系列聚合
+    const sn=String((r.shortName!==undefined?r.shortName:(r.产品简称!==undefined?r.产品简称:''))||'').trim();
+    m[k]={series:s, shortName:sn};
+  });
+  return m;
+}
+function jztBySeries(rows, serMap){
+  const out={};
+  rows.forEach(r=>{
+    const sku=jztSkuOf(r);
+    const m=sku?serMap[sku]:null;
+    if(!m || !m.series) return; // 未匹配系列 → 不展示
+    const ser=m.series, pn=(m.shortName||sku); // 品 = 产品简称，兜底用 SKU
+    const g=out[ser]=out[ser]||{total:{spend:0,clicks:0,gmv:0}, products:{}};
+    g.total.spend+=num(r.spend); g.total.clicks+=num(r.clicks); g.total.gmv+=num(r.gmv);
+    const pg=g.products[pn]=g.products[pn]||{spend:0,clicks:0,gmv:0};
+    pg.spend+=num(r.spend); pg.clicks+=num(r.clicks); pg.gmv+=num(r.gmv);
+  });
+  return out;
+}
+/* 系列行 → 各品明细：点击展开/收起；默认收起（品行直接在父表 tbody 里，共享列宽） */
+function jztToggleSeries(prefix){
+  const rows=document.querySelectorAll('.ser-detail[id^="'+prefix+'"]');
+  const show = rows.length && rows[0].style.display==='none';
+  rows.forEach(r=>{ r.style.display = show ? '' : 'none'; });
+  const tw=document.querySelector('[data-target="'+prefix+'"] .tw');
+  if(tw) tw.textContent = show ? '▼' : '▶';
+}
 function renderJzt(){
+  try {
   const [start,end]=resolveJztRange();
+  if(!start || !end){ $('#jztScene').innerHTML='<div class="empty">日期范围无效</div>'; return; }
   const c=computeJzt(start,end);
   if(!c){ $('#jztScene').innerHTML='<div class="empty">未解析到实际投放数据——请在第 3 个「京东京准通推广数据」框粘贴实际推广明细（支持「原京准通」与「全站口径」两种表头，系统自动识别；全站口径渠道自动归为「全站营销」。需含 日期 / 花费 / 点击 / GMV 等列，Tab 或逗号分隔）。</div>'; return; }
-  // 各渠道花费（MTD）：渠道=营销场景；成交占比=渠道成交金额/京准通整体成交金额
+  // fix69an：各渠道花费增加同比（去年同期）与环比（上月同期），每指标后附红▲增/绿▼降箭头+数值
+  // 时间范围 = 京准通推广数据的 jztStart/jztEnd（本期）；同比/环比自动基于该区间计算
+  const [yStart,yEnd]=[shiftYear(start,-1),shiftYear(end,-1)];
+  const [mStart,mEnd]=shiftMonthRange(start,end,-1);
+  const cYoy=computeJzt(yStart,yEnd)||{byScene:{},totalSpend:0,totalGmv:0,totalClk:0};   // 同比基期（无数据时用零值，diffLabel 会显示 —）
+  const cMom=computeJzt(mStart,mEnd)||{byScene:{},totalSpend:0,totalGmv:0,totalClk:0};   // 环比基期
   const scenes=Object.entries(c.byScene).sort((a,b)=>b[1].spend-a[1].spend);
   const tS=c.totalSpend, tG=c.totalGmv;
-  let t='<table class="tpl" style="margin-top:8px"><tr><th>渠道</th><th>花费</th><th>点击</th><th>成交</th><th>CPC</th><th>ROI</th><th>花费占比</th><th>成交占比</th></tr>';
+  const yS=cYoy.totalSpend, yG=cYoy.totalGmv, yClk=cYoy.totalClk;
+  const mS=cMom.totalSpend, mG=cMom.totalGmv, mClk=cMom.totalClk;
+  let t='<table class="tpl" style="margin-top:8px">';
+  t+='<thead><tr>';
+  t+='<th rowspan="2">渠道</th>';
+  ['花费','点击','成交','CPC','ROI'].forEach(k=>{ t+=`<th colspan="3">${esc(k)}</th>`; });
+  t+='</tr><tr>';
+  for(let i=0;i<5;i++){ t+='<th style="font-size:11px">本期</th><th style="font-size:11px">同比</th><th style="font-size:11px">环比</th>'; }
+  t+='</tr></thead><tbody>';
+  // 辅助：生成 本期 | 同比标签 | 环比标签 三格 HTML
+  const cell=(cur,yBase,mBase,fmtFn)=>{
+    const yd=diffLabel(cur,yBase), md=diffLabel(cur,mBase);
+    return `<td>${fmtFn(cur)}</td><td>${yd.html}</td><td>${md.html}</td>`;
+  };
   scenes.forEach(([name,s])=>{
-    if(!s.spend && !s.clicks && !s.gmv) return; // fix48: 渠道全部数据为0则不显示该行
+    if(!s.spend && !s.clicks && !s.gmv) return;
     const cpc=s.clicks>0?s.spend/s.clicks:0, roi=s.spend>0?s.gmv/s.spend:0;
-    const spShare=tS>0?s.spend/tS:0, gvShare=tG>0?s.gmv/tG:0;
-    t+=`<tr><td>${esc(name)}</td><td>${fmtMoney(s.spend)}</td><td>${fmt(s.clicks,0)}</td><td>${fmtMoney(s.gmv)}</td><td>${fmtMoney(cpc)}</td><td>${roi.toFixed(2)}</td><td>${fmtPct(spShare)}</td><td>${fmtPct(gvShare)}</td></tr>`;
+    // 同比/环比基期渠道数据
+    const ys=cYoy.byScene[name]||{}, ms=cMom.byScene[name]||{};
+    const yc=ys.clicks>0?ys.spend/ys.clicks:0, yr=ys.spend>0?ys.gmv/ys.spend:0;
+    const mc=ms.clicks>0?ms.spend/ms.clicks:0, mr=ms.spend>0?ms.gmv/ms.spend:0;
+    t+='<tr>';
+    t+=`<td>${esc(name)}</td>`;
+    t+=cell(s.spend,ys.spend,ms.spend,fmtMoney);
+    t+=cell(s.clicks,ys.clicks,ms.clicks,(v)=>fmt(v,0));
+    t+=cell(s.gmv,ys.gmv,ms.gmv,fmtMoney);
+    t+=cell(cpc,yc,mc,fmtMoney);
+    t+=cell(roi,yr,mr,(v)=>v.toFixed(2));
+    t+='</tr>';
   });
+  // 合计行
   const totCpc=c.totalClk>0?tS/c.totalClk:0, totRoi=tS>0?tG/tS:0;
-  t+=`<tr style="font-weight:500;border-top:2px solid var(--border-secondary,rgba(0,0,0,.3))"><td>合计</td><td>${fmtMoney(tS)}</td><td>${fmt(c.totalClk,0)}</td><td>${fmtMoney(tG)}</td><td>${fmtMoney(totCpc)}</td><td>${totRoi.toFixed(2)}</td><td>100%</td><td>100%</td></tr>`;
-  t+='</table>';
+  const yTotCpc=yClk>0?yS/yClk:0, yTotRoi=yS>0?yG/yS:0;
+  const mTotCpc=mClk>0?mS/mClk:0, mTotRoi=mS>0?mG/mS:0;
+  t+='<tr style="font-weight:500;border-top:2px solid var(--border-secondary,rgba(0,0,0,.3))">';
+  t+='<td>合计</td>';
+  t+=cell(tS,yS,mS,fmtMoney);
+  t+=cell(c.totalClk,yClk,mClk,(v)=>fmt(v,0));
+  t+=cell(tG,yG,mG,fmtMoney);
+  t+=cell(totCpc,yTotCpc,mTotCpc,fmtMoney);
+  t+=cell(totRoi,yTotRoi,mTotRoi,(v)=>v.toFixed(2));
+  t+='</tr></tbody></table>';
+
+  /* fix69as：关键词花费表（词类 + TOP关键词），列结构同渠道表（5指标×3期=15列）。
+     数据源后续接入，当前先搭骨架——无数据时各格显示 —。 */
+  t+='<h3 style="color:#dc2626;margin:18px 0 10px;font-size:15px">关键词数据</h3>';
+
+  // ===== 词类表：类目词 / 品牌词 / 总计 =====
+  t+='<table class="tpl" style="margin-top:8px">';
+  t+='<thead><tr><th rowspan="2">词类</th>';
+  ['花费','点击','成交','CPC','ROI'].forEach(k=>{ t+=`<th colspan="3">${esc(k)}</th>`; });
+  t+='</tr><tr>';
+  for(let i=0;i<5;i++){ t+='<th style="font-size:11px">本期</th><th style="font-size:11px">同比</th><th style="font-size:11px">环比</th>'; }
+  t+='</tr></thead><tbody>';
+  // TODO：数据源待接入。当前从 computeJzt 的 rows 中按 keyword/word_type 列聚合。
+  // 预留行结构，无数据时 cell 显示 —。
+  const kwCategories=['类目词','品牌词'];
+  kwCategories.forEach(cat=>{
+    t+='<tr>';
+    t+=`<td>${esc(cat)}</td>`;
+    // 占位5组×3格=15个 —（等数据源接入后替换为真实值）
+    for(let g=0;g<5;g++) t+='<td>—</td><td>—</td><td>—</td>';
+    t+='</tr>';
+  });
+  // 总计行
+  t+='<tr style="font-weight:500;border-top:2px solid var(--border-secondary,rgba(0,0,0,.3))">';
+  t+='<td>总计</td>';
+  for(let g=0;g<5;g++) t+='<td>—</td><td>—</td><td>—</td>';
+  t+='</tr></tbody></table>';
+
+  // ===== TOP关键词表 =====
+  t+='<table class="tpl" style="margin-top:12px">';
+  t+='<thead><tr><th rowspan="2">TOP关键词</th>';
+  ['花费','点击','成交','CPC','ROI'].forEach(k=>{ t+=`<th colspan="3">${esc(k)}</th>`; });
+  t+='</tr><tr>';
+  for(let i=0;i<5;i++){ t+='<th style="font-size:11px">本期</th><th style="font-size:11px">同比</th><th style="font-size:11px">环比</th>'; }
+  t+='</tr></thead><tbody>';
+  // TODO：数据源待接入。按 spend 降序取 Top N 关键词。
+  const topKeywords=[
+    '智能匹配关键词','李锦记','生抽','蚝油','酱油',
+    '薄盐生抽','叉烧酱','生抽京东自营','香油',
+    '李锦记蚝油','xo酱','李锦记京东自营旗舰店',
+    '耗油','薄盐','生抽李锦记'
+  ];
+  topKeywords.forEach(kw=>{
+    t+='<tr>';
+    t+=`<td>${esc(kw)}</td>`;
+    for(let g=0;g<5;g++) t+='<td>—</td><td>—</td><td>—</td>';
+    t+='</tr>';
+  });
+  t+='</tbody></table>';
+
+  /* fix69av：系列数据表——系列常驻(展示系列汇总) + 各品(产品简称)折叠，默认收起可展开。
+     匹配键 = 跟单SKU ID(followSkuId) → B().series 的 series + 产品简称；未匹配行不展示。 */
+  const serMap=jztBuildSeriesMap();
+  const jRowsIn=(s,e)=>(B().jzt||[]).filter(r=>{ const d=String(r.date||'').slice(0,10); return d>=s && d<=e; });
+  const serCur=jztBySeries(jRowsIn(start,end),serMap);
+  const serYoy=jztBySeries(jRowsIn(yStart,yEnd),serMap);
+  const serMom=jztBySeries(jRowsIn(mStart,mEnd),serMap);
+  const serNames=Object.keys(serCur).sort((a,b)=>serCur[b].total.spend-serCur[a].total.spend);
+  if(serNames.length){
+    t+='<h3 style="color:#dc2626;margin:18px 0 10px;font-size:15px">系列数据</h3>';
+    t+='<table class="tpl" style="margin-top:8px">';
+    t+='<thead><tr><th rowspan="2">系列 / 品</th>';
+    ['花费','点击','成交','CPC','ROI'].forEach(k=>{ t+=`<th colspan="3">${esc(k)}</th>`; });
+    t+='</tr><tr>';
+    for(let i=0;i<5;i++){ t+='<th style="font-size:11px">本期</th><th style="font-size:11px">同比</th><th style="font-size:11px">环比</th>'; }
+    t+='</tr></thead><tbody>';
+    serNames.forEach((name,idx)=>{
+      const s=serCur[name].total, ys=serYoy[name]?serYoy[name].total:{}, ms=serMom[name]?serMom[name].total:{};
+      const cpc=s.clicks>0?s.spend/s.clicks:0, roi=s.spend>0?s.gmv/s.spend:0;
+      const yc=ys.clicks>0?ys.spend/ys.clicks:0, yr=ys.spend>0?ys.gmv/ys.spend:0;
+      const mc=ms.clicks>0?ms.spend/ms.clicks:0, mr=ms.spend>0?ms.gmv/ms.spend:0;
+      const rowId='serD_'+idx+'_'+name.replace(/[^a-zA-Z0-9一-龥]/g,'');
+      t+=`<tr class="ser-head" data-target="${rowId}" onclick="jztToggleSeries('${rowId}')" style="cursor:pointer;background:#f7f8fa;font-weight:600">`;
+      t+=`<td><span class="tw" style="display:inline-block;width:14px;color:#dc2626">▶</span>${esc(name)} <span style="font-weight:400;color:#888;font-size:11px">(点开看各品)</span></td>`;
+      t+=cell(s.spend,ys.spend,ms.spend,fmtMoney);
+      t+=cell(s.clicks,ys.clicks,ms.clicks,(v)=>fmt(v,0));
+      t+=cell(s.gmv,ys.gmv,ms.gmv,fmtMoney);
+      t+=cell(cpc,yc,mc,fmtMoney);
+      t+=cell(roi,yr,mr,(v)=>v.toFixed(2));
+      t+='</tr>';
+      // 各品折叠行（直接插在父表 tbody 里，共享列宽，默认 display:none）
+      const prods=serCur[name].products;
+      const prodNames=Object.keys(prods).sort((a,b)=>prods[b].spend-prods[a].spend);
+      if(prodNames.length){
+        prodNames.forEach((pn,pi)=>{
+          const p=prods[pn];
+          const yp=serYoy[name]&&serYoy[name].products[pn]?serYoy[name].products[pn]:{};
+          const mp=serMom[name]&&serMom[name].products[pn]?serMom[name].products[pn]:{};
+          const pc=p.clicks>0?p.spend/p.clicks:0, pr=p.spend>0?p.gmv/p.spend:0;
+          const ypc=yp.clicks>0?yp.spend/yp.clicks:0, ypr=yp.spend>0?yp.gmv/yp.spend:0;
+          const mpc=mp.clicks>0?mp.spend/mp.clicks:0, mpr=mp.spend>0?mp.gmv/mp.spend:0;
+          const pid=rowId+'_p'+pi;
+          t+=`<tr id="${pid}" class="ser-detail" style="display:none;background:#fafbfc">`;
+          t+=`<td style="padding-left:28px;font-size:12px;color:#555">${esc(pn)}</td>`;
+          t+=cell(p.spend,yp.spend,mp.spend,fmtMoney);
+          t+=cell(p.clicks,yp.clicks,mp.clicks,(v)=>fmt(v,0));
+          t+=cell(p.gmv,yp.gmv,mp.gmv,fmtMoney);
+          t+=cell(pc,ypc,mpc,fmtMoney);
+          t+=cell(pr,ypr,mpr,(v)=>v.toFixed(2));
+          t+='</tr>';
+        });
+      } else {
+        const pid=rowId+'_empty';
+        t+=`<tr id="${pid}" class="ser-detail" style="display:none"><td colspan="16" style="color:#999;padding-left:22px">该系列下无可匹配的产品</td></tr>`;
+      }
+    });
+    t+='</tbody></table>';
+  }
+
   $('#jztScene').innerHTML=t;
+  } catch(e) {
+    $('#jztScene').innerHTML='<div class="empty" style="color:red">renderJzt 崩溃: '+e.message+' (stack: '+(e.stack||'').split('\\n').slice(0,5).join(' | ')+')</div>';
+    throw e; // re-throw so boot's FATAL handler also catches it
+  }
 }
 
 /* ---------- 京准通：投放目标 + MTD 同比 ---------- */
@@ -1564,14 +2268,48 @@ function jztRangeMetrics(start,end){
   };
 }
 function shiftYear(s,dy){ let [y,m,d]=s.split('-').map(Number); const dt=new Date(y+dy,m-1,d); return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`; }
-function yoyInfo(cur,py){ if(!py||py===0||isNaN(py)) return {sub:'同比 —',cls:''}; const r=(cur-py)/py; const arrow=r>=0?'▲':'▼'; const sub='同比 '+arrow+' '+(Math.abs(r)*100).toFixed(1)+'%'; let cls=''; if(cur!==py) cls=(r>=0)?'green':'red'; return {sub,cls}; }
-/* 默认日期范围：当月1日 ~ 昨日（按浏览器本地时间，运行时计算） */
-function defaultRange(){
-  const now=new Date(); const y=now.getFullYear(), m=now.getMonth();
+/* 按月偏移日期（环比用）：保持区间长度不变，整体前移/后移 N 个月 */
+function shiftMonthRange(start,end,dm){
+  if(!start || !end) return [start||'',end||''];
   const fmt=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-  return [fmt(new Date(y,m,1)), fmt(new Date(y,m,now.getDate()-1))];
+  const sd=new Date(start+'T00:00:00'), ed=new Date(end+'T00:00:00');
+  sd.setMonth(sd.getMonth()+dm); ed.setMonth(ed.getMonth()+dm);
+  // 处理月末溢出：如 8/31 前移到 7 月只有 30 天，自动 clamp 到月底
+  if(start.length>=10 && sd.getDate()!==parseInt(start.slice(8))){ sd.setDate(0); }
+  if(end.length>=10 && ed.getDate()!==parseInt(end.slice(8))){ ed.setDate(0); }
+  return [fmt(sd),fmt(ed)];
 }
-function jztDateBounds(){ const ds=B().jzt.map(r=>String(r.date||'').slice(0,10)).filter(Boolean).sort(); if(!ds.length) return ['2026-08-01','2026-08-31']; const ym=ds[ds.length-1].slice(0,7); const last=new Date(ym+'-01'); last.setMonth(last.getMonth()+1,0); return [ym+'-01', last.toISOString().slice(0,10)]; }
+/* 渠道指标同比/环比箭头标签：增=红▲+值，降=绿▼+值，持平=— */
+function diffLabel(cur,base){
+  /* fix69ar：始终返回 {html,cls} 对象，杜绝 cell() 取 .html 得 undefined。
+     无基期数据时显示 —（不显示 undefined）。增长红色▲、下降绿色▼。 */
+  if(base===null || base===undefined || (typeof base==='number' && base===0))
+    return {html:'<span>—</span>',cls:''};
+  const r=(cur-base)/base;
+  const abs=Math.abs(r*100).toFixed(1)+'%';
+  const arrow=r>0?'▲':(r<0?'▼':'—');
+  const color=r>0?'#dc2626':(r<0?'#16a34a':'');
+  const style=color?`style="color:${color}"`:'';
+  return {html:`<span ${style}>${arrow} ${abs}</span>`,cls:color?'red':''};
+}
+function yoyInfo(cur,py){ if(!py||py===0||isNaN(py)) return {sub:'同比 —',cls:''}; const r=(cur-py)/py; const arrow=r>=0?'▲':'▼'; const sub='同比 '+arrow+' '+(Math.abs(r)*100).toFixed(1)+'%'; let cls=''; if(cur!==py) cls=(r>=0)?'green':'red'; return {sub,cls}; }
+/* 默认日期范围：T-1 逻辑（数据是 T-1 的）——以「昨天」为基准日，取其所在月份的 MTD（月初 ~ 昨天）
+   例：9/1 打开 → 基准 8/31 → 08-01 ~ 08-31；9/2 打开 → 基准 9/1 → 09-01 ~ 09-01 */
+function defaultRange(){
+  const fmt=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const now=new Date();
+  const t1=new Date(now.getFullYear(),now.getMonth(),now.getDate()-1); // T-1（本地时间，日期溢出自动回退到上月/上年）
+  return [fmt(new Date(t1.getFullYear(),t1.getMonth(),1)), fmt(t1)];   // T-1 所在月月初 ~ T-1
+}
+function jztDateBounds(){
+  const ds=(B().jzt||[]).map(r=>String(r.date||'').slice(0,10)).filter(Boolean).sort();
+  if(!ds.length) return defaultRange();   // 无数据 → 退回 T-1 逻辑（原硬编码 2026-08 会永久过期）
+  const ym=ds[ds.length-1].slice(0,7);
+  const [y,m]=ym.split('-').map(Number);
+  const last=new Date(y,m,0);             // 当月最后一天（本地时区，避免 toISOString 的 UTC 偏移）
+  const fmt=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  return [ym+'-01', fmt(last)];
+}
 /* 解析日期范围：两端都空→默认整月；只填一端→视为单日区间；都填→按区间 */
 function resolveJztRange(){
   let start=$('#jztStart').value, end=$('#jztEnd').value;
@@ -1582,6 +2320,7 @@ function resolveJztRange(){
   return [start,end];
 }
 function renderJztTargets(){
+  try {
   buildTargetMap();
   const hintEl=$('#jztDataHint');
   if(hintEl){
@@ -1594,9 +2333,18 @@ function renderJztTargets(){
     } else hintEl.style.display='none';
   }
   const [start,end]=resolveJztRange();
+  if(!start || !end){ $('#jztTargetKpis').innerHTML='<div class="empty">日期范围无效</div>'; return; }
   const cur=jztRangeMetrics(start,end);
+  // 新增费比分母：GS未税金额 / POS未税金额（口径同「销售目标达成」GS实际达成 / POS实际达成）
+  const gsActualAmt=gsActualSum(start,end);
+  const posActualAmt=posActualSum(start,end);
   const py=jztRangeMetrics(shiftYear(start,-1),shiftYear(end,-1));
-  const yClicks=yoyInfo(cur.clicks,py.clicks), yCpc=yoyInfo(cur.cpc,py.cpc), yRoi=yoyInfo(cur.roi,py.roi), yFee=yoyInfo(cur.feeRatio,py.feeRatio), yGmv=yoyInfo(cur.gmv,py.gmv);
+  const yClicks=yoyInfo(cur.clicks,py.clicks), yCpc=yoyInfo(cur.cpc,py.cpc), yRoi=yoyInfo(cur.roi,py.roi), yFee=yoyInfo(cur.feeRatio,py.feeRatio), yGmv=yoyInfo(cur.gmv,py.gmv), yCtr=yoyInfo(cur.ctr,py.ctr);
+  // GS未税费比 / POS未税费比 目标（按当月月度目标；口径同销售 GS/POS 实际达成）
+  const gsFeeTgt=tlookup('gsfee','month',end.slice(0,7));
+  const posFeeTgt=tlookup('posfee','month',end.slice(0,7));
+  const gsRatio = gsActualAmt>0 ? cur.spend/gsActualAmt : 0;
+  const posRatio = posActualAmt>0 ? cur.spend/posActualAmt : 0;
   // MTD 费比目标对比（费比目标维度=月度；by day / MTD / 整月 均取当月月度目标，保持一致）
   const feeYm=end.slice(0,7);
   const feeTarget=tlookup('fee','month',feeYm);
@@ -1618,9 +2366,12 @@ function renderJztTargets(){
     $('#jztTargetKpis').innerHTML=kpiHTML([
       {label:'投放花费 目标达成',value:jztTarget?fmtPct(cur.spend/jztTarget):'—',cls:jztTarget?(cur.spend<=jztTarget?'green':'amber'):'',sub:jztTarget?('达成（实际花费）'+fmtMoney(cur.spend)+' / 投放花费目标'+fmtMoney(jztTarget)):('达成（实际花费）'+fmtMoney(cur.spend)+' / 未设目标')},
       {label:'MTD 点击',value:fmt(cur.clicks,0),sub:yClicks.sub,cls:yClicks.cls},
+      {label:'MTD 点击率',value:fmtPct(cur.ctr),sub:'曝光 '+fmt(cur.imp,0)+' · '+yCtr.sub,cls:yCtr.cls},
       {label:'MTD CPC',value:fmtMoney(cur.cpc),sub:yCpc.sub,cls:yCpc.cls},
       {label:'MTD ROI',value:cur.roi.toFixed(2),sub:yRoi.sub,cls:yRoi.cls},
       {label:'MTD 成交金额',value:fmtMoney(cur.gmv),sub:yGmv.sub,cls:yGmv.cls},
+      {label:'GS未税费比',value:gsActualAmt>0?fmtPct(gsRatio):'—',cls:(gsActualAmt>0&&gsFeeTgt>0)?(gsRatio>gsFeeTgt?'red':'green'):'',sub:(gsFeeTgt>0)?('目标 '+fmtPct(gsFeeTgt)+' / 差 '+(gsActualAmt>0?(gsRatio>=gsFeeTgt?'+':'')+((gsRatio-gsFeeTgt)*100).toFixed(1):'—')+' 个百分点'):(gsActualAmt>0?('整体花费 '+fmtMoney(cur.spend)+' / GS未税金额 '+fmtMoney(gsActualAmt)):'GS未税金额（待录入，口径同销售GS实际达成）')},
+      {label:'POS未税费比',value:posActualAmt>0?fmtPct(posRatio):'—',cls:(posActualAmt>0&&posFeeTgt>0)?(posRatio>posFeeTgt?'red':'green'):'',sub:(posFeeTgt>0)?('目标 '+fmtPct(posFeeTgt)+' / 差 '+(posActualAmt>0?(posRatio>=posFeeTgt?'+':'')+((posRatio-posFeeTgt)*100).toFixed(1):'—')+' 个百分点'):(posActualAmt>0?('整体花费 '+fmtMoney(cur.spend)+' / POS未税金额 '+fmtMoney(posActualAmt)):'POS未税金额（待录入，口径同销售POS实际达成）')},
     ]);
   } else {
     let target=0; const days=dateRange(start,end); let sd=0,has=false;
@@ -1636,10 +2387,17 @@ function renderJztTargets(){
       {label:'MTD 成交金额',value:fmtMoney(cur.gmv),sub:yGmv.sub,cls:yGmv.cls},
     ]);
   }
+  } catch(e) {
+    const el=$('#jztTargetKpis'); if(el) el.innerHTML='<div style="color:red;padding:10px">renderJztTargets 崩溃: '+e.message+'</div>';
+    throw e;
+  }
 }
 
 /* ---------- 计算：目标达成 ---------- */
-function normType(s){ const t=String(s||'').toLowerCase(); if(t.includes('品牌')||t.includes('brand')) return 'brand'; if(t.includes('采销')||t.includes('procure')||t.includes('purchase')) return 'procure'; if(t.includes('内部')||t.includes('internal')) return 'internal'; if(t.includes('京准通')||t.includes('投放')||t.includes('jzt')) return 'jztspend'; if(t.includes('pos')) return 'pos'; return t; }
+function normType(s){ const t=String(s||'').toLowerCase();
+  if(t.includes('gs费比')||t.includes('gs未税费比')) return 'gsfee';
+  if(t.includes('pos费比')||t.includes('pos未税费比')) return 'posfee';
+  if(t.includes('品牌')||t.includes('brand')) return 'brand'; if(t.includes('采销')||t.includes('procure')||t.includes('purchase')) return 'procure'; if(t.includes('内部')||t.includes('internal')) return 'internal'; if(t.includes('gs')||t.includes('gs目标')) return 'gs'; if(t.includes('京准通')||t.includes('投放')||t.includes('jzt')) return 'jztspend'; if(t.includes('pos')) return 'pos'; return t; }
 function normGran(s){ const t=String(s||'').toLowerCase(); if(t.includes('day')||t.includes('日')) return 'day'; if(t.includes('month')||t.includes('月')) return 'month'; if(t.includes('year')||t.includes('年')) return 'year'; return ''; }
 // 周期容错：2026年8月 / 2026/08 / 8月 / 8 / 2026-08-01 / 2026/8/1 等均归一为 YYYY-MM 或 YYYY-MM-DD
 function normPeriod(s, refYear){
@@ -1678,7 +2436,7 @@ function rangeTarget(type,start,end){
   const months=[...new Set(days.map(d=>d.slice(0,7)))];
   let mSum=0; months.forEach(ym=>{ const v=tlookup(type,'month',ym); if(v) mSum+=v; });
   if(mSum) return mSum;
-  const y2=days[0].slice(0,4); if(tlookup(type,'year',y2)) return tlookup(type,'year',y2);
+  const y2=days.length ? days[0].slice(0,4) : ''; if(y2 && tlookup(type,'year',y2)) return tlookup(type,'year',y2);
   return mSum;
 }
 // 周期目标（按视图）
@@ -1697,6 +2455,7 @@ function resolveTvRange(){
 function rateCellHtml(act,tgt){ if(!tgt) return '<td class="rate-pos">—</td>'; const r=act/tgt; return `<td class="rate-pos ${r>=1?'pos':'neg'}">${fmtPct(r)}</td>`; }
 
 let __posSaveDeb;
+let __lastDetail={head:[],rows:[]}; // fix69k：达成明细导出缓存（不展示，仅导出用）
 // 输入时实时更新状态 + 刷新 KPI/图表/达标率（不重建整表，保住输入焦点）
 function refreshHeLXKpis(){
   if(STATE.currentBrand!=='和路雪') return;
@@ -1769,8 +2528,8 @@ function renderTargets(){
   const isMwZy=STATE.currentBrand==='麦维他自营', isMwPop=STATE.currentBrand==='麦维他POP', isMw=isMwZy||isMwPop;
   if(isMw){ return renderMaiweiTargets(start,end,isMwZy?'麦维他自营':'麦维他POP'); }
   // 非麦维他品牌：恢复默认图表标题（麦维他专用标题仅在麦维他渠道切换时修改，切换回其他品牌必须还原）
-  { const gT=$('#targetGmvTitle'); if(gT) gT.textContent='GMV 实际 vs 品牌目标';
-    const pT=$('#targetPosTitle'); if(pT) pT.textContent='POS 实际 vs POS目标';
+  { const gT=$('#targetGmvTitle'); if(gT) gT.textContent='GMV实际达成趋势（同比/环比）';
+    const pT=$('#targetPosTitle'); if(pT) pT.textContent='POS实际达成趋势（同比/环比）';
     const tT=$('#targetTableTitle'); if(tT) tT.textContent='达成明细（按日：时间 / 品牌目标(by day) / 实际GMV / GMV达成率 / POS目标(by day) / POS实际 / POS达成率）';
     // 单面板模式：标题恢复「销售目标达成」，隐藏 POP 面板，KPI 渲染到自营 KPI 容器
     const zyT=$('#zyTargetTitle'); if(zyT) zyT.textContent='销售目标达成';
@@ -1778,10 +2537,15 @@ function renderTargets(){
     // 提示文字恢复为通用描述（不再显示麦维他专属文案）
     const zyHint=$('#zyTargetPanel')?.querySelector('.hint');
     if(zyHint) zyHint.textContent=STATE.currentBrand+' GMV（销售成交金额）目标达成追踪（按月累计 MTD）。日期范围可调。'; }
-  const gmv={}; B().sales.forEach(r=>{ if(r.date>=start&&r.date<=end) gmv[r.date]=(gmv[r.date]||0)+num(r.amount); });
+  // fix69ae：从系列数据构建「非厂直 SKU 集合」，三个GMV只统计非厂直SKU的销售额（factoryDirect='厂直' 的为厂直SKU，排除）
+  const nonFactorySkus=new Set();
+  (B().series||[]).forEach(function(sr){ if(String(sr.factoryDirect||'').trim()!=='厂直'){ nonFactorySkus.add(String(sr.sku||'').trim()); } });
+  const _isNonFactory=function(sku){ return !sku || nonFactorySkus.has(String(sku).trim()); };
+  const gmv={}; B().sales.forEach(r=>{ if(r.date>=start&&r.date<=end && _isNonFactory(r.sku)) gmv[r.date]=(gmv[r.date]||0)+num(r.amount); });
+  const gmvFull={}; B().sales.forEach(r=>{ if(_isNonFactory(r.sku)) gmvFull[r.date]=(gmvFull[r.date]||0)+num(r.amount); }); // fix69v+fix69ae：全量历史(非厂直)，用于同比找去年同日
   const pos=posDailyMap();
   const days=dateRange(start,end).filter(d=>d>=start&&d<=end);
-  const types=[['brand','品牌GMV'],['procure','采销GMV'],['internal','内部GMV'],['pos','POS']];
+  const types=[['brand','品牌GMV'],['procure','采销GMV'],['internal','内部GMV'],['gs','GS'],['pos','POS']];
 
   // MTD 日期范围与 POS 逐日(by day)目标之和（缺口 / 图表 / KPI 统一口径）
   const ym=end.slice(0,7); const ms=ym+'-01';
@@ -1794,7 +2558,7 @@ function renderTargets(){
   const posActual=sum(days.map(d=>pos[d]||0));
   // POS 目标（MTD）统一使用「逐日 by day 求和」（与缺口口径一致）；其余类型沿用原逻辑（月度优先 → 范围求和）
   const scopeTarget=type=>{ if(view==='mtd'){ if(type==='pos'){ if(posMtdTarget) return posMtdTarget; } else { const v=tlookup(type,'month',ym); if(v) return v; } } return rangeTarget(type,start,end); };
-  const tBrand=scopeTarget('brand'), tProc=scopeTarget('procure'), tInt=scopeTarget('internal');
+  const tBrand=scopeTarget('brand'), tProc=scopeTarget('procure'), tInt=scopeTarget('internal'), tGs=scopeTarget('gs');
 
   // GMV 缺口（MTD）：品牌GMV目标 - MTD GMV 实际；缺口=max(0, 目标-达成)（达成超目标时不显示负数）
   const gmvMtdActual=sum(mtdDays.map(d=>gmv[d]||0));
@@ -1808,12 +2572,12 @@ function renderTargets(){
   // 品牌差异化 KPI：
   // - 丝蕴：GMV 缺口（品牌GMV 口径），不展示 POS 目标达成卡片（4 卡）
   // - 和路雪：仅 POS 目标达成 + POS 缺口（2 卡）
-  // - 其他（李锦记/家乐/联合利华）：原版 5 ,卡（品牌/采销/内部GMV + POS目标达成 + POS缺口）
+  // - 其他（李锦记/家乐/联合利华）：6 卡（品牌/采销/内部GMV + GS目标达成 + POS目标达成 + POS缺口）
   const isSiYun=STATE.currentBrand==='丝蕴', isHeLX=STATE.currentBrand==='和路雪';
   let kpis;
   if(isSiYun){
     kpis=[
-      {label:'品牌GM 目标达成',value:tBrand?fmtPct(gmvActual/tBrand):'—',cls:tBrand?(gmvActual>=tBrand?'green':'amber'):'',sub:tBrand?('达成（实际GMV）'+fmtMoney(gmvActual)+' / 品牌目标GMV'+fmtMoney(tBrand)):('达成（实际GMV）'+fmtMoney(gmvActual)+' / 未设目标')},
+      {label:'GMV目标达成',value:tBrand?fmtPct(gmvActual/tBrand):'—',cls:tBrand?(gmvActual>=tBrand?'green':'amber'):'',sub:tBrand?('达成（实际GMV）'+fmtMoney(gmvActual)+' / 品牌目标GMV'+fmtMoney(tBrand)):('达成（实际GMV）'+fmtMoney(gmvActual)+' / 未设目标')},
       {label:'采销GMV 目标达成',value:tProc?fmtPct(gmvActual/tProc):'—',cls:tProc?(gmvActual>=tProc?'green':'amber'):'',sub:tProc?('达成（实际GMV）'+fmtMoney(gmvActual)+' / 采销目标GMV'+fmtMoney(tProc)):('达成（实际GMV）'+fmtMoney(gmvActual)+' / 未设目标')},
       {label:'内部GMV 目标达成',value:tInt?fmtPct(gmvActual/tInt):'—',cls:tInt?(gmvActual>=tInt?'green':'amber'):'',sub:tInt?('达成（实际GMV）'+fmtMoney(gmvActual)+' / 内部目标GMV'+fmtMoney(tInt)):('达成（实际GMV）'+fmtMoney(gmvActual)+' / 未设目标')},
       {label:'GMV 缺口(MTD目标-MTD达成)',value:fmtMoney(gmvGap),cls:gmvGap>0?'red':'green',sub:ym+' MTD（品牌GMV）'},
@@ -1825,27 +2589,17 @@ function renderTargets(){
     ];
   } else {
     kpis=[
-      {label:'品牌GM 目标达成',value:tBrand?fmtPct(gmvActual/tBrand):'—',cls:tBrand?(gmvActual>=tBrand?'green':'amber'):'',sub:tBrand?('达成（实际GMV）'+fmtMoney(gmvActual)+' / 品牌目标GMV'+fmtMoney(tBrand)):('达成（实际GMV）'+fmtMoney(gmvActual)+' / 未设目标')},
+      {label:'GMV目标达成',value:tBrand?fmtPct(gmvActual/tBrand):'—',cls:tBrand?(gmvActual>=tBrand?'green':'amber'):'',sub:tBrand?('达成（实际GMV）'+fmtMoney(gmvActual)+' / 品牌目标GMV'+fmtMoney(tBrand)):('达成（实际GMV）'+fmtMoney(gmvActual)+' / 未设目标')},
       {label:'采销GMV 目标达成',value:tProc?fmtPct(gmvActual/tProc):'—',cls:tProc?(gmvActual>=tProc?'green':'amber'):'',sub:tProc?('达成（实际GMV）'+fmtMoney(gmvActual)+' / 采销目标GMV'+fmtMoney(tProc)):('达成（实际GMV）'+fmtMoney(gmvActual)+' / 未设目标')},
       {label:'内部GMV 目标达成',value:tInt?fmtPct(gmvActual/tInt):'—',cls:tInt?(gmvActual>=tInt?'green':'amber'):'',sub:tInt?('达成（实际GMV）'+fmtMoney(gmvActual)+' / 内部目标GMV'+fmtMoney(tInt)):('达成（实际GMV）'+fmtMoney(gmvActual)+' / 未设目标')},
+      {label:'GS目标达成',value:'—',cls:'',sub:'GS目标达成（待配置数据源）'},
       {label:'POS 目标达成',value:posMtdTarget?fmtPct(posActual/posMtdTarget):'—',cls:posMtdTarget?(posActual>=posMtdTarget?'green':'amber'):'',sub:posMtdTarget?('达成（实际POS）'+fmtMoney(posActual)+' / POS目标'+fmtMoney(posMtdTarget)):('达成（实际POS）'+fmtMoney(posActual)+' / 未设目标')},
       {label:'POS 缺口(MTD目标-MTD达成)',value:fmtMoney(posGap),cls:posGap>0?'red':'green',sub:ym+' MTD（POS）'},
     ];
   }
   $('#zyTargetKpis').innerHTML=kpiHTML(kpis);
 
-  // 家乐 / 联合利华：把「事项」区块移到「销售目标达成」面板上方；其余品牌保持原顺序（事项在下方）
-  const todoPanel=document.getElementById('todo_sales')?.closest('.panel');
-  const zyPanel=document.getElementById('zyTargetPanel');
-  if(todoPanel && zyPanel && zyPanel.parentElement){
-    if(STATE.currentBrand==='家乐' || STATE.currentBrand==='联合利华'){
-      if(todoPanel!==zyPanel.parentElement.firstElementChild) zyPanel.parentElement.insertBefore(todoPanel, zyPanel);
-    } else {
-      // 还原到「销售目标达成」面板之后（图表网格 todo_sales 原位置）
-      const grid2=document.querySelector('#targetGmv')?.closest('.grid2');
-      if(todoPanel!==grid2 && todoPanel.nextElementSibling!==grid2) zyPanel.parentElement.insertBefore(todoPanel, grid2);
-    }
-  }
+  // fix69f：本周/上周事项已内嵌进「销售目标达成」面板（.zy-sales-grid 三栏布局），无需再搬动面板
 
   // 图表：按视图
   let labels=[], gmvAct=[], gmvTgt=[], posAct=[], posTgt=[];
@@ -1859,32 +2613,350 @@ function renderTargets(){
   const posPanel=document.querySelector('#targetPos')?.closest('.panel');
   if(gmvPanel) gmvPanel.style.display = isHeLX ? 'none' : '';
   if(posPanel) posPanel.style.gridColumn = isHeLX ? '1 / -1' : '';
+
+  // fix69v：构建按日趋势数据（同比/环比）。
+  // actualMap = 选中区间的每日实际值（用于柱子/环比/标签，只显示区间）
+  // fullMap    = 全量历史每日实际值（用于同比：找去年同日，不受选中区间限制）
+  function buildTrendData(actualMap, fullMap, historicalKey){
+    const dayMap={}; // 同比查找的基准（历史 + 全量 + 区间）
+    const hist=(B()[historicalKey])||{};
+    for(const d in hist){ const v=num(hist[d]); if(v) dayMap[d]=v; }
+    for(const d in (fullMap||actualMap)){ const v=num(fullMap[d]); if(v) dayMap[d]=v; }
+    for(const d in actualMap){ const v=num(actualMap[d]); if(v) dayMap[d]=v; }
+    const days=Object.keys(actualMap).sort(); // 标签/柱子仅用选中区间
+    if(!days.length) return {labels:[],barData:[],yoyData:[],momData:[]};
+    const barData=days.map(d=>num(actualMap[d])||0);
+    // 同比 = (当日 - 去年同日) / 去年同日（去年同日从全量历史里找，不限于选中区间）
+    const yoyData=days.map(d=>{
+      const y=parseInt(d.slice(0,4));
+      if(y<=2025) return null; // 无更早数据
+      const ly=(y-1)+d.slice(4); // 去年同日
+      const lyVal=dayMap[ly];
+      if(lyVal==null||lyVal===0) return null;
+      return (num(actualMap[d])-lyVal)/lyVal;
+    });
+    const momData=days.map((d,i)=>{
+      if(i===0) return null;
+      const prev=barData[i-1];
+      if(prev===0) return null;
+      return (barData[i]-prev)/prev;
+    });
+    return {labels:days,barData,yoyData,momData};
+  }
+
   if(!isHeLX){
-    barChart('#targetGmv',{categories:days,series:[{name:'实际GMV',data:days.map(d=>gmv[d]||0)},{name:'品牌目标',data:days.map(d=>tlookup('brand','day',d))}],yFmt:fmtMoney});
+    const gmvT=buildTrendData(gmv, gmvFull, 'historicalGmv');
+    trendChart('#targetGmv',{
+      labels:gmvT.labels,
+      barSeries:[{name:'GMV实际',data:gmvT.barData}],
+      lineSeries:[
+        {name:'同比',data:gmvT.yoyData},
+        {name:'环比',data:gmvT.momData}
+      ],
+      barFmt:fmtMoney,
+      height:420
+    });
   } else {
     const tT=$('#targetTableTitle'); if(tT) tT.textContent='达成明细（按日：时间 / POS目标(by day) / POS实际 / POS达成率）';
   }
-  // POS 图：按日（by day）实际POS vs 按日(by day)POS目标
-  barChart('#targetPos',{categories:days,series:[{name:'实际POS',data:days.map(d=>pos[d]||0)},{name:'POS目标',data:days.map(d=>tlookup('pos','day',d))}],yFmt:fmtMoney});
+  // POS 趋势图：同比/环比（按日）
+  {
+    const posT=buildTrendData(pos, pos, 'historicalPos');
+    trendChart('#targetPos',{
+      labels:posT.labels,
+      barSeries:[{name:'POS实际',data:posT.barData}],
+      lineSeries:[
+        {name:'同比',data:posT.yoyData},
+        {name:'环比',data:posT.momData}
+      ],
+      barFmt:fmtMoney,
+      height:420
+    });
+  }
 
-  // 明细表：和路雪仅展示 POS 列（取消 GMV目标(by day)/GMV实际/GMV达成率）；其余品牌含 GMV + POS 双列
+  // 明细表：和路雪保留可编辑 POS 表（功能性录入）；其余品牌「达成明细」不展示，仅缓存供导出（fix69k）
   const rateCell=(act,tgt)=>{ if(!tgt) return '<td>—</td>'; const r=act/tgt; return `<td class="${r>=1?'pos':'neg'}">${fmtPct(r)}</td>`; };
   const dayTgtDates=new Set(); for(const k in TMAP){ const parts=k.split('|'); if(parts[1]==='day'&&parts[2]>=start&&parts[2]<=end) dayTgtDates.add(parts[2]); }
   const detailDays= isHeLX ? days : Array.from(new Set([...Object.keys(gmv),...Object.keys(pos),...dayTgtDates])).filter(d=>d>=start&&d<=end).sort();
   let head, body='';
   if(isHeLX){
     head='<tr><th>时间</th><th>POS目标(by day)</th><th>POS实际（可编辑·千分位）</th><th>POS达成率</th></tr>';
+    const rows=[];
     detailDays.forEach(d=>{ const pT=tlookup('pos','day',d);
       const raw=(B().posInput&&B().posInput[d]!=null)?Math.round(num(B().posInput[d])):0;
       const disp=raw?raw.toLocaleString('en-US'):'';
-      body+=`<tr><td>${d}</td><td>${fmtMoney(pT)}</td><td><input class="pos-input" type="text" inputmode="numeric" data-date="${d}" value="${escAttr(disp)}" placeholder="0"></td>${rateCellHtml(raw,pT)}</tr>`; });
+      body+=`<tr><td>${d}</td><td>${fmtMoney(pT)}</td><td><input class="pos-input" type="text" inputmode="numeric" data-date="${d}" value="${escAttr(disp)}" placeholder="0"></td>${rateCellHtml(raw,pT)}</tr>`;
+      rows.push([d, fmtMoney(pT), raw, pT?fmtPct(raw/pT):'—']); });
     // 和路雪专属：保存按钮工具栏
-    const toolbar=isHeLX?'<div style="margin:6px 0;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button id="posSaveBtn" onclick="savePosToCloud()" style="padding:6px 16px;font-size:13px;border-radius:6px;border:1px solid #007bff;background:#007bff;color:#fff;cursor:pointer">💾 保存POS数据到云端</button><span style="font-size:12px;color:#888">填写完毕后点击保存，数据将同步给所有协作者</span></div>':'';
+    const toolbar='<div style="margin:6px 0;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button id="posSaveBtn" onclick="savePosToCloud()" style="padding:6px 16px;font-size:13px;border-radius:6px;border:1px solid #007bff;background:#007bff;color:#fff;cursor:pointer">💾 保存POS数据到云端</button><span style="font-size:12px;color:#888">填写完毕后点击保存，数据将同步给所有协作者</span></div>';
     $('#targetTable').innerHTML=toolbar+`<table class="tbl"><thead>${head}</thead><tbody>${body}</tbody></table>`;
+    __lastDetail={head:['时间','POS目标(by day)','POS实际','POS达成率'], rows};
+    // 和路雪：保留明细表可见（POS 录入需直接编辑）
+    const hep=$('#targetTable')?.closest('.panel'); if(hep) hep.style.display='';
   } else {
     head='<tr><th>时间</th><th>品牌目标(by day)</th><th>实际GMV</th><th>GMV达成率</th><th>POS目标(by day)</th><th>POS实际</th><th>POS达成率</th></tr>';
-    detailDays.forEach(d=>{ const bT=tlookup('brand','day',d), g=gmv[d]||0, pT=tlookup('pos','day',d), p=pos[d]||0; body+=`<tr><td>${d}</td><td>${fmtMoney(bT)}</td><td>${fmtMoney(g)}</td>${rateCell(g,bT)}<td>${fmtMoney(pT)}</td><td>${fmtMoney(p)}</td>${rateCell(p,pT)}</tr>`; });
-    $('#targetTable').innerHTML=`<table class="tbl"><thead>${head}</thead><tbody>${body}</tbody></table>`;
+    const rows=[];
+    detailDays.forEach(d=>{ const bT=tlookup('brand','day',d), g=gmv[d]||0, pT=tlookup('pos','day',d), p=pos[d]||0; body+=`<tr><td>${d}</td><td>${fmtMoney(bT)}</td><td>${fmtMoney(g)}</td>${rateCell(g,bT)}<td>${fmtMoney(pT)}</td><td>${fmtMoney(p)}</td>${rateCell(p,pT)}</tr>`;
+      rows.push([d, fmtMoney(bT), fmtMoney(g), bT?fmtPct(g/bT):'—', fmtMoney(pT), fmtMoney(p), pT?fmtPct(p/pT):'—']); });
+    __lastDetail={head:['时间','品牌目标(by day)','实际GMV','GMV达成率','POS目标(by day)','POS实际','POS达成率'], rows};
+    // fix69k：达成明细不展示，仅保留导出（缓存于 __lastDetail）
+    const tp=$('#targetTable')?.closest('.panel'); if(tp) tp.style.display='none';
+  }
+  // fix69l：刷新系列明细（仅当面板已展开时才渲染，避免无谓计算）
+  try{ const sdb=$('#seriesDetailBody'); if(sdb&&sdb.style.display!=='none') renderSeriesDetail(); }catch(e){}
+}
+
+// fix69k：导出达成明细为 TSV（当前日期范围内，按品牌缓存于 __lastDetail）
+function exportAchievementDetail(){
+  if(!__lastDetail||!__lastDetail.rows.length){ toast('暂无可导出的达成明细（请先确认有销售数据并应用日期）', true); return; }
+  const tsv=[__lastDetail.head.join('\t')].concat(__lastDetail.rows.map(r=>r.join('\t'))).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([tsv],{type:'text/tab-separated-values;charset=utf-8'}));
+  a.download=`达成明细_${STATE.currentBrand}_${new Date().toISOString().slice(0,10)}.tsv`;
+  a.click();
+  toast('✅ 已导出达成明细（'+__lastDetail.rows.length+' 行）');
+}
+
+/* ---------- 系列明细（fix69af）：fix69ay 4层树形表格 · 大类→中类→系列→产品简称 · 联动销售目标达成时间筛选 ---------- */
+// fix69ac：去掉折叠逻辑，面板始终展开；改用DOM操作替代innerHTML字符串拼接
+function toggleSeriesDetail(){ /* no-op: 面板默认常驻展开 */ }
+// 构建 SKU→系列映射 + 按日期范围聚合销售 GMV —— fix69ay 4层树：大类(L1) → 中类(L2) → 系列(L3) → 产品简称(L4 leaf)
+// fix69af：参数从 year 改为 [start, end] 日期范围，与销售目标达成的时间选择联动
+function buildSeriesAgg(start, end){
+  const b=B();
+  const serRows=b.series||[];
+  const salesRows=b.sales||[];
+  // 1. SKU → 系列行映射
+  const skuMap={};
+  serRows.forEach(r=>{ const k=String(r.sku||'').trim(); if(k) skuMap[k]=r; });
+  // 2. 按日期范围过滤销售 + 按 SKU 聚合 GMV
+  const gmvBySku={};
+  salesRows.forEach(r=>{
+    const d=String(r.date||'').slice(0,10);
+    if(d<start || d>end) return;
+    const k=String(r.sku||'').trim(); if(!k) return;
+    gmvBySku[k]=(gmvBySku[k]||0)+num(r.amount);
+  });
+  // 3. 四层树节点：{label, gmv, children[], level, isLeaf, sku}
+  // fix69ay 层级：catL(大类,L1) → catM(中类,L2) → series(系列,L3) → shortName(产品简称,L4 leaf)
+  const root=[];
+  const l1Map={}, l2Map={}, l3Map={};
+  Object.keys(gmvBySku).forEach(sku=>{
+    const sr=skuMap[sku];
+    if(!sr) return;
+    const cL=String(sr.catL||'').trim()||'未分类';
+    const cM=String(sr.catM||'').trim()||(String(sr.catS||'').trim())||'(空)';
+    const cS=String(sr.series||'').trim()||'(空系列)'; // fix69ay：新增系列层
+    const sName=String(sr.shortName||sr.sku||'').trim()||sku;
+    const g=gmvBySku[sku];
+    // L1: 大类
+    if(!l1Map[cL]){ l1Map[cL]={key:cL,level:1,label:cL,gmv:0,children:[],factoryDirect:sr.factoryDirect}; root.push(l1Map[cL]); }
+    l1Map[cL].gmv+=g;
+    // L2: 中类
+    const l2key=cL+'||'+cM;
+    if(!l2Map[l2key]){ l2Map[l2key]={key:l2key,level:2,label:cM,gmv:0,children:[],parent:l1Map[cL]}; l1Map[cL].children.push(l2Map[l2key]); }
+    l2Map[l2key].gmv+=g;
+    // L3: 系列（fix69ay 新增）
+    const l3key=l2key+'||'+cS;
+    if(!l3Map[l3key]){ l3Map[l3key]={key:l3key,level:3,label:cS,gmv:0,children:[],parent:l2Map[l2key]}; l2Map[l2key].children.push(l3Map[l3key]); }
+    l3Map[l3key].gmv+=g;
+    // L4: 叶子(产品简称/SKU)
+    l3Map[l3key].children.push({level:4,label:sName,gmv:g,isLeaf:true,sku:sku});
+  });
+  // 排序：按 GMV 降序
+  const sortNode=(arr)=>{ arr.sort((a,b)=>b.gmv-a.gmv); arr.forEach(n=>{ if(n.children&&n.children.length) sortNode(n.children); }); };
+  sortNode(root);
+  return root;
+}
+// fix69af：系列明细使用销售目标达成的时间范围（resolveTvRange），不再按年份筛选
+function renderSeriesDetail(){
+  const tbody=$('#seriesDetailTbody'); const summaryEl=$('#sdSummary'); const dateRangeEl=$('#sdDateRange');
+  if(!tbody) return;
+  // fix69af：使用与销售目标达成相同的时间选择器
+  var _tvRange;
+  try { _tvRange=resolveTvRange(); } catch(e) { _tvRange=['','']; }
+  const start=_tvRange[0]||'', end=_tvRange[1]||'';
+  // 显示当前时间范围
+  if(dateRangeEl) dateRangeEl.textContent=(start&&end)?('时间：'+start+' ~ '+end):'（使用上方销售目标达成的时间选择）';
+  if(!start || !end){
+    tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:20px;color:#9ca3af">请先在上方「销售目标达成」选择日期范围</td></tr>';
+    if(summaryEl) summaryEl.textContent=''; return;
+  }
+  // 厂直过滤（值改为 '厂直' / '__nonfactory__'）
+  const filtFactory=$('#sdFilterFactory')?.value||'';
+  // 构建当年树（3层：大类→中类→产品简称）—— 使用 start/end 日期范围
+  let tree=buildSeriesAgg(start, end);
+  // 厂直过滤
+  if(filtFactory==='厂直') tree=tree.filter(n=>String(n.factoryDirect||'').trim()==='厂直');
+  else if(filtFactory==='__nonfactory__') tree=tree.filter(n=>String(n.factoryDirect||'').trim()!=='厂直');
+  // 构建去年同期树（仅用于 YOY%）：同起止月日，年份-1
+  const lastStart=start.length>=10?(String(Number(start.slice(0,4))-1)+start.slice(4)):'';
+  const lastEnd=end.length>=10?(String(Number(end.slice(0,4))-1)+end.slice(4)):'';
+  const lastTree=(lastStart&&lastEnd)?buildSeriesAgg(lastStart, lastEnd):[];
+  // 扁平化去年数据为 { labelPath → gmv }
+  const lastGmv={};
+  (function flatten(nodes, prefix){
+    nodes.forEach(function(n){
+      var key=prefix+n.label;
+      lastGmv[key]=n.gmv;
+      if(n.children) flatten(n.children, key+'>');
+    });
+  })(lastTree, '');
+  // 总 GMV
+  var totalGmv=tree.reduce(function(s,n){ return s+n.gmv; }, 0);
+  var lastTotalGmv=Object.values(lastGmv).reduce(function(s,v){ return typeof v==='number'?s+v:s; }, 0)||0;
+  var totalYoy=lastTotalGmv?((totalGmv-lastTotalGmv)/lastTotalGmv*100):null;
+  if(summaryEl){
+    summaryEl.textContent='合计：'+fmtMoney(totalGmv)+' · YOY '+(totalYoy!=null?((totalYoy>=0?'+':'')+totalYoy.toFixed(2)+'%'):'—')+' · '+tree.reduce(function(s,n){ return s+countLeaves(n); }, 0)+' 个 SKU';
+  }
+
+  // ===== DOM 渲染 =====
+  tbody.innerHTML='';
+  function countLeaves(n){ if(!n.children||!n.children.length) return 1; return n.children.reduce((s,c)=>s+countLeaves(c),0); }
+  function makeCell(text, cls){
+    const td=document.createElement('td'); if(cls) td.className=cls; td.textContent=text==null?'':String(text); return td;
+  }
+  function makeToggleCell(node, pathKey){
+    const td=document.createElement('td');
+    if(node.children&&node.children.length){
+      const sp=document.createElement('span'); sp.className='sd-toggle'; sp.textContent='\u229E'; // ⊖
+      sp.style.cursor='pointer'; sp.style.color='#6b7280'; sp.style.fontSize='12px';
+      sp.onclick=function(e){ e.stopPropagation(); toggleSubtree(sp, tr); };
+      td.appendChild(sp);
+    } else {
+      const sp=document.createElement('span'); sp.className='sd-toggle'; sp.style.visibility='hidden'; td.appendChild(sp);
+    }
+    var tr=null; // will be set below
+    return td;
+  }
+  var allRows=[]; // 收集所有行引用，供折叠用
+  /* fix69ay：折叠状态沿祖先链继承。每行有自己的 _foldState{ collapsed, parent }，
+     子行的 _parentState 指向父行的 _foldState。展开父行时，若任一祖先仍处于折叠态，
+     该行保持隐藏——避免「大类折叠再展开」把系列下已折叠的产品全部冲开。 */
+  function ancestorCollapsed(state){
+    while(state){ if(state.collapsed) return true; state=state.parent; }
+    return false;
+  }
+  function visibleOrNot(tr, forceHide){
+    return (forceHide || ancestorCollapsed(tr._parentState)) ? 'none' : '';
+  }
+  function renderNodes(nodes, depth, parentKey, parentState){
+    nodes.forEach(function(n){
+      var pathKey=parentKey+n.label;
+      var lg=n.gmv||0;
+      var lgLast=lastGmv[pathKey]||0;
+      var yoy=lgLast?((lg-lgLast)/lgLast*100):null;
+      var yoyCls=yoy==null?'':(yoy>=0?'pos':'neg');
+      var yoyTxt=yoy!=null?(yoy>=0?'+':'')+yoy.toFixed(2)+'%':'—';
+      var rowClass=n.isLeaf?'sd-row-leaf':'sd-row-group';
+
+      var tr=document.createElement('tr'); tr.className=rowClass; tr.dataset.path=pathKey;
+      // fix69ay：本行的折叠状态（isFoldParent 决定初始是否折叠其子行）
+      tr._parentState=parentState||null;
+      tr._foldState={ collapsed:!!(n.children&&n.children.length&&depth===3), parent:parentState||null };
+
+      // 列1：展开/收起图标
+      var td1=document.createElement('td');
+      if(n.children&&n.children.length){
+        var sp=document.createElement('span'); sp.className='sd-toggle';
+        /* fix69ay：4 层树 大类(L1)→中类(L2)→系列(L3)→产品简称(L4)。
+           折叠规则：仅「系列(L3)」折叠其下产品简称(L4)；大类/中类/系列本身都不折叠。 */
+        var isFoldParent=(depth===3);
+        sp.textContent=isFoldParent?'\u25B6':'\u229E'; // ▶(收起) / ⊖(展开)
+        sp.style.cursor='pointer'; sp.style.color=isFoldParent?'#dc2626':'#6b7280'; sp.style.fontSize='12px';
+        (function(childNodes, myTr, collapsed){ // closure
+          sp.onclick=function(e){ e.stopPropagation(); collapsed=!collapsed;
+            childNodes.forEach(function(cn){ cn.tr.style.display=visibleOrNot(cn.tr, collapsed); });
+            sp.textContent=collapsed?'\u25B6':'\u229E'; // ▶ / ⊖
+            sp.style.color=collapsed?'#dc2626':'#6b7280';
+          };
+        })(n.children.map(function(cn){ return {tr:null}; }), tr, isFoldParent);
+        // 下面在创建子行后回填 tr 引用
+        sp._childPlaceHolder=true;
+        sp._isCollapsed=isFoldParent; // 供回填时读取默认折叠状态
+      } else {
+        var sp2=document.createElement('span'); sp2.className='sd-toggle'; sp2.style.visibility='hidden'; td1.appendChild(sp2);
+      }
+      if(n.children&&n.children.length) td1.appendChild(sp); else {}
+      tr.appendChild(td1);
+
+      // fix69ay：可折叠的父行（系列 L3）加提示 + 可点击样式
+      var hint=null;
+      if(isFoldParent){
+        tr.style.cursor='pointer';
+        tr.style.background='#f7f8fa';
+        hint=document.createElement('span');
+        hint.style.fontWeight='400'; hint.style.color='#888'; hint.style.fontSize='11px';
+        hint.textContent=' (点开看各品)';
+      }
+
+      // 列2：大类（仅 L1 显示）
+      var td2=document.createElement('td');
+      if(depth===1){ td2.textContent=n.label; td2.style.fontWeight='700'; }
+      tr.appendChild(td2);
+
+      // 列3：中类（仅 L2 显示）
+      var td3=document.createElement('td');
+      if(depth===2){ td3.textContent=n.label; td3.style.fontWeight='600'; }
+      tr.appendChild(td3);
+
+      // 列4：系列（L3 显示）/ 产品简称（L4 叶子，缩进显示）
+      var td4=document.createElement('td');
+      if(depth===3){ td4.textContent=n.label; }
+      else if(depth>=4){
+        td4.innerHTML='<span style="display:inline-block;width:20px"></span>';
+        td4.appendChild(document.createTextNode(n.label));
+        td4.style.color='#4b5563';
+      }
+      if(hint) td4.appendChild(hint);
+      tr.appendChild(td4);
+
+      // 列5-7：GMV / YOY% / 去年GMV
+      var td5=document.createElement('td'); td5.className='sd-gmv'; td5.textContent=fmtMoney(lg); tr.appendChild(td5);
+      var td6=document.createElement('td'); td6.className='sd-yoy '+(yoyCls||''); td6.textContent=yoyTxt; tr.appendChild(td6);
+      var td7=document.createElement('td'); td7.className='sd-gmv'; td7.textContent=fmtMoney(lgLast); tr.appendChild(td7);
+
+      tbody.appendChild(tr);
+      allRows.push({tr:tr, node:n});
+
+      // 子节点（默认全展开，除系列行下的产品简称）
+      if(n.children&&n.children.length){
+        var childRows=[];
+        /* fix69ay：原来用 allRows.length-n.children.length 计算起点，在多层嵌套下会算错
+           （子孙行也会被计入，导致只取到最后一个子孙）。改为记录递归前的索引——
+           DFS 前序遍历保证从 mark 到末尾的所有行都是本节点的子孙，整棵子树都能正确折叠。 */
+        var mark=allRows.length;
+        renderNodes(n.children, depth+1, pathKey+'>', tr._foldState);
+        for(var ci=mark; ci<allRows.length; ci++){ childRows.push(allRows[ci].tr); }
+        // 找到刚才添加的 toggle span 并绑定子行列表
+        var toggleSp=td1.querySelector('.sd-toggle');
+        if(toggleSp&&toggleSp._childPlaceHolder){
+          (function(childList, tSp, myState){
+            // fix69ay：读取创建时标记的默认折叠状态
+            var collapsed=!!tSp._isCollapsed;
+            myState.collapsed=collapsed;
+            // 初始隐藏子行（系列行下的产品简称默认折叠）
+            childList.forEach(function(ct){ ct.style.display=visibleOrNot(ct, collapsed); });
+            tSp.onclick=function(e){ e.stopPropagation(); collapsed=!collapsed;
+              myState.collapsed=collapsed;
+              childList.forEach(function(ct){ ct.style.display=visibleOrNot(ct, collapsed); });
+              tSp.textContent=collapsed?'\u25B6':'\u229E';
+              tSp.style.color=collapsed?'#dc2626':'#6b7280';
+            };
+          })(childRows, toggleSp, tr._foldState);
+          delete toggleSp._childPlaceHolder;
+        }
+      }
+    });
+  }
+  renderNodes(tree, 1, '', null);
+
+  if(!tree.length){
+    var emptyRow=document.createElement('tr');
+    var emptyCell=document.createElement('td'); emptyCell.colSpan=7;
+    emptyCell.style.textAlign='center'; emptyCell.style.padding='20px'; emptyCell.style.color='#9ca3af';
+    emptyCell.textContent=filtFactory?'当前厂直筛选无匹配数据':'暂无系列划分数据（请先在「系列划分」区录入 SKU 映射表）';
+    emptyRow.appendChild(emptyCell); tbody.appendChild(emptyRow);
   }
 }
 
@@ -1970,10 +3042,14 @@ function renderMaiweiTargets(start,end){
   const detailDays=Array.from(new Set([...Object.keys(zyGmv),...Object.keys(popGmv),...days])).filter(d=>d>=start&&d<=end).sort();
   let head='<tr><th>时间</th><th>自营目标(by day)</th><th>自营实际GMV</th><th>自营GMV达成率</th><th>POP目标(by day)</th><th>POP实际GMV</th><th>POPGMV达成率</th></tr>';
   let body='';
+  const rows=[];
   detailDays.forEach(d=>{ const zyTd=tgtOf(zyName,'brand',d), zg=zyGmv[d]||0, popTd=tgtOf(popName,'brand',d), pg=popGmv[d]||0;
     const zyTdCell=zyTd!=null?fmtMoney(zyTd):'—', popTdCell=popTd!=null?fmtMoney(popTd):'—';
-    body+=`<tr><td>${d}</td><td>${zyTdCell}</td><td>${fmtMoney(zg)}</td>${rateCell(zg,zyTd)}<td>${popTdCell}</td><td>${fmtMoney(pg)}</td>${rateCell(pg,popTd)}</tr>`; });
-  $('#targetTable').innerHTML=`<table class="tbl"><thead>${head}</thead><tbody>${body}</tbody></table>`;
+    body+=`<tr><td>${d}</td><td>${zyTdCell}</td><td>${fmtMoney(zg)}</td>${rateCell(zg,zyTd)}<td>${popTdCell}</td><td>${fmtMoney(pg)}</td>${rateCell(pg,popTd)}</tr>`;
+    rows.push([d, zyTdCell, fmtMoney(zg), zyTd?fmtPct(zg/zyTd):'—', popTdCell, fmtMoney(pg), popTd?fmtPct(pg/popTd):'—']); });
+  __lastDetail={head:['时间','自营目标(by day)','自营实际GMV','自营GMV达成率','POP目标(by day)','POP实际GMV','POPGMV达成率'], rows};
+  // fix69k：达成明细不展示，仅保留导出
+  const tp=$('#targetTable')?.closest('.panel'); if(tp) tp.style.display='none';
 }
 
 /* ---------- 总览 ---------- */
@@ -2438,7 +3514,7 @@ function populateClearTypes(){
   const typeCol=findTypeCol(lines[0]||'');
   const set=new Set();
   if(typeCol>=0){ for(let i=1;i<lines.length;i++){ const c=(lines[i].split(/\t|,/)[typeCol]||'').trim(); if(c) set.add(c); } }
-  ['品牌GMV','采销GMV','内部GMV','POS','京准通花费','投放花费','费比目标'].forEach(x=>set.add(x));
+  ['品牌GMV','采销GMV','内部GMV','GS','POS','京准通花费','投放花费','费比目标'].forEach(x=>set.add(x));
   const sel=$('#cmType'); sel.innerHTML='';
   Array.from(set).forEach(v=>{ const o=document.createElement('option'); o.value=v; o.textContent=v; sel.appendChild(o); });
 }
@@ -2561,6 +3637,9 @@ function reparseBrand(brand){
   b.chaohu=parseTable(b._raw.chaohu||'');
   b.series=mergeSeriesRows([], parseTable(b._raw.series||'')); /* fix68 */
   b.targets=tgt;
+  // fix69j：解析历史月度数据（格式：YYYY-MM\t数值，每行一条）
+  b.historicalGmv=parseHistoricalMonthly(b._raw.historicalGmv||'');
+  b.historicalPos=parseHistoricalMonthly(b._raw.historicalPos||'');
 }
 // 从 _raw 重新派生已解析数组（销售/库存/京准通/采购单/现货率/长库龄/目标）。
 // 关键修复：normalizeState 历史会把「保存时序列化的已解析数组」原样恢复（见 dst.jzt=... 那行），
@@ -2571,18 +3650,21 @@ function reparseObj(b){
   const seen={}; const tgt=[];
   const push=r=>{ if(!isTargetRow(r)) return; const k=(r.ttype||'')+'|'+(r.tgran||'')+'|'+(r.tperiod||''); if(!seen[k]){ seen[k]=1; tgt.push(r); } };
   parseTargets(b._raw.targets||'').forEach(push);
-  b.sales=aggregateRows(parseTable(b._raw.sales||''));
-  b.inventory=parseTable(b._raw.inventory||'');
-  b.jzt=aggregateRows(parseJztRaw(b._raw.jzt||''));
-  b.purchase=parseTable(b._raw.purchase||'');
-  b.purchase_order=parseTable(b._raw.purchase_order||'');
-  b.spot_rate=parseTable(b._raw.spot_rate||'');
-  b.aging_warn=parseTable(b._raw.aging_warn||'');
-  b.inv_full=parseTable(b._raw.inv_full||'');
-  b.inv_siyun=parseTable(b._raw.inv_siyun||'');
-  b.chaohu=parseTable(b._raw.chaohu||'');
+  // fix69t：防御性保留——_raw 为空时不覆盖已有数组（避免从磁盘/IDB 加载的有效数据被空 _raw 清空）
+  const rawSales=b._raw.sales||''; if(rawSales.trim()) b.sales=aggregateRows(parseTable(rawSales));
+  const rawInv=b._raw.inventory||''; if(rawInv.trim()) b.inventory=parseTable(rawInv);
+  const rawJzt=b._raw.jzt||''; if(rawJzt.trim()) b.jzt=aggregateRows(parseJztRaw(rawJzt));
+  const rawPur=b._raw.purchase||''; if(rawPur.trim()) b.purchase=parseTable(rawPur);
+  const rawPo=b._raw.purchase_order||''; if(rawPo.trim()) b.purchase_order=parseTable(rawPo);
+  const rawSr=b._raw.spot_rate||''; if(rawSr.trim()) b.spot_rate=parseTable(rawSr);
+  const rawAw=b._raw.aging_warn||''; if(rawAw.trim()) b.aging_warn=parseTable(rawAw);
+  const rawIf=b._raw.inv_full||''; if(rawIf.trim()) b.inv_full=parseTable(rawIf);
+  const rawIs=b._raw.inv_siyun||''; if(rawIs.trim()) b.inv_siyun=parseTable(rawIs);
+  const rawCh=b._raw.chaohu||''; if(rawCh.trim()) b.chaohu=parseTable(rawCh);
   b.series=mergeSeriesRows([], parseTable(b._raw.series||'')); /* fix68：系列划分按 SKU 去重 */
   b.targets=tgt;
+  b.historicalGmv=parseHistoricalMonthly(b._raw.historicalGmv||'');
+  b.historicalPos=parseHistoricalMonthly(b._raw.historicalPos||'');
 }
 // 全部品牌清除：遍历每个品牌，对其 _raw[which] 应用 filter 后重建
 function clearRowsAllBrands(which, filter, suffix){
@@ -2671,7 +3753,8 @@ function renderAll(){
   renderSales(); renderInv(); renderJzt(); renderJztTargets(); renderTargets(); renderOverview();
   populateGanttMonth('营销','#ganttMkt'); populateGanttMonth('设计','#ganttDesign'); populateGanttMonth('数据','#ganttData');
   updateTimeProgress();
-  $('#lastUpdate').textContent='更新于 '+new Date().toLocaleString('zh-CN');
+  // fix69w：#lastUpdate 已替换为 #saveStatus（由 updateSaveStatus 管理），此处不再单独更新
+  try{ const lu=$('#lastUpdate'); if(lu) lu.textContent='更新于 '+new Date().toLocaleString('zh-CN'); }catch(e){}
 }
 
 /* ---------- 交互 ---------- */
@@ -2793,6 +3876,12 @@ function refreshInvDateOptions(){
 }
 const invDateSel=$('#invDate'); if(invDateSel) invDateSel.addEventListener('change',()=>{}); // 仅选择，不自动应用；点「应用日期」才生效
 const invDateApplyBtn=$('#invDateApplyBtn'); if(invDateApplyBtn) invDateApplyBtn.addEventListener('click',()=>{ invAsOf=invDateSel.value||null; renderInv(); renderOverview(); });
+// fix69ai：部门切换即时生效（无需点应用）
+const invDeptSel=$('#invDept'); if(invDeptSel) invDeptSel.addEventListener('change',()=>{ renderInv(); });
+// fix69bh：三张表各一个「保存备注」按钮（仅手动点击才保存，失焦只缓存）
+$('#saveTurnRemark')?.addEventListener('click',function(){ saveTableRemarks('turn'); });
+$('#saveHighTurnRemark')?.addEventListener('click',function(){ saveTableRemarks('turn'); });
+$('#saveAgingRemark')?.addEventListener('click',function(){ saveTableRemarks('aging'); });
 ['jztStart','jztEnd'].forEach(id=>{ const el=$(id); if(el) el.addEventListener('change',applyJztDates); });
 const jztApplyBtn=$('#jztApplyBtn'); if(jztApplyBtn) jztApplyBtn.addEventListener('click',applyJztDates);
 const jztResetBtn=$('#jztResetBtn'); if(jztResetBtn) jztResetBtn.addEventListener('click',()=>{ $('#jztStart').value=''; $('#jztEnd').value=''; applyJztDates(); });
@@ -3094,7 +4183,7 @@ const tgtTplBtn=$('#tgtTplBtn'); if(tgtTplBtn) tgtTplBtn.addEventListener('click
   ws['!cols']=[{wch:14},{wch:10},{wch:12},{wch:12}];
   const wsHelp=XLSX.utils.aoa_to_sheet([
     ['列','说明','可选值 / 示例'],
-    ['类型','目标指标类型','品牌GMV / 采销GMV / 内部GMV / POS / 京准通花费 / 投放花费 / 费比目标（值填小数，0.15=15%）'],
+    ['类型','目标指标类型','品牌GMV / 采销GMV / 内部GMV / GS / POS / 京准通花费 / 投放花费 / 费比目标（值填小数，0.15=15%）'],
     ['粒度','统计粒度','month（按月） / day（按天） / year（按年）'],
     ['周期','目标所属期间','month: 2026-08；day: 2026-08-01；year: 2026'],
     ['目标值','数值目标','纯数字，如 600000'],
@@ -3361,38 +4450,37 @@ const srTplBtn=$('#srTplBtn'); if(srTplBtn) srTplBtn.addEventListener('click',()
   toast('已下载 Excel 模板（.xlsx，含「现货率」+「填写说明」两个 Sheet，每日一行）');
 });
 
-// 下载长库龄预警金额填写模板（真实 .xlsx：6 列，每日一行，附填写说明表）
+// 下载长库龄预警金额填写模板（真实 .xlsx：逐 SKU 明细，附填写说明表）
 const awTplBtn=$('#awTplBtn'); if(awTplBtn) awTplBtn.addEventListener('click',()=>{
-  const t=new Date(); const y=t.getFullYear(), m=String(t.getMonth()+1).padStart(2,'0');
-  const d=n=>`${y}-${m}-${String(n).padStart(2,'0')}`;
   const rows=[
-    ['日期','60-90天长库龄预警金额','90天以上长库龄金额','60-90天长库龄预警金额（基调）','60-90天长库龄预警金额（复调）','90天以上长库龄金额（基调）','90天以上长库龄金额（复调）'],
-    [d(1),180000,95000,120000,60000,60000,35000],
-    [d(2),175000,92000,115000,60000,58000,34000],
-    [d(3),168000,90000,110000,58000,56000,34000],
-    ['','','','','','',''],
-    ['','','','','','','']
+    ['商品','商品名称','配送中心','长库龄数量','0-30天','31-60天','61-90天','91-120天','121-150天','151-180天','181-365天','1年以上','品牌','类目'],
+    ['10012345','味极鲜酱油1.8L','北京仓',120,10,30,40,20,10,5,3,2,'李锦记','酱油'],
+    ['10012346','草菇老抽500ml','上海仓',80,5,20,25,15,8,4,2,1,'李锦记','酱油'],
+    ['','','','','','','','','','','','','',''],
+    ['','','','','','','','','','','','','','']
   ];
   const ws=XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols']=[{wch:14},{wch:20},{wch:18},{wch:24},{wch:24},{wch:22},{wch:22}];
+  ws['!cols']=[{wch:12},{wch:18},{wch:10},{wch:12},{wch:9},{wch:9},{wch:9},{wch:10},{wch:10},{wch:10},{wch:10},{wch:9},{wch:10},{wch:10}];
   const wsHelp=XLSX.utils.aoa_to_sheet([
     ['列','说明','示例'],
-    ['日期','长库龄预警快照日期（每日一行）','2026-08-01'],
-    ['60-90天长库龄预警金额','60-90天 长库龄预警金额','180000'],
-    ['90天以上长库龄金额','90天以上 长库龄金额','95000'],
-    ['60-90天长库龄预警金额（基调）','基调拆分','120000'],
-    ['60-90天长库龄预警金额（复调）','复调拆分','60000'],
-    ['90天以上长库龄金额（基调）','基调拆分','60000'],
-    ['90天以上长库龄金额（复调）','复调拆分','35000']
+    ['商品','SKU（与浮码/库存明细的 SKU 一致）','10012345'],
+    ['商品名称','商品名','味极鲜酱油1.8L'],
+    ['配送中心','仓库/DC','北京仓'],
+    ['长库龄数量','长库龄总件数（D列，用于 90+ 金额）','120'],
+    ['61-90天','61~90天件数（G列，用于 60-90 预警金额）','40'],
+    ['0-30天 / 31-60天 / 91-120天 / … / 1年以上','各区间件数明细','10 / 30 / 20 / … / 2'],
+    ['品牌','品牌名','李锦记'],
+    ['类目','类目','酱油'],
+    ['金额计算','库龄金额 = Σ(区间天数 × 该 SKU 浮码价格 × 1.129)；60-90预警=61-90天×浮码价×1.129，90+=长库龄数量×浮码价×1.129','见前台库龄卡片']
   ]);
-  wsHelp['!cols']=[{wch:30},{wch:44},{wch:18}];
+  wsHelp['!cols']=[{wch:24},{wch:40},{wch:30}];
   const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, '长库龄预警');
+  XLSX.utils.book_append_sheet(wb, ws, '长库龄明细');
   XLSX.utils.book_append_sheet(wb, wsHelp, '填写说明');
   const wbout=XLSX.write(wb,{bookType:'xlsx',type:'array'});
   const blob=new Blob([wbout],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='长库龄预警金额填写模板.xlsx'; a.click();
-  toast('已下载 Excel 模板（.xlsx，含「长库龄预警」+「填写说明」两个 Sheet，每日一行）');
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='长库龄明细填写模板.xlsx'; a.click();
+  toast('已下载 Excel 模板（.xlsx，含「长库龄明细」+「填写说明」两个 Sheet，逐 SKU 一行）');
 });
 
 // 下载浮码数据填写模板（真实 .xlsx：时间/SKU/浮码，含示例行与空行，附填写说明表）
@@ -3469,11 +4557,21 @@ async function sheetToTsv(ws){
       /* fix66x：日期序列号【必为整数】（无小数位）。若值含小数（如 39205.26638）则是金额等数值，
          绝非日期。此前仅凭 [25000,70000] 范围判断，导致巢湖库存 V 列品牌采购在途金额被误转为 "2007-05-04" 日期字符串，
          parseFloat 截取后变成 2007 → 显示 ¥2,007（正确值应为 ¥39,205.27）。现增加整数守卫。 */
-      if(cell.t==='n' && cell.v === Math.floor(cell.v) && Math.floor(cell.v)>25000 && Math.floor(cell.v)<70000){
-        const fw=cell.w!==undefined?String(cell.w):'';
-        /* 若 w 是纯数字且等于 v 的整数部分，说明该单元格实际是数值（如成交金额），不应转为日期 */
-        if(fw && /^\d+$/.test(fw) && Number(fw)===Math.floor(cell.v)) val=fw;
-        else val=normDate(String(Math.floor(cell.v)));
+      if(cell.t==='n'){
+        const isInt=(cell.v===Math.floor(cell.v));
+        if(isInt && cell.v>25000 && cell.v<70000){
+          const fw=cell.w!==undefined?String(cell.w):'';
+          /* 若 w 是纯数字且等于 v 的整数部分，说明该单元格实际是数值（如成交金额），不应转为日期 */
+          if(fw && /^\d+$/.test(fw) && Number(fw)===cell.v) val=fw;
+          else val=normDate(String(cell.v));
+        } else {
+          const w=(cell.w!==undefined)?String(cell.w).trim():'';
+          /* fix69m：大整数（SKU/订单号等，如 100006776506）在 Excel 中以科学计数法显示（"1.00007E+11"），
+             直接采用 cell.w 会丢失真实值并破坏 SKU 关联（系列划分↔销售数据 JOIN 失败）。检测科学计数法则改用精确数值字符串。 */
+          if(/[eE][+-]?\d+$/.test(w)) val=String(cell.v);
+          else if(w) val=w;
+          else val=String(cell.v);
+        }
       }
       /* 文本/日期单元格：优先用格式化文本 w，再用 v；w 仍非标准（如 8/31/26）时若 v 是序列号则转换 */
       else if(cell.w!==undefined && String(cell.w).trim()) val=String(cell.w).trim();
@@ -3595,8 +4693,9 @@ function setupFile(id,key){ const inp=$(id); const ta=()=>{ const t=$('#'+key+'I
       }
       if(key==='po'){
         const poRows=B().purchase_order||[];
-        let poSum=0; poRows.forEach(r=>{ poSum+=num(r.poAmt!==undefined?r.poAmt:r.采购金额); });
-        const byMonth={}; poRows.forEach(r=>{ const d=String(r.date||r.订购时间||'').slice(0,7); if(d) byMonth[d]=(byMonth[d]||0)+num(r.poAmt!==undefined?r.poAmt:r.采购金额); });
+        // fix69bc②：诊断汇总也只统计 5 个有效状态的采购金额
+        let poSum=0; poRows.forEach(r=>{ if(poStatusValid(r)) poSum+=num(r.poAmt!==undefined?r.poAmt:r.采购金额); });
+        const byMonth={}; poRows.forEach(r=>{ if(!poStatusValid(r)) return; const d=String(r.date||r.订购时间||'').slice(0,7); if(d) byMonth[d]=(byMonth[d]||0)+num(r.poAmt!==undefined?r.poAmt:r.采购金额); });
         const months=Object.keys(byMonth).sort();
         diag=' | 采购金额合计≈'+fmtMoney(poSum)+(months.length?' | '+months.map(m=>m+'月='+fmtMoney(byMonth[m])).join(' '):'');
       }
@@ -3641,8 +4740,8 @@ $('#importBtn').addEventListener('change',async e=>{
 let toastT; function toast(msg,persist){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastT); if(!persist) toastT=setTimeout(()=>t.classList.remove('show'),1800); }
 
 /* ---------- 前台待办清单：各视图 上周/本周 两列，带勾选的代办事项，自动持久化 ---------- */
-const TODO_KEYS=['sales','inventory','jzt','mt_marketing','mt_design','mt_data'];
-function freshTodo(){ return {sales:{last:[],this:[]},inventory:{last:[],this:[]},jzt:{last:[],this:[]},mt_marketing:{last:[],this:[]},mt_design:{last:[],this:[]},mt_data:{last:[],this:[]}}; }
+const TODO_KEYS=['sales','inventory','jzt','mt_marketing','mt_design','mt_data','mt_service'];
+function freshTodo(){ return {sales:{last:[],this:[]},inventory:{last:[],this:[]},jzt:{last:[],this:[]},mt_marketing:{last:[],this:[]},mt_design:{last:[],this:[]},mt_data:{last:[],this:[]},mt_service:{last:[],this:[]}}; }
 function escAttr(s){ return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function todoInit(){ B().todo=B().todo||{}; TODO_KEYS.forEach(w=>{ B().todo[w]=B().todo[w]||{last:[],this:[]}; B().todo[w].last=B().todo[w].last||[]; B().todo[w].this=B().todo[w].this||[]; }); }
 // 兼容旧版 memo 纯文本：首启若有备注，移入对应「本周」待办
@@ -3650,8 +4749,8 @@ function migrateMemoToTodo(){ TODO_KEYS.forEach(w=>{ const m=(STATE.memo&&STATE.
 function buildTodoContainer(which){
   const grid=$('#todo_'+which); if(!grid) return; if(grid.dataset.built) return;
   grid.innerHTML =
-    '<div class="todo-col" data-col="last"><h4>上周 <span class="cnt" id="cnt_'+which+'_last"></span></h4><div class="todo-box" data-col="last"></div></div>'+
-    '<div class="todo-col" data-col="this"><h4>本周 <span class="cnt" id="cnt_'+which+'_this"></span></h4><div class="todo-box" data-col="this"></div></div>';
+    '<div class="todo-col" data-col="this"><h4>本周 <span class="cnt" id="cnt_'+which+'_this"></span></h4><div class="todo-box" data-col="this"></div></div>'+
+    '<div class="todo-col" data-col="last"><h4>上周 <span class="cnt" id="cnt_'+which+'_last"></span></h4><div class="todo-box" data-col="last"></div></div>';
   grid.dataset.built='1';
 }
 function renderTodoColumn(which,col){
@@ -3858,10 +4957,33 @@ const BACKEND_TYPE='github'; // fix66l: 切回 GitHub（用户已开 VPN；Gitee
 // 反之 ?cloud=1 可强制走云端（即使在本机打开也连 GitHub）。
 const LOCAL_MODE = /[?&]local(=|$)/.test(location.search)
   || (/^https?:\/\/(localhost|127\.0\.0\.1|::1)([:\/]|$)/.test(location.href) && !/[?&]cloud=1/.test(location.search));
+// 纯本地文件双击打开（file://）：用浏览器 localStorage 持久化，不连任何云端，适合单机使用
+const IS_LOCAL_FILE = location.protocol==='file:';
+// 是否跳过云端（本地服务器模式 或 纯文件模式）
+function skipCloud(){ return LOCAL_MODE || IS_LOCAL_FILE; }
 const LOCAL_BASE = (function(){
   const m = location.search.match(/[?&]local=(https?:\/\/[^&\s]+)/);
   return m ? m[1].replace(/\/$/,'') : 'http://127.0.0.1:8787';
 })();
+// fix69u：运行时判定「本次是否连上了本地服务(serve_local.js)」。LOCAL_MODE 或 file:// 双击模式下，
+// 只要本机服务可达就置 true，保存时额外 PUT 回 /api/state，使两种打开方式共用同一份磁盘数据。
+let USING_SERVER = false;
+// fix69v：file:// 双击打开时本机浏览器无法可靠持久化 25MB+ 数据（IndexedDB 被禁、localStorage 仅 5MB）。
+// 若本机服务可达，自动跳转到 localhost（唯一能可靠保存的模式）；若不可达，显示醒目横幅提示先启动服务。
+if(location.protocol==='file:'){
+  (function(){
+    fetch('http://127.0.0.1:8787/api/health',{cache:'no-store'}).then(r=>r.ok?true:false).catch(()=>false).then(up=>{
+      if(up){ location.href='http://127.0.0.1:8787/'; return; }
+      window.addEventListener('DOMContentLoaded',()=>{
+        let b=document.getElementById('fileModeBanner');
+        if(!b){ b=document.createElement('div'); b.id='fileModeBanner';
+          b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:9999;background:#b91c1c;color:#fff;padding:12px 16px;font-size:14px;line-height:1.6;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.3)';
+          document.body.appendChild(b); }
+        b.innerHTML='⚠️ 你正用 <b>file://</b> 双击打开，此模式数据无法可靠保存（浏览器限制，25MB 会超限丢失）。请：① 运行 <code>node serve_local.js</code>（或双击 <code>start_local.command</code>）② 再访问 <b>http://127.0.0.1:8787/</b>。当前录入的数据刷新后会丢失！';
+      });
+    });
+  })();
+}
 // GitHub 配置（沿用上方 GH_* 常量）
 const GITHUB_CFG={ owner:GH_OWNER, dataRepo:GH_REPO, pubRepo:GH_PUB_REPO, branch:GH_BRANCH,
   pagesBase:'https://'+GH_OWNER+'.github.io/'+GH_PUB_REPO+'/' }; // 查看者免令牌只读基址
@@ -4113,13 +5235,13 @@ function mergeBrandData(inc, cloud){
   var out=JSON.parse(JSON.stringify(inc));
   ['sales','inventory','purchase','purchase_order','spot_rate','aging_warn','inv_full','inv_siyun','chaohu','jzt','targets','series'].forEach(function(k){ if(isEmptyVal(out[k]) && !isEmptyVal(cloud[k])) out[k]=JSON.parse(JSON.stringify(cloud[k])); });
   out._raw=out._raw||{};
-  ['sales','inventory','jzt','targets','purchase','purchase_order','spot_rate','aging_warn','inv_full','inv_siyun','chaohu','series'].forEach(function(k){ if(isEmptyVal(out._raw[k]) && !isEmptyVal(cloud._raw&&cloud._raw[k])) out._raw[k]=cloud._raw[k]; });
+  ['sales','inventory','jzt','targets','purchase','purchase_order','spot_rate','aging_warn','inv_full','inv_siyun','chaohu','series','historicalGmv','historicalPos'].forEach(function(k){ if(isEmptyVal(out._raw[k]) && !isEmptyVal(cloud._raw&&cloud._raw[k])) out._raw[k]=cloud._raw[k]; });
   if(cloud.posInput) out.posInput=Object.assign({}, cloud.posInput, out.posInput||{});
   return out;
 }
 function extractBrandData(b){
   if(!b) return freshBrand();
-  const raw=Object.assign({sales:'',inventory:'',inv_full:'',inv_siyun:'',chaohu:'',jzt:'',targets:'',purchase:'',purchase_order:'',spot_rate:'',aging_warn:'',series:''}, b._raw||{});
+  const raw=Object.assign({sales:'',inventory:'',inv_full:'',inv_siyun:'',chaohu:'',jzt:'',targets:'',purchase:'',purchase_order:'',spot_rate:'',aging_warn:'',series:'',historicalGmv:'',historicalPos:''}, b._raw||{});
   // fix53→fix66n：超大明细（库存明细·李锦记 全量导出 1.2万行×117列 ≈ 16MB；库存明细全量列 inv_full 同理）不推云端。
   // 原因：GitHub Contents API 对极大多 MB 文件会超时挂起，导致保存时页面「卡住」无法恢复。
   // 但原阈值 1.5MB 过低：丝蕴库存日报 14MB xlsx → 解析 TSV 约 8.3MB，被误判为「全量大表」而整体丢弃，
@@ -4137,11 +5259,12 @@ function extractBrandData(b){
     spot_rate:Array.isArray(b.spot_rate)?b.spot_rate:[], aging_warn:Array.isArray(b.aging_warn)?b.aging_warn:[], chaohu:Array.isArray(b.chaohu)?b.chaohu:[],
     jzt:Array.isArray(b.jzt)?b.jzt:[], targets:Array.isArray(b.targets)?b.targets:[],
     series:Array.isArray(b.series)?b.series:[],
+    historicalGmv:b.historicalGmv||{}, historicalPos:b.historicalPos||{},
     _raw:{
       sales:raw.sales||'', inventory: stripInventory?'':raw.inventory, inv_full:'', inv_siyun:raw.inv_siyun||'',
       chaohu:raw.chaohu||'', jzt:raw.jzt||'', targets:raw.targets||'', purchase:raw.purchase||'',
       purchase_order:raw.purchase_order||'', spot_rate:raw.spot_rate||'', aging_warn:raw.aging_warn||'',
-      series:raw.series||''
+      series:raw.series||'', historicalGmv:raw.historicalGmv||'', historicalPos:raw.historicalPos||''
     },
     posInput:Object.assign({}, b.posInput||{}),
     todo:b.todo||freshBrand().todo
@@ -4323,40 +5446,96 @@ function fillInputsForCurrentBrand(){
 function clearInputs(){ $('#salesInput').value=''; $('#invInput').value=''; $('#invFullInput').value=''; $('#chaohuInput').value=''; $('#jztInput').value=''; $('#tgtInput').value=''; $('#ganttInput').value=''; $('#ppInput').value=''; $('#poInput').value=''; $('#srInput').value=''; $('#awInput').value=''; $('#seriesInput').value=''; readInputs('replace', true); }
 
 // 自动保存：每次解析/导入/编辑后调用。云端 GitHub(共享,多人可见) + 本地 IndexedDB(离线缓存)。
+/* fix69w：保存状态指示器——让用户随时看到数据保存在哪、是否成功、何时保存 */
+var __saveStatusInfo={ok:false,where:'',msg:'',at:0};
+function updateSaveStatus(ok, where, msg){
+  __saveStatusInfo={ok:!!ok, where:where||'', msg:msg||'', at:Date.now()};
+  const el=$('#saveStatus'); if(!el) return;
+  el.className=ok?'ok':(ok===false?'err':'warn');
+  const dot=el.querySelector('.dot'); if(dot){ dot.className='dot'; }
+  const txt=$('#saveStatusText'); if(!txt) return;
+  const time=ok?(' '+new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',second:'2-digit'})):'';
+  txt.textContent=(msg||'')+(where?' ['+where+']':'')+time;
+  el.title=(ok?'✅ 保存成功':'❌ 保存失败')+' | 位置='+where+' | 详情='+msg+' | '+new Date().toLocaleString();
+}
+// 页面加载完成时显示初始状态
+setTimeout(()=>{
+  if(__saveStatusInfo.at===0) updateSaveStatus(null, LOCAL_MODE?'本地模式':'云端模式', '等待操作…');
+}, 500);
+
 async function saveToService(){
-  // fix59：本地 IndexedDB 必须【先写且 await 完成】再返回。此前 idbSet(STATE) 未 await，
-  // 上传后若用户立刻刷新，本地写入尚未落盘即被丢弃（无令牌或云端推送失败时就彻底丢失）→ “刷新后数据丢失”。
-  await idbSet(STATE); // 浏览器本地主存储：容量大、离线可用（await 保证落盘后再继续）
-  if(window.__noCloudPushOnce){ return; } // 保险丝：示例初始化只存本地，不推云端
-  if(LOCAL_MODE){
-    // fix69：本地服务器模式——整份 STATE 推到本机磁盘（serve_local.js 的 /api/state），不依赖 GitHub
-    try{
-      const res=await fetch(LOCAL_BASE+'/api/state',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(STATE)});
-      if(res.ok){ if(typeof window.clearLocalUnsynced==='function') window.clearLocalUnsynced(); }
-      else { toast('⚠️ 本地服务器保存失败（HTTP '+res.status+'），数据已存本机浏览器', true); }
-    }catch(e){ toast('⚠️ 本地服务器不可达（'+LOCAL_BASE+'），数据已存本机浏览器；请确认本地服务已启动：node serve_local.js', true); }
-    return;
-  }
-  if(!ghToken()){
-    // 无令牌：云端/快照均不可写，数据只在本机浏览器。明确告警一次，避免同事以为已保存（fix28）
-    if(!window.__warnedNoToken){
-      window.__warnedNoToken=true;
-      toast('⚠️ 未配置'+cloudLabel()+'令牌：刚录入的数据仅存本机浏览器，刷新/换设备/清缓存将丢失，且同事看不到。点右下角「未配置令牌」徽章粘贴令牌，即可云端保存并团队共享。', true);
+  // fix69w：每次保存都更新状态指示器，用户能实时看到保存结果
+  updateSaveStatus(null, '保存中…', '正在保存');
+  // fix69v：本机磁盘服务器优先（localhost 与 file:// 双击且服务可达时），保存时【重新探测】服务，
+  // 永不依赖启动时的 USING_SERVER 标记（避免启动探测失败导致永不落盘）。失败再转浏览器兜底。
+  if(LOCAL_MODE || IS_LOCAL_FILE){
+    let reachable=false;
+    try{ const h=await fetch(LOCAL_BASE+'/api/health',{cache:'no-store'}); reachable=h.ok; }catch(e){ reachable=false; }
+    if(reachable){
+      try{
+        // fix69w：先验证 STATE 可被 JSON 序列化（避免写入损坏数据）
+        const payload=JSON.stringify(STATE);
+        JSON.parse(payload); // round-trip 验证
+        const res=await fetch(LOCAL_BASE+'/api/state',{method:'PUT',headers:{'Content-Type':'application/json'},body:payload});
+        if(res.ok){
+          window.__lastSaveAt=Date.now();
+          if(typeof window.clearLocalUnsynced==='function') window.clearLocalUnsynced();
+          const sizeKB=Math.round(payload.length/1024);
+          updateSaveStatus(true, '本机磁盘('+LOCAL_BASE+')', '✅ 已保存 '+sizeKB+'KB');
+          toast('✅ 已保存到本机磁盘 ('+sizeKB+'KB)');
+          return;
+        } else {
+          const errText=await res.text().catch(()=>'');
+          updateSaveStatus(false, '本机磁盘', '❌ HTTP '+res.status+(errText?' '+errText.slice(0,50):''));
+          toast('⚠️ 本机磁盘保存失败（HTTP '+res.status+'），已转存浏览器', true);
+        }
+      }catch(e){
+        updateSaveStatus(false, '本机磁盘', '❌ '+(e.message||e).slice(0,60));
+        toast('⚠️ 本机磁盘保存失败：'+(e.message||e)+'，已转存浏览器', true);
+      }
+    } else {
+      updateSaveStatus(false, '本机磁盘', '❌ 服务不可达（'+LOCAL_BASE+'）');
+      toast('⚠️ 本机服务不可达（'+LOCAL_BASE+'），数据仅存浏览器', true);
     }
-    if(typeof window.markLocalUnsynced==='function') window.markLocalUnsynced(); // fix31：常驻"未同步"警告
-    return; // 无令牌不尝试云端，避免无谓 401 报错
+  }
+  // 浏览器本地兜底（IndexedDB / localStorage）
+  const idbOk = await idbSet(STATE);
+  if(idbOk){
+    updateSaveStatus(true, '浏览器存储(IndexedDB)', '✅ 已保存到浏览器');
+  } else {
+    updateSaveStatus(false, '浏览器存储', '❌ 浏览器存储也失败了（数据过大？）');
+  }
+  // fix69u：file:// 双击模式且未连上本机服务时，若浏览器存储写入失败（如 25MB 超 localStorage 5MB 上限），明确告警
+  if(IS_LOCAL_FILE && !idbOk){
+    toast('⚠️ 浏览器存储也写入失败（数据过大超出上限）。请改用 http://127.0.0.1:8787/ 打开（需先启动 serve_local.js），否则刷新即丢失。', true);
+  }
+  if(window.__noCloudPushOnce){ return; }
+  if(LOCAL_MODE || USING_SERVER){ return; }
+  if(!ghToken()){
+    if(!IS_LOCAL_FILE){
+      if(!window.__warnedNoToken){
+        window.__warnedNoToken=true;
+        toast('⚠️ 未配置'+cloudLabel()+'令牌：刚录入的数据仅存本机浏览器，刷新/换设备/清缓存将丢失，且同事看不到。点右下角「未配置令牌」徽章粘贴令牌，即可云端保存并团队共享。', true);
+      }
+      if(typeof window.markLocalUnsynced==='function') window.markLocalUnsynced();
+    }
+    return;
   }
   try{
     const _res=await ghUpsertBoard(currentBoard.id, currentBoard.name, STATE);
     if(typeof window.clearLocalUnsynced==='function') window.clearLocalUnsynced();
-    // fix66n：云端同步未完全成功时不再静默吞掉——明确提示用户（数据已存本机），避免「以为存了实则丢了」
     if(_res && _res.ok===false){
       const _fb=(_res.failedBrands||[]).join('、');
+      updateSaveStatus(false, '云端同步', '⚠️ 部分失败'+(_fb?(' :'+_fb):''));
       toast('⚠️ 云端同步未完全成功'+( _fb?('（失败品牌：'+_fb+'）'):'')+'，数据已存本机；请检查网络后点「同步云端」重试', true);
+    } else {
+      updateSaveStatus(true, '云端(GitHub)', '✅ 已同步云端');
     }
   }
-  catch(e){ toast('⚠️ 云端同步失败（'+(errMsg(e)||'网络异常').slice(0,60)+'），数据已存本机；请检查网络后点「同步云端」重试', true); }
-  // 有令牌时同步公开快照（查看者免令牌只读）
+  catch(e){
+    updateSaveStatus(false, '云端', '❌ '+(errMsg(e)||'网络异常').slice(0,40));
+    toast('⚠️ 云端同步失败（'+(errMsg(e)||'网络异常').slice(0,60)+'），数据已存本机；请检查网络后点「同步云端」重试', true);
+  }
   try{ if(ghToken()) await ghPutPublicSnapshot(); }catch(e){ /* 快照失败不影响主存储 */ }
 }
 // fix63/fix65b：强制把本地全量数据推送到云端共享看板；据 ghUpsertBoard 真实返回结果提示「是否同步成功」
@@ -4388,17 +5567,76 @@ $('#syncCloudBtn').addEventListener('click',async()=>{
 
 /* ---------- 初始化 ---------- */
 function init(){
-  // 若以 file:// 双击打开：浏览器禁用 IndexedDB/跨域 fetch，数据无法自动持久化。提示改用本地服务地址。
-  try{ if(location.protocol==='file:'){ toast('⚠️ 当前以 file:// 方式打开，浏览器限制导致数据无法自动保存。请改用 http://127.0.0.1:8787/ 打开（先运行 start_local.command 启动本机服务，数据将自动存本机、重开不丢）', true); } }catch(e){}
+  // fix69z：版本标记时间戳（证明新代码加载）
+  (function(){ var e=document.getElementById('vmTime'); if(e) e.textContent=new Date().toLocaleString('zh-CN'); })();
+  // fix69z：显示调试信息（LOCAL_MODE、URL、LOCAL_BASE）
+  (function(){ var d=document.getElementById('vmDebug'); if(d) d.textContent='MODE='+(typeof LOCAL_MODE!=='undefined'?LOCAL_MODE:'?')+' URL='+location.href.slice(0,40); })();
+  // fix69w：显示模式横幅——让用户一眼知道当前是什么模式、数据保存在哪里
+  (function(){
+    const b=document.getElementById('modeBanner'); if(!b) return;
+    b.style.display='block';
+    if(LOCAL_MODE){
+      b.textContent='🟢 本地服务器模式（数据存本机磁盘 '+LOCAL_BASE+'）— '+location.href;
+      b.style.background='#f0fdf4'; b.style.color='#166534'; b.style.borderColor='#86efac';
+    } else if(IS_LOCAL_FILE){
+      b.textContent='🟡 文件模式（file:// 双击，数据仅存浏览器，大文件可能丢失！）— 建议改用 http://127.0.0.1:8787/';
+      b.style.background='#fffbeb'; b.style.color='#92400e'; b.style.borderColor='#fcd34d';
+    } else {
+      b.textContent='🔵 云端模式（数据存 GitHub / CloudStudio）— '+location.href;
+      b.style.background='#eff6ff'; b.style.color='#1e40af'; b.style.borderColor='#93c5fd';
+    }
+  })();
+  // —— fix69ab：renderBoardBar 定义前移至 boot() 调用之前 ——
+  // 原因：boot() 内部（第4891行）同步调用了 renderBoardBar()，但原定义在第5476行（boot()之后），
+  // 导致 "renderBoardBar is not defined" 错误 → boot() 异常 → 数据不显示
+  window.renderBoardBar=function(){
+    var bar=document.getElementById('boardBar'); if(!bar) return;
+    if(LOCAL_MODE || IS_LOCAL_FILE){
+      bar.innerHTML='<span class="bb-label">看板：'+(currentBoard.name||'李锦记')+' <small style="color:#888">(本地模式)</small></span>';
+      if(window.__hideCollabBadge){ var cb=document.getElementById('collabBadge'); if(cb) cb.style.display='none'; }
+      return;
+    }
+    ghListBoards().then(function(list){
+      bar.innerHTML='';
+      var lab=document.createElement('span'); lab.className='bb-label'; lab.textContent='看板：'; bar.appendChild(lab);
+      list.forEach(function(b){
+        var btn=document.createElement('button'); btn.className='bb-pill'+(b.id===currentBoard.id?' active':'');
+        btn.textContent=b.name; btn.title='点击切换；双击重命名';
+        btn.onclick=function(){ switchBoard(b.id,b.name); };
+        btn.ondblclick=function(){ var n=prompt('重命名看板',b.name); if(n&&n.trim()){ ghRenameBoard(b.id,n.trim()).then(function(){ b.name=n.trim(); if(b.id===currentBoard.id) currentBoard.name=n.trim(); renderBoardBar(); }).catch(function(){ toast('重命名失败'); }); } };
+        bar.appendChild(btn);
+      });
+      var add=document.createElement('button'); add.className='bb-add'; add.textContent='＋ 新建看板';
+      add.onclick=function(){ var n=prompt('新看板名称（例如：品牌名）',''); if(n&&n.trim()){ ghCreateBoard(n.trim()).then(function(nb){ currentBoard=nb; switchBoard(nb.id,nb.name,true); toast('已新建看板「'+nb.name+'」'); }).catch(function(){ toast('新建失败（云端连接？）'); }); } };
+      bar.appendChild(add);
+    }).catch(function(){ bar.innerHTML='<span class="bb-label">看板：（云端连接失败，请检查网络）</span>'; });
+  };
+
+  // 纯文件模式（file://）双击打开：数据存本机浏览器 localStorage，重开不丢，不连云端。
+  try{ if(IS_LOCAL_FILE){ toast('📁 本地模式：数据已存于本机浏览器（刷新/重开不丢）。此方式仅你本机可见；需要多人共享时再部署本机服务。', false); } }catch(e){}
   // 和路雪：达成明细 POS 实际前台可编辑（input 实时刷新、blur 千分位重格式化）
   const tt=$('#targetTable'); if(tt){ tt.addEventListener('input', onPosInput); tt.addEventListener('blur', onPosBlur, true); }
-  boot();
+  boot().catch(function(e){ console.error('[boot] UNHANDLED:', e); var sb=document.getElementById('saveStatus'); if(sb){ sb.style.background='#dc2626'; sb.style.color='#fff'; sb.textContent='❌ 启动错误: '+String(e.message||e).slice(0,100)+' · 请刷新重试或检查控制台(F12)'; } });
 }
 async function boot(){
-  // ===== fix66j 诊断：逐步记录云端加载链路，定位"徽章已连接但数据走本地缓存"的根因 =====
-  (async function diagBoot(){
+  // ===== fix69x：本地模式下完全跳过所有 GitHub/云端连接 =====
+  // fix69aa：逐行诊断——写到 versionMarker（已确认能显示）
+  var _dbg=function(msg){ try{ var d=document.getElementById('vmDebug'); if(d) d.textContent=msg; }catch(e){} console.log('[boot-diag] '+msg); };
+  _dbg('① boot() started...');
+  try { // fix69z：全局错误捕获，防止 boot() 静默失败导致页面卡死
+  _dbg('② entered try block');
+  const FORCE_LOCAL = LOCAL_MODE || IS_LOCAL_FILE; // 统一标志：任何本地模式都不连云端
+  let cloudOk=false, listErr=null, boards=[];
+  if(FORCE_LOCAL){
+    // 本地模式：彻底不连 GitHub，不调任何云端 API
+    cloudOk=false; listErr=new Error('本地模式：已禁用云端连接'); boards=[];
+    window.__hideCollabBadge=true;
+    console.log('[boot] FORCE_LOCAL=true — 跳过所有 GitHub/云端 API 调用');
+  } else {
+    // ===== fix66j 诊断：逐步记录云端加载链路（仅非本地模式） =====
+    (async function diagBoot(){
     try{
-      if(LOCAL_MODE) return; // fix69：本地模式跳过 GitHub 连通性诊断
+      if(LOCAL_MODE||IS_LOCAL_FILE) return; // fix69c：本地服务器模式 / 纯文件模式 跳过 GitHub 连通性诊断
       var t=ghToken()||'';
       console.log('[boot-diag] BACKEND_TYPE='+BACKEND_TYPE+' | token='+(t?t.slice(0,4)+'..'+t.slice(-4):'(empty)')+' | len='+t.length);
       // Step 1: 测试 Gitee API 基础连通性
@@ -4427,34 +5665,61 @@ async function boot(){
       }catch(e){ console.error('[boot-diag] Step3 FAIL', e.message||e, 'status=', e.status||'?'); }
     }catch(e){ console.error('[boot-diag] EXC', e); }
   })();
+  } // fix69aa：关闭 if(FORCE_LOCAL){...} else {...} 的 else 分支（之前缺失导致整个 script 块语法错误）
   // 先尝试真正连接云端（GitHub 用首次 list 验证凭证+网络），记录是否成功（避免误报"已连接"弹窗）
-  let cloudOk=false, listErr=null, boards=[];
-  if(!ghToken()){ listErr=new Error('未配置访问令牌'); }
-  else { try{ boards=await ghListBoards(); cloudOk=true; }catch(e){ boards=[]; listErr=e; window.__lastCloudErr=e; console.error('[GitHub] 连接/列表失败:', e); } }
-  // fix63：云端可达时缓存权威看板 ID；断网 fallback 用「缓存 ID → 共享看板常量 → lijx」三级优先级，绝不被快照里的错误 snap.id 带偏
-  if(cloudOk && boards && boards[0]) __boardIdCacheSet(boards[0].id);
-  var _knownId = __boardIdCacheGet() || SHARED_BOARD_ID;
-  // 以云端第一个看板为当前看板（不再硬编码 lijx）；若云端暂无看板，种子逻辑已在 ghListBoards 内保证至少一个
-  currentBoard = (boards && boards[0]) ? boards[0] : {id:_knownId, name:currentBoard.name||'李锦记'};
-  window.__cloudOk=cloudOk; // 供第二个脚本块的徽标/诊断参考
-  renderBoardBar();
+  // fix69x：此整段仅在非本地模式下执行
+  if(!FORCE_LOCAL){
+    let _cloudOk=false, _listErr=null, _boards=[];
+    if(!ghToken()){ _listErr=new Error('未配置访问令牌'); }
+    else { try{ _boards=await ghListBoards(); _cloudOk=true; }catch(e){ _boards=[]; _listErr=e; window.__lastCloudErr=e; console.error('[GitHub] 连接/列表失败:', e); } }
+    if(_cloudOk && _boards && _boards[0]) __boardIdCacheSet(_boards[0].id);
+    var _knownId = __boardIdCacheGet() || SHARED_BOARD_ID;
+    currentBoard = (_boards && _boards[0]) ? _boards[0] : {id:_knownId, name:currentBoard.name||'李锦记'};
+    window.__cloudOk=_cloudOk;
+    cloudOk=_cloudOk; listErr=_listErr; boards=_boards;
+    renderBoardBar(); // fix69ab：定义已前移至 boot() 调用之前，此处调用安全
+  } else {
+    // 本地模式：使用固定的看板信息，不调云端 API
+    var _knownId = __boardIdCacheGet() || SHARED_BOARD_ID;
+    currentBoard = {id:_knownId, name:'李锦记'};
+    window.__cloudOk=false;
+    if(typeof renderBoardBar==='function') renderBoardBar(); // fix69ab：防御守卫（定义已前移但保留 typeof 检查以防万一）
+  }
 
   // 启动数据源优先级：云端 > 本地 IndexedDB 缓存 > 示例数据。
   // 关键修复：之前不读 IndexedDB，且离线时灌示例会把真实数据覆盖成样例 → 刷新即丢失。
   let loaded=null, fromWhere='';
   // fix69：本地服务器模式——以本机磁盘文件为单一真源，跳过 GitHub 云端
+  _dbg('③ FORCE_LOCAL='+FORCE_LOCAL+' LOCAL_MODE='+LOCAL_MODE);
   if(LOCAL_MODE){
+    _dbg('④ entered LOCAL_MODE branch, fetching '+LOCAL_BASE+'/api/state ...');
+    window.__hideCollabBadge=true;
+    updateSaveStatus(null, null, '⏳ 正在从本机服务器加载('+LOCAL_BASE+')...');
+    console.log('[boot] LOCAL_MODE=true, fetching', LOCAL_BASE+'/api/state');
+    try{
+      _dbg('⑤ calling fetch()...');
+      const res=await fetch(LOCAL_BASE+'/api/state');
+      _dbg('⑥ fetch returned: ok='+res.ok+' status='+res.status);
+      if(res.ok){
+        _dbg('⑦ reading response text...');
+        const txt=await res.text();
+        _dbg('⑧ got text: '+(txt||'').length+' chars, parsing JSON...');
+        if(txt && txt!=='null'){ const st=JSON.parse(txt); _dbg('⑨ parsed, isUsableState='+isUsableState(st)); if(isUsableState(st)){ loaded=st; fromWhere='本地服务器'; USING_SERVER=true; await idbSet(st).catch(()=>{}); _dbg('⑩ LOADED! sales='+(st.brands&&st.brands['李锦记']?st.brands['李锦记'].sales.length:'?')); } }
+      }
+    }catch(e){ _dbg('❌ FETCH ERROR: '+(e.message||e)); console.warn('[boot] 本地服务器读取失败', e.message||e); updateSaveStatus(false, null, '❌ 服务器读取失败: '+String(e.message||e).slice(0,60)); }
+    if(!loaded){ try{ const lc=await idbGet(); if(lc&&isUsableState(lc)){ loaded=lc; fromWhere='本地缓存'; } }catch(_){} }
+  }
+  // 纯文件模式（file://）：不连任何云端；但若本机服务(serve_local.js)可达，优先用服务器磁盘数据（绕开 file:// 下 5MB localStorage / IndexedDB 限制）
+  if(IS_LOCAL_FILE){
     window.__hideCollabBadge=true;
     try{
       const res=await fetch(LOCAL_BASE+'/api/state');
-      if(res.ok){
-        const txt=await res.text();
-        if(txt && txt!=='null'){ const st=JSON.parse(txt); if(isUsableState(st)){ loaded=st; fromWhere='本地服务器'; } }
-      }
-    }catch(e){ console.warn('[boot] 本地服务器读取失败', e.message||e); }
+      if(res.ok){ const txt=await res.text(); if(txt && txt!=='null'){ const st=JSON.parse(txt); if(isUsableState(st)){ loaded=st; fromWhere='本地服务器'; USING_SERVER=true; await idbSet(st).catch(()=>{}); /* 服务器退出后也能从浏览器缓存恢复 */ } } }
+    }catch(e){ /* 服务不可达则回退浏览器缓存 */ }
     if(!loaded){ try{ const lc=await idbGet(); if(lc&&isUsableState(lc)){ loaded=lc; fromWhere='本地缓存'; } }catch(_){} }
   }
-  if(cloudOk && !LOCAL_MODE){
+  // fix69x：云端加载——仅在非本地模式下执行（FORCE_LOCAL 时完全跳过）
+  if(cloudOk && !FORCE_LOCAL){
     try{
       const raw=await ghGetFile('dashboards/'+currentBoard.id+'.json');
       const row=await loadBoardState(currentBoard.id);
@@ -4473,8 +5738,8 @@ async function boot(){
   } else {
     console.warn('[boot] cloudOk=false, 跳过云端加载. listErr=', listErr ? (listErr.message||listErr).slice(0,100) : '-');
   }
-  // 云端读不到时（无令牌，或 GitHub API 被本机网络拦截）
-  if(!loaded && !LOCAL_MODE){
+  // 云端读不到时（无令牌，或 GitHub API 被本机网络拦截）—— fix69x：本地模式不加载公开快照
+  if(!loaded && !FORCE_LOCAL){
     const snap=await fetchPublicSnapshot().catch(()=>null);
     const local=await idbGet().catch(()=>null);
     const snapOk=snap&&snap.state&&isUsableState(snap.state);
@@ -4517,26 +5782,42 @@ async function boot(){
       }catch(e){ return 'err'; }
     })();
     console.log('[dashboard] '+APP_VERSION+' reparseObj='+!!window.reparseObj+' 麦维他关键词花费='+kwSpend+' jzt总行数='+jztN+' || fromWhere='+fromWhere+' cloudOk='+cloudOk);
+    // fix69w：加载完成后立即更新保存状态指示器
+    updateSaveStatus(true, fromWhere, '已加载 · 销售'+salesN+'行 · 库存'+invN+'行 · 京准通'+jztN+'行');
     if(fromWhere==='云端'){ toast('已从云端加载数据 · '+APP_VERSION); window.__hideCollabBadge=true; }
     else if(fromWhere==='公开快照'){ toast('已载入「'+currentBoard.name+'」最新数据（只读模式，由录入同事每日更新）'); }
     else if(fromWhere==='本地优先·与公开快照合并'){ toast('已从本机恢复并合并公开快照（未配置令牌：数据仅存本机，点右下角徽章粘贴令牌即可云端共享）'); }
     else if(fromWhere==='本地服务器'){ toast('本地模式：已从本机服务器加载数据（'+LOCAL_BASE+'）'); }
     else if(fromWhere==='本地缓存' && LOCAL_MODE){ toast('本地模式：本机服务器暂不可达，已从浏览器缓存恢复'); }
+    else if(IS_LOCAL_FILE){ toast('已从本机浏览器恢复「'+currentBoard.name+'」（本地模式，数据仅存此设备）'); }
     else { toast('已从本地缓存恢复「'+currentBoard.name+'」（云端暂不可用，联网后将自动同步）'); }
   } else {
     // 真正的首次使用：本地与云端都无数据 → 载入示例（此分支才会写样例，不会覆盖已有数据）
     $('#salesInput').value=sampleSales(); $('#invInput').value=sampleInv(); $('#jztInput').value=sampleJzt(); $('#tgtInput').value=sampleTargets(); $('#ganttInput').value=sampleGantt(); $('#ppInput').value=samplePurchase(); $('#poInput').value=samplePurchaseOrder();
     // 防误覆盖保险丝：示例数据只供本地查看，禁止推送到云端（否则云端读取失败时会拿示例覆盖真实数据）
     window.__noCloudPushOnce=true; readInputs(); window.__noCloudPushOnce=false;
+    // fix69w：示例数据模式也要显示状态
+    updateSaveStatus(null, LOCAL_MODE?'本地模式':(IS_LOCAL_FILE?'文件模式':'云端'), '示例数据（待上传真实数据）');
     if(cloudOk){ toast('已连接云端（GitHub）。「'+currentBoard.name+'」看板初始为示例数据，请上传你的真实数据'); }
     else if(LOCAL_MODE){ toast('本地模式：已载入示例数据，录入后自动保存到本机服务器（'+LOCAL_BASE+'）'); }
+    else if(IS_LOCAL_FILE){ toast('本地模式：已载入示例数据，录入后自动保存到本机浏览器（双击本文件即可再次打开）'); }
     else { var why=listErr?errMsg(listErr):'网络异常'; toast('云端暂不可用（'+(why||'网络异常').slice(0,80)+'），已载入示例数据（离线模式）；配置好云端后会自动同步', true); }
   }
+  _dbg('⑪ loaded='+(loaded?'YES('+fromWhere+')':'NO')+' → calling renderAll()...');
   renderAll();
   todoInit(); migrateMemoToTodo(); setupTodoAll();
   syncBrandUI(); // 确保品牌栏与输入区选择器高亮当前品牌
   updateMwChannelBar(); // fix65c：麦维他渠道切换条按恢复后的当前品牌显示
   applyBrandSubtabs(); // 家乐/联合利华/和路雪：临时隐藏京准通推广/库存周转子视图（保留代码，后续改 JZT_INV_HIDDEN_BRANDS 即可放出）
+  } catch(bootErr){ // fix69z：boot() 全局错误捕获——确保页面不会静默卡死
+    var _stack = (bootErr.stack || '').split('\n').slice(0, 10).join(' | ');
+    _dbg('❌ FATAL: '+(bootErr.message||bootErr).slice(0,150) + ' | STACK: ' + _stack);
+    console.error('[boot] FATAL:', bootErr);
+    var sb=document.getElementById('saveStatus');
+    if(sb){ sb.style.background='#dc2626'; sb.style.color='#fff'; sb.textContent='❌ 启动失败: '+String(bootErr.message||bootErr).slice(0,80)+' | '+(bootErr.stack||'').split('\n').slice(0,3).map(function(l){return l.trim();}).join(' → '); }
+    // 即使 boot() 失败也尝试渲染（至少显示空 UI 而不是卡死）
+    try{ renderAll(); }catch(e2){ console.error('[boot] renderAll also failed:', e2); }
+  }
 }
 
 
@@ -4625,7 +5906,7 @@ function donutChart(elId,{data,yFmt=fmt}){
   el.innerHTML=lg; bindTips(el);
 }
 
-function freshBrand(){ return { sales:[], inventory:[], inv_full:[], inv_siyun:[], chaohu:[], purchase:[], purchase_order:[], spot_rate:[], aging_warn:[], series:[], jzt:[], targets:[], posInput:{}, _raw:{sales:'',inventory:'',inv_full:'',inv_siyun:'',chaohu:'',jzt:'',targets:'',purchase:'',purchase_order:'',spot_rate:'',aging_warn:'',series:''}, todo:freshTodo() }; }
+function freshBrand(){ return { sales:[], inventory:[], inv_full:[], inv_siyun:[], chaohu:[], purchase:[], purchase_order:[], spot_rate:[], aging_warn:[], series:[], jzt:[], targets:[], posInput:{}, historicalGmv:{}, historicalPos:{}, _raw:{sales:'',inventory:'',inv_full:'',inv_siyun:'',chaohu:'',jzt:'',targets:'',purchase:'',purchase_order:'',spot_rate:'',aging_warn:'',series:'',historicalGmv:'',historicalPos:''}, todo:freshTodo() }; }
 
 
 function hideTip(){ tip.style.opacity=0; }
@@ -4639,8 +5920,13 @@ const IDB_STORE = 'STATE';
 const IDB_KEY = 'STATE';
 const STORE_KEY = 'yayx-dashboard-state';
 let _idbConn=null; // fix61b：缓存单条 IndexedDB 连接，避免每次 idbGet/idbSet 都 open 新连接 → 多连接互相阻塞（boot 已持有一条时后续 open 会挂起，idbSet 永不 resolve → 刷新即丢失）
-function idbGet(){ return new Promise(async res=>{ try{ const db=await idbOpen(); const tx=db.transaction(IDB_STORE,'readonly'); const rq=tx.objectStore(IDB_STORE).get(IDB_KEY); rq.onsuccess=()=>res(rq.result||null); rq.onerror=()=>res(null); }catch(e){ res(null); } }); }
-function idbSet(val){ return new Promise(async res=>{ let ok=false; for(let attempt=0; attempt<2 && !ok; attempt++){ try{ const db=await idbOpen(); const tx=db.transaction(IDB_STORE,'readwrite'); tx.objectStore(IDB_STORE).put(val,IDB_KEY); await new Promise(r=>{ tx.oncomplete=()=>{ ok=true; r(); }; tx.onerror=()=>r(); tx.onabort=()=>r(); }); }catch(e){ /* 重试一次 */ } } if(!ok) console.warn('[idbSet] 本地存储写入失败：刚保存的数据可能无法在刷新后保留（建议配置令牌以云端备份）'); res(ok); }); }
+// 纯本地文件（file://）下 Chrome/Edge 会禁用 IndexedDB，改用 localStorage 持久化（同样落在本机浏览器，刷新/重开不丢）
+function _lsGet(){ try{ const r=localStorage.getItem(STORE_KEY); return r?JSON.parse(r):null; }catch(e){ return null; } }
+function _lsSet(v){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(v)); return true; }catch(e){ console.warn('[localStorage] 写入失败（可能超出容量上限）', e); return false; } }
+// fix69s：统一走真实 IndexedDB（容量大、可存 25MB+，file:// 双击模式也不会因 5MB localStorage 上限丢数据）。
+// 仅当 IndexedDB 不可用（极少数浏览器 file:// 限制）才退化到 localStorage，避免无限期静默丢数据。
+function idbGet(){ return new Promise(async res=>{ try{ const db=await idbOpen(); const tx=db.transaction(IDB_STORE,'readonly'); const rq=tx.objectStore(IDB_STORE).get(IDB_KEY); rq.onsuccess=()=>res(rq.result||null); rq.onerror=()=>res(null); }catch(e){ try{ res(_lsGet()); }catch(_){ res(null); } } }); }
+function idbSet(val){ return new Promise(async res=>{ let ok=false; for(let attempt=0; attempt<2 && !ok; attempt++){ try{ const db=await idbOpen(); const tx=db.transaction(IDB_STORE,'readwrite'); tx.objectStore(IDB_STORE).put(val,IDB_KEY); await new Promise(r=>{ tx.oncomplete=()=>{ ok=true; r(); }; tx.onerror=()=>r(); tx.onabort=()=>r(); }); }catch(e){ try{ _lsSet(val); ok=true; }catch(_){ /* 双重失败 */ } } } if(!ok) console.warn('[idbSet] 本地存储写入失败：刚保存的数据可能无法在刷新后保留'); res(ok); }); }
 
 function idbOpen(){ return new Promise((res,rej)=>{ try{ if(typeof indexedDB==='undefined'){ rej(new Error('no idb')); return; } if(_idbConn && !_idbConn._dead){ res(_idbConn); return; } const r=indexedDB.open(IDB_NAME,2); r.onupgradeneeded=()=>{ try{ if(!r.result.objectStoreNames.contains(IDB_STORE)) r.result.createObjectStore(IDB_STORE); }catch(_){} }; r.onsuccess=()=>{ _idbConn=r.result; _idbConn._dead=false; try{ _idbConn.onversionchange=()=>{ try{ _idbConn.close(); }catch(_){} _idbConn=null; }; }catch(_){} res(_idbConn); }; r.onerror=()=>rej(r.error||new Error('idb open failed')); }catch(e){ rej(e); } }); }
 
@@ -4654,7 +5940,7 @@ function loadState(){ try{ const raw=localStorage.getItem(STORE_KEY); if(raw){ S
 
 
 
-function legendHTML(items){ let h='<div class="legend">'; items.forEach(it=>{ h+=`<span><i style="background:${it.color}"></i>${esc(it.name)}</span>`; }); return h+'</div>'; }
+function legendHTML(items){ let h='<div class="legend">'; items.forEach(it=>{ const style=it.dash?`border-bottom:2px dashed ${it.color};height:0;width:14px;background:transparent`:`background:${it.color}`; h+=`<span><i style="${style}"></i>${esc(it.name)}</span>`; }); return h+'</div>'; }
 
 
 function lineChart(elId,{labels,series,yFmt=fmt,height=300}){
@@ -4679,6 +5965,54 @@ function lineChart(elId,{labels,series,yFmt=fmt,height=300}){
     s.data.forEach((v,i)=>{ if(v==null) return; g+=`<circle cx="${xAt(i)}" cy="${yAt(v)}" r="3.5" fill="${color}" data-tip="${esc(s.name)} · ${esc(labels[i])}<br>${yFmt(v)}" style="cursor:pointer"/>`; });
   });
   el.innerHTML=svgEl(W,H,g)+legendHTML(series.map((s,si)=>({name:s.name,color:PALETTE[si%PALETTE.length]})));
+  bindTips(el);
+}
+
+/* fix69j：混合趋势图 —— 柱状(实际值，左轴) + 折线(同比%/环比%，右轴)，用于 GMV/POS 月度达成趋势 */
+function trendChart(elId,{labels,barSeries,lineSeries,barFmt=fmt,pctFmt=v=>(v*100).toFixed(1)+'%',height=340}){
+  const el=$(elId); if(!el) return;
+  if(!labels||!labels.length){ el.innerHTML='<div class="empty">暂无数据</div>'; return; }
+  const W=800,H=height,padL=56,padR=56,padT=20,padB=46;
+  const iw=W-padL-padR, ih=H-padT-padB;
+  const n=labels.length;
+  let maxBar=0; (barSeries||[]).forEach(s=>s.data.forEach(v=>{ if(v!=null&&!isNaN(v)) maxBar=Math.max(maxBar,Math.abs(v)); }));
+  if(maxBar<=0) maxBar=1;
+  let maxPct=1; (lineSeries||[]).forEach(s=>s.data.forEach(v=>{ if(v!=null&&!isNaN(v)) maxPct=Math.max(maxPct,Math.min(Math.abs(v),3)); }));
+  if(maxPct<=0) maxPct=1;
+  const yBarAt=v=> padT+ih-(v/maxBar)*ih;
+  const yPctAt=v=> padT+ih-((v+maxPct)/(2*maxPct))*ih;
+  const groupW=iw/n, barW=Math.min(40,groupW*0.55), gap=4;
+  const xAt=i=> padL+groupW*i+groupW/2;
+  // 标签步进：每日数据密集时跳显，最多显示约 12 个标签
+  const lblStep=Math.max(1,Math.ceil(n/12));
+  let g='';
+  const barTicks=4;
+  for(let t=0;t<=barTicks;t++){ const v=maxBar*t/barTicks; const y=yBarAt(v); g+=`<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="#eef0f4"/>`; g+=`<text x="${padL-8}" y="${y+4}" text-anchor="end" font-size="11" fill="#9ca3af">${barFmt(v)}</text>`; }
+  const pctTicks=4;
+  for(let t=0;t<=pctTicks;t++){ const v=maxPct*(1-2*t/pctTicks); const y=yPctAt(v); g+=`<text x="${W-padR+6}" y="${y+4}" text-anchor="start" font-size="11" fill="#9ca3af">${pctFmt(v)}</text>`; }
+  { const y0=yPctAt(0); g+=`<line x1="${padL}" y1="${y0}" x2="${W-padR}" y2="${y0}" stroke="#e5e7eb" stroke-dasharray="4,3"/>`; }
+  labels.forEach((l,i)=>{
+    if(i%lblStep!==0&&i!==n-1) return; // 跳过非步进点（末尾始终显示）
+    const cx=xAt(i);
+    const m=String(l).match(/^(\d{4})-(\d{1,2})(?:-(\d{1,2}))?/);
+    g+=`<text x="${cx}" y="${H-padB+18}" text-anchor="middle" font-size="10" fill="#9ca3af">${m?(m[3]?m[2]+'/'+m[3].padStart(2,'0'):m[2]+'月'):esc(String(l).slice(-10))}</text>`;
+    (barSeries||[]).forEach((s,si)=>{
+      const v=s.data[i]; if(v==null||isNaN(v)) return;
+      const h=(Math.abs(v)/maxBar)*ih; const y=padT+ih-h; const startX=cx-barW/2;
+      const color=PALETTE[si%PALETTE.length];
+      g+=`<rect x="${startX}" y="${y}" width="${barW}" height="${h}" rx="2" fill="${color}" opacity="0.82" data-tip="${esc(l)}<br>${esc(s.name)}: ${barFmt(v)}" style="cursor:pointer"/>`;
+    });
+  });
+  (lineSeries||[]).forEach((s,si)=>{
+    const color=PALETTE[(barSeries?.length||0)+si];
+    let d=''; s.data.forEach((v,i)=>{ if(v==null||isNaN(v)) return; d+=(d===''?'M':'L')+xAt(i)+' '+yPctAt(v)+' '; });
+    if(d) g+=`<path d="${d}" fill="none" stroke="${color}" stroke-width="2.2" stroke-linejoin="round"/>`;
+    s.data.forEach((v,i)=>{ if(v==null||isNaN(v)) return; g+=`<circle cx="${xAt(i)}" cy="${yPctAt(v)}" r="3.2" fill="${color}" data-tip="${esc(labels[i])}<br>${esc(s.name)}: ${pctFmt(v)}" style="cursor:pointer"/>`; });
+  });
+  const legendItems=[];
+  (barSeries||[]).forEach((s,si)=>legendItems.push({name:s.name,color:PALETTE[si%PALETTE.length]}));
+  (lineSeries||[]).forEach((s,si)=>legendItems.push({name:s.name,color:PALETTE[(barSeries?.length||0)+si],dash:true}));
+  el.innerHTML=svgEl(W,H,g)+legendHTML(legendItems);
   bindTips(el);
 }
 
@@ -4754,11 +6088,11 @@ function renderSales(){
   // 保留 computeSales 供目标达成使用。
 }
 
-function sampleAgingWarn(){return `日期\t60-90天长库龄预警金额\t90天以上长库龄金额\t60-90天长库龄预警金额（基调）\t60-90天长库龄预警金额（复调）\t90天以上长库龄金额（基调）\t90天以上长库龄金额（复调）
-2026-08-17\t180000\t95000\t120000\t60000\t60000\t35000
-2026-08-18\t175000\t92000\t115000\t60000\t58000\t34000
-2026-08-19\t168000\t90000\t110000\t58000\t56000\t34000
-2026-08-20\t160000\t88000\t108000\t52000\t55000\t33000`;}
+function sampleAgingWarn(){return `商品\t商品名称\t配送中心\t长库龄数量\t0-30天\t31-60天\t61-90天\t91-120天\t121-150天\t151-180天\t181-365天\t1年以上\t品牌\t类目
+10012345\t味极鲜酱油1.8L\t北京仓\t120\t10\t30\t40\t20\t10\t5\t3\t2\t李锦记\t酱油
+10012346\t草菇老抽500ml\t上海仓\t80\t5\t20\t25\t15\t8\t4\t2\t1\t李锦记\t酱油
+10012347\t薄盐生抽1L\t广州仓\t60\t5\t15\t20\t10\t5\t3\t1\t1\t李锦记\t酱油
+10012348\t蚝油680g\t深圳仓\t40\t3\t10\t12\t8\t4\t2\t1\t0\t李锦记\t蚝油`;}
 
 function sampleGantt(){
   const t=new Date(); const y=t.getFullYear(), m=String(t.getMonth()+1).padStart(2,'0');
@@ -4866,7 +6200,12 @@ init();
 <script>
 /* ===================== 多人协作：腾讯云开发 GitHub 云端同步 + 多看板切换 ===================== */
 (function(){
+  // fix69z：本地模式下完全跳过所有云端协作文档（徽章、轮询、GitHub API、看板切换）
+  // 直接检测 URL，不依赖任何跨脚本块变量（避免作用域问题）
+  if(/^(http|https):\/\/(localhost|127\.0\.0\.1|::1)([:\/]|$)/i.test(location.href)
+  && !/[?&]cloud=1/.test(location.search)){ return; }
   if(location.protocol==='file:'){ return; } // 仅 http(s) 下启用
+  /* ===== 以下代码仅在非本地模式下执行（GitHub Pages / CloudStudio 云端部署） ===== */
   window.__COLLAB=true;
   window.__lastSaveAt=0;
   var badge=document.createElement('div');
@@ -4929,24 +6268,8 @@ init();
     }catch(e){ return 0; }
   }
 
-  // —— 看板切换栏 ——
-  window.renderBoardBar=function(){
-    var bar=document.getElementById('boardBar'); if(!bar) return;
-    ghListBoards().then(function(list){
-      bar.innerHTML='';
-      var lab=document.createElement('span'); lab.className='bb-label'; lab.textContent='看板：'; bar.appendChild(lab);
-      list.forEach(function(b){
-        var btn=document.createElement('button'); btn.className='bb-pill'+(b.id===currentBoard.id?' active':'');
-        btn.textContent=b.name; btn.title='点击切换；双击重命名';
-        btn.onclick=function(){ switchBoard(b.id,b.name); };
-        btn.ondblclick=function(){ var n=prompt('重命名看板',b.name); if(n&&n.trim()){ ghRenameBoard(b.id,n.trim()).then(function(){ b.name=n.trim(); if(b.id===currentBoard.id) currentBoard.name=n.trim(); renderBoardBar(); }).catch(function(){ toast('重命名失败'); }); } };
-        bar.appendChild(btn);
-      });
-      var add=document.createElement('button'); add.className='bb-add'; add.textContent='＋ 新建看板';
-      add.onclick=function(){ var n=prompt('新看板名称（例如：品牌名）',''); if(n&&n.trim()){ ghCreateBoard(n.trim()).then(function(nb){ currentBoard=nb; switchBoard(nb.id,nb.name,true); toast('已新建看板「'+nb.name+'」'); }).catch(function(){ toast('新建失败（云端连接？）'); }); } };
-      bar.appendChild(add);
-    }).catch(function(){ bar.innerHTML='<span class="bb-label">看板：（云端连接失败，请检查网络）</span>'; });
-  };
+  // —— 看板切换栏（定义已前移至 boot() 调用之前，fix69ab）——
+
   window.switchBoard=async function(id,name,fresh){
     try{ await ghUpsertBoard(currentBoard.id,currentBoard.name,STATE); }catch(e){} // 先保存当前看板
     currentBoard={id:id,name:name};
@@ -4958,9 +6281,11 @@ init();
   };
 
   // —— 云端轮询：别人更新且你没在输入则自动拉取 ——
+  // fix69x：本地模式下完全禁用云端轮询（不调任何 GitHub/快照 API）
   var syncing=false;
   function modalOpen(){ try{ var m=document.getElementById('ganttModal'); return m && m.classList.contains('show'); }catch(e){ return false; } }
   async function poll(){
+    if(LOCAL_MODE || IS_LOCAL_FILE){ syncing=false; return; } // 本地模式：不轮询云端
     if(syncing) return; syncing=true;
     if((window.__saving||0)>0){ syncing=false; return; } // 本机有上传在进行：跳过本轮，防止旧云端状态回灌覆盖新编辑
     if(noToken()){
