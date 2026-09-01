@@ -193,7 +193,7 @@
 <body data-page-node-id="TnJopYRx03FYyUEAnM7EON">
 <!-- fix69af 版本标记：厂直值改"厂直"+系列明细时间联动 -->
 <div id="versionMarker" style="background:linear-gradient(135deg,#16a34a,#2563eb);color:#fff;text-align:center;padding:4px 10px;font:bold 13px system-ui;position:relative;z-index:99998;">
-  🟢 fix69bo · <span id="vmMode"></span> v2026-09-01 · <span id="vmTime"></span> · <span id="vmDebug" style="font-weight:normal;opacity:.9;background:rgba(0,0,0,.2);padding:1px 6px;border-radius:3px"></span>
+  🟢 fix69bp · <span id="vmMode"></span> v2026-09-01 · <span id="vmTime"></span> · <span id="vmDebug" style="font-weight:normal;opacity:.9;background:rgba(0,0,0,.2);padding:1px 6px;border-radius:3px"></span>
 </div>
 <!-- fix69aa 终极诊断：独立小脚本（不在主282KB块内），测试JS能否执行 -->
 <script>
@@ -708,7 +708,7 @@
           <label class="filelabel" data-page-node-id="jztKwFileLbl">上传文件<input type="file" id="jztKwFile" accept=".csv,.xlsx,.xls" hidden data-page-node-id="jztKwFileInp"></label>
           <button class="btn2 ghost clearBtn" data-which="jzt_kw" data-page-node-id="jztKwClearBtn">清除历史</button>
         </div>
-        <textarea id="jztKwInput" placeholder="日期&#9;营销场景&#9;计划ID&#9;推广计划&#9;跟单SKU ID&#9;跟单SKU名称&#9;搜索词&#9;关键词&#9;展现数&#9;点击数&#9;点击率(%)&#9;花费&#9;千次展现成本&#9;平均点击成本&#9;直接订单行&#9;直接订单金额&#9;间接订单行&#9;间接订单金额&#9;总订单行&#9;总订单金额&#9;直接加购数&#9;间接加购数&#9;总加购数&#9;转化率(%)&#9;平均订单成本&#9;投产比&#9;预售订单行&#9;预售订单金额"></textarea>
+        <textarea id="jzt_kwInput" placeholder="日期&#9;营销场景&#9;计划ID&#9;推广计划&#9;跟单SKU ID&#9;跟单SKU名称&#9;搜索词&#9;关键词&#9;展现数&#9;点击数&#9;点击率(%)&#9;花费&#9;千次展现成本&#9;平均点击成本&#9;直接订单行&#9;直接订单金额&#9;间接订单行&#9;间接订单金额&#9;总订单行&#9;总订单金额&#9;直接加购数&#9;间接加购数&#9;总加购数&#9;转化率(%)&#9;平均订单成本&#9;投产比&#9;预售订单行&#9;预售订单金额"></textarea>
         <div class="diag" id="diagJztKw" data-page-node-id="jztKwDiag"></div>
       </details>
 
@@ -859,7 +859,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-09-01-fix69bo-jztkw-parse-perf';
+const APP_VERSION = '2026-09-01-fix69bp-jztkw-id-fix';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -3565,7 +3565,7 @@ function findDateCol(header, which){
 function dateInRange(date, d, ed){ if(!d) return false; if(!ed) return d===date; return date>=d && date<=ed; }
 const CLEAR_NAME={sales:'销售',inventory:'库存周转',inv_full:'库存明细(全量列)',inv_siyun:'库存明细(丝蕴)',chaohu:'巢湖库存数据',jzt:'京准通',jzt_kw:'京准通关键词',targets:'目标',gantt:'甘特图',purchase:'浮码',purchase_order:'采购单',spot_rate:'现货率',aging_warn:'长库龄预警',series:'系列划分'};
 let cmWhich=null;
-const CLEAR_EL={sales:'#salesInput',inventory:'#invInput',inv_full:'#invFullInput',inv_siyun:'#invSiyunInput',chaohu:'#chaohuInput',jzt:'#jztInput',jzt_kw:'#jztKwInput',targets:'#tgtInput',gantt:'#ganttInput',purchase:'#ppInput',purchase_order:'#poInput',spot_rate:'#srInput',aging_warn:'#awInput',series:'#seriesInput'};
+const CLEAR_EL={sales:'#salesInput',inventory:'#invInput',inv_full:'#invFullInput',inv_siyun:'#invSiyunInput',chaohu:'#chaohuInput',jzt:'#jztInput',jzt_kw:'#jzt_kwInput',targets:'#tgtInput',gantt:'#ganttInput',purchase:'#ppInput',purchase_order:'#poInput',spot_rate:'#srInput',aging_warn:'#awInput',series:'#seriesInput'};
 // 目标「类型」列下标
 function findTypeCol(header){
   const cells=String(header||'').split(/\t|,/).map(s=>String(s||'').trim().toLowerCase());
@@ -3956,7 +3956,7 @@ $$('.secBrand').forEach(sel=>sel.addEventListener('change',()=>{
   // 即视为切换当前渠道（与点击品牌 tab 等价），否则「目标数据」框会一直落在默认的 麦维他自营，
   // 导致 POP 的 by day 目标被误存到 麦维他自营、刷新后 麦维他POP 显示为空（只有麦维他POP 会丢数据的根因）。
   if(v==='麦维他自营'||v==='麦维他POP'){ switchBrand(v); return; }
-  const TA_ID={sales:'salesInput',inventory:'invInput',inv_full:'invFullInput',inv_siyun:'invSiyunInput',chaohu:'chaohuInput',purchase:'ppInput',purchase_order:'poInput',spot_rate:'srInput',aging_warn:'awInput',jzt:'jztInput',jzt_kw:'jztKwInput',targets:'tgtInput',series:'seriesInput'};
+  const TA_ID={sales:'salesInput',inventory:'invInput',inv_full:'invFullInput',inv_siyun:'invSiyunInput',chaohu:'chaohuInput',purchase:'ppInput',purchase_order:'poInput',spot_rate:'srInput',aging_warn:'awInput',jzt:'jztInput',jzt_kw:'jzt_kwInput',targets:'tgtInput',series:'seriesInput'};
   const DIAG_KEY={sales:'Sales',inventory:'Inv',inv_full:'InvFull',inv_siyun:'InvSiyun',chaohu:'Chaohu',purchase:'Pp',purchase_order:'Po',spot_rate:'Sr',aging_warn:'Aw',jzt:'Jzt',jzt_kw:'JztKw',targets:'Targets',series:'Series'};
   if(!TA_ID[w]) return; // 未知 section 直接跳过（避免 $('#undefined') 报错）
   $('#'+TA_ID[w]).value=b._raw[w]||'';
@@ -4068,7 +4068,7 @@ function routeRawByBrand(w, cur, fallback, edited){
 async function readInputs(mode, silent){
   mode=mode||'merge';
   const SECTIONS=['sales','inventory','inv_full','inv_siyun','chaohu','jzt','jzt_kw','targets','purchase','purchase_order','spot_rate','aging_warn','series'];
-  const TA={sales:'salesInput',inventory:'invInput',inv_full:'invFullInput',inv_siyun:'invSiyunInput',chaohu:'chaohuInput',jzt:'jztInput',jzt_kw:'jztKwInput',targets:'tgtInput',purchase:'ppInput',purchase_order:'poInput',spot_rate:'srInput',aging_warn:'awInput',series:'seriesInput'};
+  const TA={sales:'salesInput',inventory:'invInput',inv_full:'invFullInput',inv_siyun:'invSiyunInput',chaohu:'chaohuInput',jzt:'jztInput',jzt_kw:'jzt_kwInput',targets:'tgtInput',purchase:'ppInput',purchase_order:'poInput',spot_rate:'srInput',aging_warn:'awInput',series:'seriesInput'};
   const DIAG={sales:'Sales',inventory:'Inv',inv_full:'InvFull',inv_siyun:'InvSiyun',chaohu:'Chaohu',jzt:'Jzt',jzt_kw:'JztKw',targets:'Targets',purchase:'Pp',purchase_order:'Po',spot_rate:'Sr',aging_warn:'Aw',series:'Series'};
   // 每个输入框所属品牌：取对应 <select id="brand_xxx"> 的当前值（无效则回退当前查看品牌）
   const brandOf={}; const edited=new Set();
@@ -4161,7 +4161,7 @@ $('#applyBtn').addEventListener('click',readInputs);
 let deb; $('#salesInput').addEventListener('input',()=>{ clearTimeout(deb); deb=setTimeout(readInputs,700); });
 $('#invInput').addEventListener('input',()=>{ clearTimeout(deb); deb=setTimeout(readInputs,700); });
 $('#jztInput').addEventListener('input',()=>{ clearTimeout(deb); deb=setTimeout(readInputs,700); });
-$('#jztKwInput').addEventListener('input',()=>{ clearTimeout(deb); deb=setTimeout(readInputs,700); });
+$('#jzt_kwInput').addEventListener('input',()=>{ clearTimeout(deb); deb=setTimeout(readInputs,700); });
 $('#tgtInput').addEventListener('input',()=>{ clearTimeout(deb); deb=setTimeout(readInputs,700); });
 $('#ganttInput').addEventListener('input',()=>{ clearTimeout(deb); deb=setTimeout(readInputs,700); });
 $('#ppInput').addEventListener('input',()=>{ clearTimeout(deb); deb=setTimeout(readInputs,700); });
@@ -4838,8 +4838,8 @@ function setupFile(id,key){ const inp=$(id); const ta=()=>{ const t=$('#'+key+'I
 function loadScript(src){ return new Promise((res,rej)=>{ const s=document.createElement('script'); s.src=src; s.onload=res; s.onerror=()=>rej(new Error('CDN加载失败')); document.head.appendChild(s); }); }
 setupFile('#salesFile','sales'); setupFile('#invFile','inv'); setupFile('#jztFile','jzt'); setupFile('#jztKwFile','jzt_kw'); setupFile('#tgtFile','tgt'); setupFile('#ganttFile','gantt'); setupFile('#ppFile','pp'); setupFile('#poFile','po'); setupFile('#srFile','sr'); setupFile('#awFile','aw'); setupFile('#invFullFile','invFull'); setupFile('#invSiyunFile','invSiyun'); setupFile('#chaohuFile','chaohu'); setupFile('#seriesFile','series');
 
-$('#resetBtn').addEventListener('click',()=>{ $('#salesInput').value=sampleSales(); $('#invInput').value=sampleInv(); $('#jztInput').value=sampleJzt(); $('#jztKwInput').value=''; $('#tgtInput').value=sampleTargets(); $('#ganttInput').value=sampleGantt(); $('#ppInput').value=samplePurchase(); $('#poInput').value=samplePurchaseOrder(); $('#srInput').value=sampleSpotRate(); $('#awInput').value=sampleAgingWarn(); $('#invFullInput').value=sampleInvFull(); $('#invSiyunInput').value=sampleInvSiyun(); $('#chaohuInput').value=sampleChaohu(); readInputs('replace'); syncBrandUI(); toast('已恢复示例数据（写入品牌「'+STATE.currentBrand+'」，历史已清空，重新计算）'); });
-$('#clearBtn').addEventListener('click',()=>{ const bn=STATE.currentBrand; if(confirm('确认清空品牌「'+bn+'」的全部数据？（甘特图与事项除外）')){ const b=B(); b.sales=[];b.inventory=[];b.inv_full=[];b.inv_siyun=[];b.chaohu=[];b.jzt=[];b.jzt_kw=[];b.targets=[];b.purchase=[];b.purchase_order=[];b.spot_rate=[];b.aging_warn=[]; b._raw={sales:'',inventory:'',inv_full:'',inv_siyun:'',chaohu:'',jzt:'',jzt_kw:'',targets:'',purchase:'',purchase_order:'',spot_rate:'',aging_warn:''}; b.todo=freshTodo(); $('#salesInput').value='';$('#invInput').value='';$('#invFullInput').value='';$('#invSiyunInput').value='';$('#chaohuInput').value='';$('#jztInput').value='';$('#jztKwInput').value='';$('#tgtInput').value='';$('#ppInput').value='';$('#poInput').value='';$('#srInput').value='';$('#awInput').value=''; syncBrandUI(); readInputs('replace', true); saveState(); renderAll(); saveToService(); setupTodoAll(); toast('已清空品牌「'+bn+'」的数据'); } });
+$('#resetBtn').addEventListener('click',()=>{ $('#salesInput').value=sampleSales(); $('#invInput').value=sampleInv(); $('#jztInput').value=sampleJzt(); $('#jzt_kwInput').value=''; $('#tgtInput').value=sampleTargets(); $('#ganttInput').value=sampleGantt(); $('#ppInput').value=samplePurchase(); $('#poInput').value=samplePurchaseOrder(); $('#srInput').value=sampleSpotRate(); $('#awInput').value=sampleAgingWarn(); $('#invFullInput').value=sampleInvFull(); $('#invSiyunInput').value=sampleInvSiyun(); $('#chaohuInput').value=sampleChaohu(); readInputs('replace'); syncBrandUI(); toast('已恢复示例数据（写入品牌「'+STATE.currentBrand+'」，历史已清空，重新计算）'); });
+$('#clearBtn').addEventListener('click',()=>{ const bn=STATE.currentBrand; if(confirm('确认清空品牌「'+bn+'」的全部数据？（甘特图与事项除外）')){ const b=B(); b.sales=[];b.inventory=[];b.inv_full=[];b.inv_siyun=[];b.chaohu=[];b.jzt=[];b.jzt_kw=[];b.targets=[];b.purchase=[];b.purchase_order=[];b.spot_rate=[];b.aging_warn=[]; b._raw={sales:'',inventory:'',inv_full:'',inv_siyun:'',chaohu:'',jzt:'',jzt_kw:'',targets:'',purchase:'',purchase_order:'',spot_rate:'',aging_warn:''}; b.todo=freshTodo(); $('#salesInput').value='';$('#invInput').value='';$('#invFullInput').value='';$('#invSiyunInput').value='';$('#chaohuInput').value='';$('#jztInput').value='';$('#jzt_kwInput').value='';$('#tgtInput').value='';$('#ppInput').value='';$('#poInput').value='';$('#srInput').value='';$('#awInput').value=''; syncBrandUI(); readInputs('replace', true); saveState(); renderAll(); saveToService(); setupTodoAll(); toast('已清空品牌「'+bn+'」的数据'); } });
 // 导出数据包：把完整 STATE（含解析结果与原始输入）存成 JSON 文件，刷新/换机后可「导入数据包」还原
 $('#exportBtn').addEventListener('click',()=>{
   const pkg={ version:3, exportedAt:new Date().toISOString(), state:STATE };
@@ -5562,13 +5562,13 @@ function hydrateFromState(st){
 // 把当前品牌的原始输入回填到数据输入区文本框（供查看/编辑）；甘特图回填到共享框
 function fillInputsForCurrentBrand(){
   const b=B();
-  $('#invFullInput').value=b._raw.inv_full||''; $('#invSiyunInput').value=b._raw.inv_siyun||''; $('#salesInput').value=b._raw.sales||''; $('#invInput').value=b._raw.inventory||''; $('#jztInput').value=b._raw.jzt||''; $('#jztKwInput').value=b._raw.jzt_kw||'';
+  $('#invFullInput').value=b._raw.inv_full||''; $('#invSiyunInput').value=b._raw.inv_siyun||''; $('#salesInput').value=b._raw.sales||''; $('#invInput').value=b._raw.inventory||''; $('#jztInput').value=b._raw.jzt||''; $('#jzt_kwInput').value=b._raw.jzt_kw||'';
   $('#tgtInput').value=(b._raw.targets&&b._raw.targets.trim())?b._raw.targets:targetRowsToText(b.targets||[]); $('#ppInput').value=b._raw.purchase||''; $('#poInput').value=b._raw.purchase_order||''; $('#srInput').value=b._raw.spot_rate||''; $('#awInput').value=b._raw.aging_warn||''; $('#chaohuInput').value=b._raw.chaohu||''; $('#seriesInput').value=b._raw.series||''; $('#ganttInput').value=STATE.ganttRaw||''; /* fix68：系列划分回填 */
   try{ renderSeriesPreview(); }catch(e){} // fix68：切换品牌后同步预览表
   // 同步品牌栏与各输入区品牌选择器为当前品牌
   syncBrandUI(); updateMwChannelBar();
 }
-function clearInputs(){ $('#salesInput').value=''; $('#invInput').value=''; $('#invFullInput').value=''; $('#chaohuInput').value=''; $('#jztInput').value=''; $('#jztKwInput').value=''; $('#tgtInput').value=''; $('#ganttInput').value=''; $('#ppInput').value=''; $('#poInput').value=''; $('#srInput').value=''; $('#awInput').value=''; $('#seriesInput').value=''; readInputs('replace', true); }
+function clearInputs(){ $('#salesInput').value=''; $('#invInput').value=''; $('#invFullInput').value=''; $('#chaohuInput').value=''; $('#jztInput').value=''; $('#jzt_kwInput').value=''; $('#tgtInput').value=''; $('#ganttInput').value=''; $('#ppInput').value=''; $('#poInput').value=''; $('#srInput').value=''; $('#awInput').value=''; $('#seriesInput').value=''; readInputs('replace', true); }
 
 // 自动保存：每次解析/导入/编辑后调用。云端 GitHub(共享,多人可见) + 本地 IndexedDB(离线缓存)。
 /* fix69w：保存状态指示器——让用户随时看到数据保存在哪、是否成功、何时保存 */
