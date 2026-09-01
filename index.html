@@ -129,6 +129,8 @@
   table.tpl{width:100%;border-collapse:collapse;margin-top:8px;font-size:12px}
   table.tpl th,table.tpl td{border:1px solid var(--line);padding:6px 8px;text-align:left}
   table.tpl th{background:#f3f4f6}
+  table.tpl th.ratio-col{background:#fef3c7}
+  table.tpl td.ratio-col{background:#fffbeb}
   .chart-svg{width:100%;height:auto;display:block}
   .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:6px}
   .legend span{display:inline-flex;align-items:center;gap:5px}
@@ -228,7 +230,7 @@
 <body data-page-node-id="TnJopYRx03FYyUEAnM7EON">
 <!-- fix69af 版本标记：厂直值改"厂直"+系列明细时间联动 -->
 <div id="versionMarker" style="background:linear-gradient(135deg,#16a34a,#2563eb);color:#fff;text-align:center;padding:4px 10px;font:bold 13px system-ui;position:relative;z-index:99998;">
-  🟢 fix69bq · <span id="vmMode"></span> v2026-09-01 · <span id="vmTime"></span> · <span id="vmDebug" style="font-weight:normal;opacity:.9;background:rgba(0,0,0,.2);padding:1px 6px;border-radius:3px"></span>
+  🟢 fix69cc · <span id="vmMode"></span> v2026-09-01 · <span id="vmTime"></span> · <span id="vmDebug" style="font-weight:normal;opacity:.9;background:rgba(0,0,0,.2);padding:1px 6px;border-radius:3px"></span>
 </div>
 <!-- fix69aa 终极诊断：独立小脚本（不在主282KB块内），测试JS能否执行 -->
 <script>
@@ -916,7 +918,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-09-01-fix69bq-jztkw-crash-fix';
+const APP_VERSION = '2026-09-01-fix69cc-jzt-spend-ratio';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -2245,7 +2247,7 @@ function renderJzt(){
   let t='<table class="tpl" style="margin-top:8px">';
   t+='<thead><tr>';
   t+='<th rowspan="2">渠道</th>';
-  ['花费','点击','成交','CPC','ROI'].forEach(k=>{ t+=`<th colspan="3">${esc(k)}</th>`; });
+  ['花费','点击','成交','CPC','ROI'].forEach((k,i)=>{ t+=`<th colspan="3">${esc(k)}</th>`; if(i===0) t+='<th rowspan="2" class="ratio-col">花费占比</th>'; });
   t+='</tr><tr>';
   for(let i=0;i<5;i++){ t+='<th style="font-size:11px">本期</th><th style="font-size:11px">同比</th><th style="font-size:11px">环比</th>'; }
   t+='</tr></thead><tbody>';
@@ -2264,6 +2266,7 @@ function renderJzt(){
     t+='<tr>';
     t+=`<td>${esc(name)}</td>`;
     t+=cell(s.spend,ys.spend,ms.spend,fmtMoney);
+    t+=`<td class="ratio-col">${tS>0?fmtPct(s.spend/tS):'—'}</td>`;
     t+=cell(s.clicks,ys.clicks,ms.clicks,(v)=>fmt(v,0));
     t+=cell(s.gmv,ys.gmv,ms.gmv,fmtMoney);
     t+=cell(cpc,yc,mc,fmtMoney);
@@ -2277,6 +2280,7 @@ function renderJzt(){
   t+='<tr style="font-weight:500;border-top:2px solid var(--border-secondary,rgba(0,0,0,.3))">';
   t+='<td>合计</td>';
   t+=cell(tS,yS,mS,fmtMoney);
+  t+=`<td class="ratio-col">100%</td>`;
   t+=cell(c.totalClk,yClk,mClk,(v)=>fmt(v,0));
   t+=cell(tG,yG,mG,fmtMoney);
   t+=cell(totCpc,yTotCpc,mTotCpc,fmtMoney);
@@ -2293,10 +2297,11 @@ function renderJzt(){
   const kwM=computeJztKw(mStart,mEnd);
 
   if(kwC){
+    const kwDenom=kwC.totals.spend;
     // ===== 词类表：品类词 / 品牌词 / 总计 =====
     t+='<table class="tpl" style="margin-top:8px">';
     t+='<thead><tr><th rowspan="2">词类</th>';
-    ['花费','点击','成交','CPC','ROI'].forEach(k=>{ t+=`<th colspan="3">${esc(k)}</th>`; });
+    ['花费','点击','成交','CPC','ROI'].forEach((k,i)=>{ t+=`<th colspan="3">${esc(k)}</th>`; if(i===0) t+='<th rowspan="2" class="ratio-col">花费占比</th>'; });
     t+='</tr><tr>';
     for(let i=0;i<5;i++){ t+='<th style="font-size:11px">本期</th><th style="font-size:11px">同比</th><th style="font-size:11px">环比</th>'; }
     t+='</tr></thead><tbody>';
@@ -2312,6 +2317,7 @@ function renderJzt(){
       t+='<tr>';
       t+=`<td>${esc(cat)}</td>`;
       t+=cell(c.spend,y?y.spend:null,m?m.spend:null,fmtMoney);
+      t+=`<td class="ratio-col">${kwDenom>0?fmtPct(c.spend/kwDenom):'—'}</td>`;
       t+=cell(c.clicks,y?y.clicks:null,m?m.clicks:null,(v)=>fmt(v,0));
       t+=cell(c.gmv,y?y.gmv:null,m?m.gmv:null,fmtMoney);
       t+=cell(cpc,yc,mc,fmtMoney);
@@ -2326,6 +2332,7 @@ function renderJzt(){
     t+='<tr style="font-weight:500;border-top:2px solid var(--border-secondary,rgba(0,0,0,.3))">';
     t+='<td>总计</td>';
     t+=cell(kt.spend,yt?yt.spend:null,mt?mt.spend:null,fmtMoney);
+    t+=`<td class="ratio-col">100%</td>`;
     t+=cell(kt.clicks,yt?yt.clicks:null,mt?mt.clicks:null,(v)=>fmt(v,0));
     t+=cell(kt.gmv,yt?yt.gmv:null,mt?mt.gmv:null,fmtMoney);
     t+=cell(tc,ytc,mtc,fmtMoney);
@@ -2337,7 +2344,7 @@ function renderJzt(){
     const topKw=kwNames.slice(0,50);
     t+='<table class="tpl" style="margin-top:12px">';
     t+='<thead><tr><th rowspan="2">TOP关键词</th>';
-    ['花费','点击','成交','CPC','ROI'].forEach(k=>{ t+=`<th colspan="3">${esc(k)}</th>`; });
+    ['花费','点击','成交','CPC','ROI'].forEach((k,i)=>{ t+=`<th colspan="3">${esc(k)}</th>`; if(i===0) t+='<th rowspan="2" class="ratio-col">花费占比</th>'; });
     t+='</tr><tr>';
     for(let i=0;i<5;i++){ t+='<th style="font-size:11px">本期</th><th style="font-size:11px">同比</th><th style="font-size:11px">环比</th>'; }
     t+='</tr></thead><tbody>';
@@ -2351,6 +2358,7 @@ function renderJzt(){
       t+='<tr>';
       t+=`<td>${esc(kw)}</td>`;
       t+=cell(o.spend,oy?oy.spend:null,om?om.spend:null,fmtMoney);
+      t+=`<td class="ratio-col">${kwDenom>0?fmtPct(o.spend/kwDenom):'—'}</td>`;
       t+=cell(o.clicks,oy?oy.clicks:null,om?om.clicks:null,(v)=>fmt(v,0));
       t+=cell(o.gmv,oy?oy.gmv:null,om?om.gmv:null,fmtMoney);
       t+=cell(cpc,yc,mc,fmtMoney);
@@ -2372,11 +2380,12 @@ function renderJzt(){
   const serYoy=jztBySeries(jRowsIn(yStart,yEnd),serMap);
   const serMom=jztBySeries(jRowsIn(mStart,mEnd),serMap);
   const serNames=Object.keys(serCur).sort((a,b)=>serCur[b].total.spend-serCur[a].total.spend);
+  const serDenom=serNames.reduce((a,n)=>a+serCur[n].total.spend,0);
   if(serNames.length){
     t+='<h3 style="color:#dc2626;margin:18px 0 10px;font-size:15px">系列数据</h3>';
     t+='<table class="tpl" style="margin-top:8px">';
     t+='<thead><tr><th rowspan="2">系列 / 品</th>';
-    ['花费','点击','成交','CPC','ROI'].forEach(k=>{ t+=`<th colspan="3">${esc(k)}</th>`; });
+    ['花费','点击','成交','CPC','ROI'].forEach((k,i)=>{ t+=`<th colspan="3">${esc(k)}</th>`; if(i===0) t+='<th rowspan="2" class="ratio-col">花费占比</th>'; });
     t+='</tr><tr>';
     for(let i=0;i<5;i++){ t+='<th style="font-size:11px">本期</th><th style="font-size:11px">同比</th><th style="font-size:11px">环比</th>'; }
     t+='</tr></thead><tbody>';
@@ -2389,6 +2398,7 @@ function renderJzt(){
       t+=`<tr class="ser-head" data-target="${rowId}" onclick="jztToggleSeries('${rowId}')" style="cursor:pointer;background:#f7f8fa;font-weight:600">`;
       t+=`<td><span class="tw" style="display:inline-block;width:14px;color:#dc2626">▶</span>${esc(name)} <span style="font-weight:400;color:#888;font-size:11px">(点开看各品)</span></td>`;
       t+=cell(s.spend,ys.spend,ms.spend,fmtMoney);
+      t+=`<td class="ratio-col">${serDenom>0?fmtPct(s.spend/serDenom):'—'}</td>`;
       t+=cell(s.clicks,ys.clicks,ms.clicks,(v)=>fmt(v,0));
       t+=cell(s.gmv,ys.gmv,ms.gmv,fmtMoney);
       t+=cell(cpc,yc,mc,fmtMoney);
@@ -2409,6 +2419,7 @@ function renderJzt(){
           t+=`<tr id="${pid}" class="ser-detail" style="display:none;background:#fafbfc">`;
           t+=`<td style="padding-left:28px;font-size:12px;color:#555">${esc(pn)}</td>`;
           t+=cell(p.spend,yp.spend,mp.spend,fmtMoney);
+          t+=`<td class="ratio-col">${s.spend>0?fmtPct(p.spend/s.spend):'—'}</td>`;
           t+=cell(p.clicks,yp.clicks,mp.clicks,(v)=>fmt(v,0));
           t+=cell(p.gmv,yp.gmv,mp.gmv,fmtMoney);
           t+=cell(pc,ypc,mpc,fmtMoney);
