@@ -163,10 +163,12 @@
   .fcal-time-col{width:64px;flex-shrink:0;border-right:1px solid #e2e8f0;padding:8px 4px;text-align:center;font-size:11px;color:#9ca3af;font-weight:600}
   .fcal-day-col{flex:1;min-width:0;padding:8px 4px;text-align:center;border-right:1px solid #eef0f4}
   .fcal-day-col:last-child{border-right:none}
+  .fcal-day-col.other-month-col{background:#f9fafb}
   .fcal-day-name{font-size:11px;color:#9ca3af;margin-bottom:2px}
+  .fcal-day-name.other-month{color:#d1d5db}
   .fcal-day-num{font-size:16px;font-weight:700;color:#374151}
   .fcal-day-num.today{color:#2563eb;background:#dbeafe;width:28px;height:28px;line-height:28px;border-radius:50%;display:inline-block}
-  .fcal-day-num.other-month{color:#d1d5db}
+  .fcal-day-num.other-month{color:#d1d5db;font-weight:400}
   .fcal-body{display:flex;position:relative;min-height:520px;max-height:600px;overflow-y:auto}
   .fcal-time-labels{width:64px;flex-shrink:0;border-right:1px solid #e2e8f0;position:sticky;left:0;background:#fafbfc;z-index:1}
   .fcal-time-row{height:52px;border-bottom:1px solid #f1f3f5;display:flex;align-items:flex-start;justify-content:center;padding-top:-2px;position:relative}
@@ -175,7 +177,8 @@
   .fcal-grid{flex:1;display:flex;position:relative}
   .fcal-col{flex:1;min-width:0;border-right:1px solid #f1f3f5;position:relative;cursor:pointer}
   .fcal-col:last-child{border-right:none}
-  .fcal-col:hover{background:#fafbff}
+  .fcal-col.other-month-col{background:#fafbfc}
+  .fcal-col.other-month-col:hover{background:#f5f6f8}
   .fcal-col.today-col{background:#fffbeb}
   .fcal-event{position:absolute;left:3px;right:3px;border-radius:5px;padding:3px 6px;font-size:11px;cursor:pointer;z-index:3;overflow:hidden;border-left:3px solid;transition:box-shadow .15s,line-height .15s;white-space:nowrap;text-overflow:ellipsis;line-height:1.4}
   .fcal-event:hover{box-shadow:0 2px 8px rgba(0,0,0,.12);z-index:5}
@@ -3398,9 +3401,10 @@ function renderFeishuCalendar(){
     var dt=new Date(d.slice(0,4), d.slice(5,7)-1, d.slice(8,10));
     var wd=dt.getDay(), dn=+d.slice(8,10);
     var isToday=(d===today);
-    var isOtherMonth=isMonth && (d.slice(0,7)!==ws.slice(0,7));
-    head+='<div class="fcal-day-col'+(isToday?' today-col':'')+'">';
-    head+='<div class="fcal-day-name">'+WD[wd]+'</div>';
+    /* 月视图下用 displayYm 判断是否为当月日期（不用 ws，因为 ws 可能属上月） */
+    var isOtherMonth=isMonth && (d.slice(0,7)!==displayYm);
+    head+='<div class="fcal-day-col'+(isToday?' today-col':'')+(isOtherMonth?' other-month-col':'')+'">';
+    head+='<div class="fcal-day-name'+(isOtherMonth?' other-month':'')+'">'+WD[wd]+'</div>';
     head+='<div class="fcal-day-num'+(isToday?' today':'')+(isOtherMonth?' other-month':'')+'">'+dn+'</div>';
     head+='</div>';
   });
@@ -3418,8 +3422,9 @@ function renderFeishuCalendar(){
   body+='<div class="fcal-grid">';
   days.forEach(function(d){
     var isToday=(d===today);
+    var isOtherMonthCol=isMonth && (d.slice(0,7)!==displayYm);
     var dayEvents=eventsByDay[d]||[];
-    body+='<div class="fcal-col'+(isToday?' today-col':'')+'" data-fcal-date="'+d+'">';
+    body+='<div class="fcal-col'+(isToday?' today-col':'')+(isOtherMonthCol?' other-month-col':'')+'" data-fcal-date="'+d+'">';
     /* 渲染该日的事件块 */
     dayEvents.forEach(function(ev){
       var pos=eventPos(ev.startTime, ev.endTime);
