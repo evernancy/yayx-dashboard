@@ -109,6 +109,20 @@
   .todo-row:hover .todo-del{opacity:.5}
   .todo-row .todo-del:hover{opacity:1}
   .todo-row.todo-new .todo-line{color:var(--muted)}
+  /* fix69cf：事项面板保存按钮 + 日期历史筛选 */
+  .todo-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:4px 0 10px;padding:7px 10px;background:#f5f7fb;border:1px solid var(--line);border-radius:10px;flex:0 0 100%}
+  .todo-bar .todo-save-btn{padding:5px 14px;border-radius:8px;border:1px solid var(--blue,#2f6fed);background:var(--blue,#2f6fed);color:#fff;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+  .todo-bar .todo-save-btn:hover{filter:brightness(.95)}
+  .todo-bar .todo-lastsave{font-size:12px;color:var(--muted)}
+  .todo-bar .todo-hist-label{font-size:12px;color:#374151;font-weight:500}
+  .todo-bar .todo-hist-sel{padding:4px 8px;border:1px solid var(--line);border-radius:7px;font-size:12px;background:#fff;color:var(--ink);max-width:170px}
+  .todo-bar .todo-back-btn{padding:4px 12px;border-radius:8px;border:1px solid var(--blue,#2f6fed);background:#fff;color:var(--blue,#2f6fed);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
+  .todo-hist-banner{grid-column:1 / -1;display:flex;gap:12px;align-items:center;margin-bottom:8px;padding:6px 12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;font-size:13px;color:#9a3412;font-weight:600}
+  .todo-hist-banner .todo-back-btn{margin-left:auto}
+  .todo-box.todo-readonly{background:#f8fafc;opacity:.96}
+  .todo-ro-text{flex:1;min-width:0;font-size:13px;line-height:1.5;color:var(--ink);padding:2px 0;word-break:break-all}
+  .todo-row.done .todo-ro-text{text-decoration:line-through;color:var(--muted)}
+
   .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
   .row .btn2{background:#fff;border:1px solid var(--line);border-radius:8px;padding:7px 12px;cursor:pointer;font-size:13px;color:var(--ink)}
   .row .btn2:hover{border-color:var(--blue);color:var(--blue)}
@@ -228,7 +242,7 @@
 <body data-page-node-id="TnJopYRx03FYyUEAnM7EON">
 <!-- fix69af 版本标记：厂直值改"厂直"+系列明细时间联动 -->
 <div id="versionMarker" style="background:linear-gradient(135deg,#16a34a,#2563eb);color:#fff;text-align:center;padding:4px 10px;font:bold 13px system-ui;position:relative;z-index:99998;">
-  🟢 fix69ce · <span id="vmMode"></span> v2026-09-01 · <span id="vmTime"></span> · <span id="vmDebug" style="font-weight:normal;opacity:.9;background:rgba(0,0,0,.2);padding:1px 6px;border-radius:3px"></span>
+  🟢 fix69cf · <span id="vmMode"></span> v2026-09-01 · <span id="vmTime"></span> · <span id="vmDebug" style="font-weight:normal;opacity:.9;background:rgba(0,0,0,.2);padding:1px 6px;border-radius:3px"></span>
 </div>
 <!-- fix69aa 终极诊断：独立小脚本（不在主282KB块内），测试JS能否执行 -->
 <script>
@@ -916,7 +930,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-09-01-fix69ce-jzt-topkw-wordtype-filter';
+const APP_VERSION = '2026-09-01-fix69cf-todo-save-history';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -4254,6 +4268,7 @@ function updateMwChannelBar(){
 }
 function switchBrand(name){
   // 「麦维他」为顶层品牌 tab，实际数据按渠道存于「麦维他自营」（默认渠道）
+  todoView={}; // fix69cf：切换品牌时清空历史只读视图，避免跨品牌串味
   const displayName=name;
   if(name==='麦维他') name='麦维他自营';
   if(!STATE.brands[name]) return;
@@ -5386,9 +5401,13 @@ let toastT; function toast(msg,persist){ const t=$('#toast'); t.textContent=msg;
 
 /* ---------- 前台待办清单：各视图 上周/本周 两列，带勾选的代办事项，自动持久化 ---------- */
 const TODO_KEYS=['sales','inventory','jzt','mt_marketing','mt_design','mt_data','mt_service'];
+/* fix69cf：带「保存+日期历史」的事项面板（销售 / 京准通 / 中台4）单独保存 */
+const TODO_SAVE_KEYS=['sales','jzt','mt_marketing','mt_design','mt_data','mt_service'];
+/* 当前是否处于「查看历史只读」状态（瞬态，不入 STATE） */
+var todoView={};
 function freshTodo(){ return {sales:{last:[],this:[]},inventory:{last:[],this:[]},jzt:{last:[],this:[]},mt_marketing:{last:[],this:[]},mt_design:{last:[],this:[]},mt_data:{last:[],this:[]},mt_service:{last:[],this:[]}}; }
 function escAttr(s){ return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function todoInit(){ B().todo=B().todo||{}; TODO_KEYS.forEach(w=>{ B().todo[w]=B().todo[w]||{last:[],this:[]}; B().todo[w].last=B().todo[w].last||[]; B().todo[w].this=B().todo[w].this||[]; }); }
+function todoInit(){ B().todo=B().todo||{}; TODO_KEYS.forEach(w=>{ B().todo[w]=B().todo[w]||{last:[],this:[]}; B().todo[w].last=B().todo[w].last||[]; B().todo[w].this=B().todo[w].this||[]; }); B().todoHistory=B().todoHistory||{}; B().todoLastSave=B().todoLastSave||{}; TODO_SAVE_KEYS.forEach(w=>{ B().todoHistory[w]=B().todoHistory[w]||{}; }); }
 // 兼容旧版 memo 纯文本：首启若有备注，移入对应「本周」待办
 function migrateMemoToTodo(){ TODO_KEYS.forEach(w=>{ const m=(STATE.memo&&STATE.memo[w]||'').trim(); if(m && B().todo[w].last.length===0 && B().todo[w].this.length===0){ m.split(/\r?\n/).forEach(t=>{ if(t.trim()) B().todo[w].this.push({text:t.trim(),done:false}); }); } }); STATE.memo={sales:'',inventory:'',jzt:''}; }
 function buildTodoContainer(which){
@@ -5426,26 +5445,32 @@ function focusTodoLine(which,col,sel){ const grid=$('#todo_'+which); if(!grid) r
 function setupTodo(which){
   const grid=$('#todo_'+which); if(!grid) return;
   buildTodoContainer(which);
+  if(TODO_SAVE_KEYS.indexOf(which)>=0) ensureTodoToolbar(which);
   renderTodoColumn(which,'last'); renderTodoColumn(which,'this');
+  if(todoView[which]) viewTodoHistory(which, todoView[which]); // 重渲染后保持历史只读视图
   if(grid.dataset.wired) return; grid.dataset.wired='1';
   grid.addEventListener('input',(e)=>{
+    if(todoView[which]) return; // 历史只读时不响应编辑
     const row=e.target.closest('.todo-row'); if(!row||!e.target.classList.contains('todo-line')) return;
     const col=row.dataset.col, idx=row.dataset.idx;
     if(idx==='__new__') return;
     B().todo[which][col][+idx].text=e.target.value; saveTodoDeb();
   });
   grid.addEventListener('change',(e)=>{
+    if(todoView[which]) return;
     const row=e.target.closest('.todo-row'); if(!row||!e.target.classList.contains('todo-chk')) return;
     const col=row.dataset.col, idx=+row.dataset.idx; const done=e.target.checked;
     B().todo[which][col][idx].done=done; row.classList.toggle('done',done); updateTodoCnt(which); saveTodoDeb();
   });
   grid.addEventListener('click',(e)=>{
+    if(todoView[which]) return;
     if(!e.target.classList.contains('todo-del')) return;
     const row=e.target.closest('.todo-row'); if(!row||!row.isConnected) return;
     const col=row.dataset.col, idx=+row.dataset.idx;
     B().todo[which][col].splice(idx,1); renderTodoColumn(which,col); saveTodoDeb();
   });
   grid.addEventListener('keydown',(e)=>{
+    if(todoView[which]) return;
     if(e.key!=='Enter'||!e.target.classList.contains('todo-line')) return;
     const row=e.target.closest('.todo-row'); if(!row) return;
     e.preventDefault();
@@ -5455,6 +5480,7 @@ function setupTodo(which){
     saveTodoDeb();
   });
   grid.addEventListener('focusout',(e)=>{
+    if(todoView[which]) return;
     const row=e.target.closest('.todo-row'); if(!row||!row.isConnected) return;
     if(!e.target.classList||!e.target.classList.contains('todo-line')) return;
     const col=row.dataset.col, idx=row.dataset.idx;
@@ -5462,6 +5488,62 @@ function setupTodo(which){
   });
 }
 function setupTodoAll(){ TODO_KEYS.forEach(setupTodo); }
+
+/* ---------- fix69cf：事项面板「保存 + 日期历史」 ---------- */
+function ensureTodoToolbar(which){
+  const grid=$('#todo_'+which); if(!grid) return;
+  let bar=document.getElementById('todoBar_'+which);
+  if(!bar){ bar=document.createElement('div'); bar.id='todoBar_'+which; bar.className='todo-bar'; if(grid.parentNode) grid.parentNode.insertBefore(bar, grid); }
+  renderTodoToolbar(which);
+}
+function renderTodoToolbar(which){
+  const bar=document.getElementById('todoBar_'+which); if(!bar) return;
+  const hist=(B().todoHistory&&B().todoHistory[which])?B().todoHistory[which]:{};
+  const dates=Object.keys(hist).filter(d=>hist[d]&&hist[d].items).sort().reverse();
+  const last=(B().todoLastSave&&B().todoLastSave[which])||'';
+  const viewing=todoView[which]||'';
+  let h='<button type="button" class="todo-save-btn" onclick="saveTodoSnapshot(\''+which+'\')">💾 保存</button>';
+  h+='<span class="todo-lastsave">最后保存：'+(last||'—')+'</span>';
+  h+='<span class="todo-hist-label">历史：</span><select class="todo-hist-sel" onchange="onTodoHistPick(\''+which+'\',this.value)">';
+  h+='<option value="">— 当前编辑 —</option>';
+  dates.forEach(d=>{ h+='<option value="'+d+'"'+(d===viewing?' selected':'')+'>'+d+'</option>'; });
+  h+='</select>';
+  if(viewing){ h+=' <button type="button" class="todo-back-btn" onclick="exitTodoHistory(\''+which+'\')">← 返回编辑</button>'; }
+  bar.innerHTML=h;
+}
+function saveTodoSnapshot(which){
+  try{
+    const now=new Date();
+    const d=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+    B().todoHistory=B().todoHistory||{}; B().todoHistory[which]=B().todoHistory[which]||{};
+    B().todoHistory[which][d]={ts:now.getTime(), items:{last:(B().todo[which].last||[]).map(x=>({text:x.text,done:!!x.done})), this:(B().todo[which].this||[]).map(x=>({text:x.text,done:!!x.done}))}};
+    B().todoLastSave=B().todoLastSave||{}; B().todoLastSave[which]=d;
+    if(typeof markDirty==='function') markDirty(STATE.currentBrand);
+    saveState(); if(typeof saveToService==='function') saveToService();
+    renderTodoToolbar(which);
+    if(typeof toast==='function') toast('已保存「'+which+'」于 '+d);
+  }catch(err){ if(typeof toast==='function') toast('保存失败：'+(err&&err.message||err)); }
+}
+function onTodoHistPick(which,val){ if(val) viewTodoHistory(which,val); else exitTodoHistory(which); }
+function renderTodoItemsRO(arr){
+  if(!arr||!arr.length) return '<div style="font-size:12px;color:#aaa;padding:4px 0">（无内容）</div>';
+  return arr.map(it=>'<div class="todo-row'+(it.done?' done':'')+'"><input type="checkbox"'+(it.done?' checked':'')+' disabled><span class="todo-ro-text">'+escAttr(it.text||'')+'</span></div>').join('');
+}
+function viewTodoHistory(which,date){
+  const snap=B().todoHistory[which]&&B().todoHistory[which][date];
+  todoView[which]=date;
+  const grid=$('#todo_'+which); if(!grid) return;
+  const items=snap&&snap.items?snap.items:B().todo[which];
+  grid.innerHTML='<div class="todo-hist-banner">查看历史：'+escAttr(date)+'（只读） <button type="button" class="todo-back-btn" onclick="exitTodoHistory(\''+which+'\')">← 返回编辑</button></div>'+
+    '<div class="todo-col" data-col="this"><h4>本周</h4><div class="todo-box todo-readonly" data-col="this">'+renderTodoItemsRO(items.this)+'</div></div>'+
+    '<div class="todo-col" data-col="last"><h4>上周</h4><div class="todo-box todo-readonly" data-col="last">'+renderTodoItemsRO(items.last)+'</div></div>';
+  renderTodoToolbar(which);
+}
+function exitTodoHistory(which){
+  delete todoView[which];
+  renderTodoColumn(which,'last'); renderTodoColumn(which,'this');
+  renderTodoToolbar(which);
+}
 
 /* ---------- 自动模式：加载顺序 本地服务data.json → 浏览器IndexedDB(主存储) → localStorage ---------- */
 function isUsableState(st){ return !!st && (st.brands || Array.isArray(st.sales)||Array.isArray(st.inventory)||Array.isArray(st.jzt)||Array.isArray(st.gantt)||Array.isArray(st.purchase)|| (st._raw && (st._raw.sales||st._raw.inventory||st._raw.jzt||st._raw.targets||st._raw.gantt||st._raw.purchase))); }
