@@ -193,7 +193,7 @@
 <body data-page-node-id="TnJopYRx03FYyUEAnM7EON">
 <!-- fix69af 版本标记：厂直值改"厂直"+系列明细时间联动 -->
 <div id="versionMarker" style="background:linear-gradient(135deg,#16a34a,#2563eb);color:#fff;text-align:center;padding:4px 10px;font:bold 13px system-ui;position:relative;z-index:99998;">
-  🟢 fix69bp · <span id="vmMode"></span> v2026-09-01 · <span id="vmTime"></span> · <span id="vmDebug" style="font-weight:normal;opacity:.9;background:rgba(0,0,0,.2);padding:1px 6px;border-radius:3px"></span>
+  🟢 fix69bq · <span id="vmMode"></span> v2026-09-01 · <span id="vmTime"></span> · <span id="vmDebug" style="font-weight:normal;opacity:.9;background:rgba(0,0,0,.2);padding:1px 6px;border-radius:3px"></span>
 </div>
 <!-- fix69aa 终极诊断：独立小脚本（不在主282KB块内），测试JS能否执行 -->
 <script>
@@ -859,7 +859,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-09-01-fix69bp-jztkw-id-fix';
+const APP_VERSION = '2026-09-01-fix69bq-jztkw-crash-fix';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -2058,15 +2058,31 @@ function posActualSum(start,end){
 function computeJztKw(start,end){
   const all=B().jzt_kw||[];
   if(!all.length) return null;
-  // 字段读取：优先标准 key，回退 ext_ 前缀
+  /* fix69bq：支持两种数据格式：
+     ① 预聚合格式（xlsx 上传后）：每行 = {keyword, type, spend, imp, clk, gmv, orders, ...}
+     ② 原始明细格式（粘贴/文本输入）：每行 = {date, scene, ext_关键词, spend, ...} */
+  const isAgg=all[0]&&all[0].keyword!==undefined;  // 检测预聚合格式
+  if(isAgg){
+    // 预聚合格式：直接按词类汇总 + TOP 排序已在上传时完成
+    const byKeyword={};
+    const byCategory={'品牌词':{spend:0,clicks:0,gmv:0,imp:0,orders:0},'品类词':{spend:0,clicks:0,gmv:0,imp:0,orders:0}};
+    all.forEach(r=>{
+      const kw=r.keyword||'(空)';
+      const cat=r.type||'品类词';
+      byKeyword[kw]={spend:r.spend||0,clicks:r.clk||0,gmv:r.gmv||0,imp:r.imp||0,orders:r.orders||0,isBrand:cat==='品牌词'};
+      const c=byCategory[cat]||byCategory['品类词']; // 容错
+      c.spend+=(r.spend||0); c.clicks+=(r.clk||0); c.gmv+=(r.gmv||0); c.imp+=(r.imp||0); c.orders+=(r.orders||0);
+    });
+    const totals={spend:sum(all.map(o=>o.spend||0)),clicks:sum(all.map(o=>o.clk||0)),gmv:sum(all.map(o=>o.gmv||0)),imp:sum(all.map(o=>o.imp||0)),orders:sum(all.map(o=>o.orders||0))};
+    return {byKeyword,byCategory,totals};
+  }
+  // 原始明细格式（粘贴/文本输入）：需过滤 + 聚合
   const get=(r,...ks)=>{ for(const k of ks){ if(r[k]!==undefined&&r[k]!==null&&r[k]!=='') return r[k]; } return ''; };
   const numOf=(r,...ks)=>{ const v=parseFloat(get(r,...ks)); return isNaN(v)?0:v; };
   let rows=all;
   if(start&&end) rows=rows.filter(r=>{ const d=String(r.date||'').slice(0,10); return d>=start&&d<=end; });
-  // 只保留 营销场景=关键词
-  rows=rows.filter(r=>{ const sc=String(get(r,'scene','ext_营销场景','营销场景')||'').trim(); return sc.includes('关键词'); });   // 匹配「关键词」「常规推广-关键词」等含"关键词"的场景值
+  rows=rows.filter(r=>{ const sc=String(get(r,'scene','ext_营销场景','营销场景')||'').trim(); return sc.includes('关键词'); });
   if(!rows.length) return null;
-  // 按关键词聚合
   const byKeyword={};
   const byCategory={'品牌词':{spend:0,clicks:0,gmv:0,imp:0,orders:0},'类目词':{spend:0,clicks:0,gmv:0,imp:0,orders:0}};
   rows.forEach(r=>{
@@ -2074,15 +2090,11 @@ function computeJztKw(start,end){
     if(!kw) kw='(空关键词)';
     const isBrand=kw.includes('李锦记');
     const cat=isBrand?'品牌词':'类目词';
-    const sp=numOf(r,'spend','ext_花费','花费');
-    const cl=numOf(r,'clicks','ext_点击数','点击数');
-    const gm=numOf(r,'gmv','ext_总订单金额','总订单金额');
-    const im=numOf(r,'impressions','ext_展现数','展现数');
+    const sp=numOf(r,'spend','ext_花费','花费'); const cl=numOf(r,'clicks','ext_点击数','点击数');
+    const gm=numOf(r,'gmv','ext_总订单金额','总订单金额'); const im=numOf(r,'impressions','ext_展现数','展现数');
     const or=numOf(r,'orders','ext_总订单行','总订单行');
-    // 按关键词
     const o=byKeyword[kw]=byKeyword[kw]||{spend:0,clicks:0,gmv:0,imp:0,orders:0,isBrand};
     o.spend+=sp; o.clicks+=cl; o.gmv+=gm; o.imp+=im; o.orders+=or; o.isBrand=isBrand;
-    // 按词类
     const c=byCategory[cat]; c.spend+=sp; c.clicks+=cl; c.gmv+=gm; c.imp+=im; c.orders+=or;
   });
   const totals={spend:sum(Object.values(byKeyword).map(o=>o.spend)),clicks:sum(Object.values(byKeyword).map(o=>o.clicks)),gmv:sum(Object.values(byKeyword).map(o=>o.gmv)),imp:sum(Object.values(byKeyword).map(o=>o.imp)),orders:sum(Object.values(byKeyword).map(o=>o.orders))};
@@ -4727,6 +4739,9 @@ function setupFile(id,key){ const inp=$(id); const ta=()=>{ const t=$('#'+key+'I
       const ab=await f.arrayBuffer();
       const u8=new Uint8Array(ab); // 关键：浏览器 arrayBuffer 是 ArrayBuffer，必须转 Uint8Array，否则 XLSX.read 抛 Invalid array length
       const wb=XLSX.read(u8,{type:'array',cellDates:true,cellStyles:false,cellNF:false,cellHTML:false,cellFormula:false});
+      /* fix69bq：大文件 XLSX.read 同步阻塞主线程（27MB 约 30-60 秒），必须立刻让步避免"页面无响应" */
+      toast('Excel 已读取，正在转换数据格式…', true);
+      await new Promise(r=>setTimeout(r,100));
       /* 智能选表：优先选名称含「模板/数据/Gantt」的 Sheet；避免读到「填写说明」等辅助 Sheet 导致解析不全 */
       let ws=wb.Sheets[wb.SheetNames[0]];
       const dataSheet=wb.SheetNames.find(n=>/[模板数据gantt数据sheet]/i.test(n))||wb.SheetNames.find(n=>!/[说明帮助指引readme注]/i.test(n));
@@ -4740,7 +4755,13 @@ function setupFile(id,key){ const inp=$(id); const ta=()=>{ const t=$('#'+key+'I
       if(!text.trim()) throw new Error('工作表为空或无法解析，请确认首个工作表包含数据');
       const objRows = parseTable(text);
       if(!objRows.length) throw new Error('工作表为空或无法解析，请确认首个工作表包含数据');
-      ta().value = text;
+      /* fix69bq：大文件（>2MB 文本）不塞入 textarea——32MB 文本写入 DOM 会导致编辑器卡死/崩溃。
+         原始文本仍存于 _raw（IndexedDB 可处理），textarea 仅显示摘要供用户确认。 */
+      if(text.length>2*1024*1024){
+        ta().value='[大文件] '+objRows.length+' 行 × '+text.split('\n')[0].split('\t').length+' 列（'+(text.length/1024/1024).toFixed(1)+'MB，原始文本已存入内部存储）';
+      } else {
+        ta().value = text;
+      }
       /* 甘特图上传：只替换甘特图数据（不影响销售/库存等其他段，防止误清空） */
       if(key==='gantt'){
         STATE.ganttRaw=text;
@@ -4764,13 +4785,43 @@ function setupFile(id,key){ const inp=$(id); const ta=()=>{ const t=$('#'+key+'I
         if(key==='inv'){ b.inventory=objRows; b._raw.inventory=text; }
         else if(key==='po'){ b.purchase_order=aggregateRows(objRows); b._raw.purchase_order=text; }
         else if(key==='jzt'){ b.jzt=objRows; b._raw.jzt=text; }  // jzt 不 aggregate（有独立合并逻辑）
-        else if(key==='jzt_kw'){  // fix69bj：京准通关键词（逐行明细），按 "brand_jzt_kw" 选择器归属品牌，与 readInputs 路由一致
+        else if(key==='jzt_kw'){  // fix69bj→fix69bq：京准通关键词，预聚合防大文件崩溃（20万行→~352个关键词）
           const ksel=document.getElementById('brand_jzt_kw');
           const kv=(ksel&&ksel.value)||STATE.currentBrand;
           const kb=STATE.brands[kv]?kv:STATE.currentBrand;
           const kwB=STATE.brands[kb];
-          kwB.jzt_kw=objRows; kwB._raw.jzt_kw=text;
+          /* fix69bq：大文件（如 27MB/20 万行）若全量存入 STATE，会导致：
+             a) JSON.stringify(saveState) 将 200K 对象+32MB 文本序列化 → 主线程卡死 10s+
+             b) IndexedDB 写入超大数据 → 浏览器"页面无响应"
+             c) renderAll() 遍历全量数据重渲染 → 二次卡死
+             故对 jzt_kw 做上传时预聚合：只保留按关键词汇总后的紧凑数据（~352 条），
+             同时保留 _raw.jzt_kw 原始文本供 reparseObj 重解析用。 */
+          const get=(r,...keys)=>{ for(const k of keys){ if(r[k]!==undefined&&r[k]!==null&&r[k]!=='') return r[k]; } return ''; };
+          const numOf=(r,...keys)=>{ const v=parseFloat(get(r,...keys)); return isNaN(v)?0:v; };
+          const kwMap={};
+          let filtered=0, totalSpend=0;
+          objRows.forEach(r=>{
+            const sc=String(get(r,'scene','ext_营销场景','营销场景')||'').trim();
+            if(!sc.includes('关键词')) return;   // 只保留含"关键词"的场景
+            filtered++;
+            let kw=String(get(r,'ext_关键词','关键词','keyword')||'').trim();
+            if(!kw) kw='(空关键词)';
+            if(!kwMap[kw]) kwMap[kw]={keyword:kw,type:kw.includes('李锦记')?'品牌词':'品类词',spend:0,imp:0,clk:0,gmv:0,orders:0,dirOrders:0,indirOrders:0,dirAmt:0,indirAmt:0,preOrders:0,preAmt:0,cart:0};
+            const o=kwMap[kw];
+            o.spend+=numOf(r,'spend','ext_花费','花费'); o.imp+=numOf(r,'impressions','ext_展现数','展现数');
+            o.clk+=numOf(r,'clicks','ext_点击数','点击数'); o.gmv+=numOf(r,'gmv','ext_总订单金额','总订单金额');
+            o.orders+=numOf(r,'orders','ext_总订单行','总订单行'); o.dirOrders+=numOf(r,'dirOrders','ext_直接订单行','直接订单行');
+            o.indirOrders+=numOf(r,'indirOrders','ext_间接订单行','间接订单行'); o.dirAmt+=numOf(r,'dirAmt','ext_直接订单金额','直接订单金额');
+            o.indirAmt+=numOf(r,'indirAmt','ext_间接订单金额','间接订单金额'); o.preOrders+=numOf(r,'preOrders','ext_预售订单行','预售订单行');
+            o.preAmt+=numOf(r,'preAmt','ext_预售订单金额','预售订单金额'); o.cart+=numOf(r,'totalCart','ext_总加购数','总加购数');
+          });
+          const aggRows=Object.values(kwMap);
+          aggRows.sort((a,b)=>b.spend-a.spend);  // 按花费降序
+          aggRows.forEach(o=>{ totalSpend+=o.spend; });
+          kwB.jzt_kw=aggRows;   // 存预聚合后的紧凑数据（~352 行 vs 原 20 万行）
+          kwB._raw.jzt_kw=text; // 原始文本仍存（供 reparseObj 重解析；IndexedDB 可处理大字符串）
           if(kb!==STATE.currentBrand){ markDirty(kb); markDirty(STATE.currentBrand); }
+          toast('关键词已聚合：'+objRows.length+' 行 → '+filtered+' 行(含"关键词") → '+aggRows.length+' 个独立关键词，总花费 ¥'+totalSpend.toFixed(2));
         }
         else if(key==='sales'){ b.sales=aggregateRows(objRows); b._raw.sales=text; }
         else if(key==='pp'){ b.purchase=aggregateRows(objRows); b._raw.purchase=text; }
@@ -4805,6 +4856,8 @@ function setupFile(id,key){ const inp=$(id); const ta=()=>{ const t=$('#'+key+'I
           updateDiag(tgtB._raw.targets||'', parseTargets(tgtB._raw.targets||'').length, 'Targets');
         }
         if(key!=='tgt')         markDirty(STATE.currentBrand);
+        /* fix69bq：大文件写入后让步一次，避免 saveState(JSON.stringify 大对象)+renderAll 连续阻塞 */
+        if(objRows.length>50000){ toast('数据已就绪，正在保存与渲染（'+objRows.length+' 行）…', true); await new Promise(r=>setTimeout(r,50)); }
         saveState(); renderAll(); await saveToService();
       }
       // fix55：上传完成后显示关键诊断（行数 + 金额校验），方便快速判断数据完整性
