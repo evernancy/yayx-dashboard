@@ -193,7 +193,7 @@
 <body data-page-node-id="TnJopYRx03FYyUEAnM7EON">
 <!-- fix69af 版本标记：厂直值改"厂直"+系列明细时间联动 -->
 <div id="versionMarker" style="background:linear-gradient(135deg,#16a34a,#2563eb);color:#fff;text-align:center;padding:4px 10px;font:bold 13px system-ui;position:relative;z-index:99998;">
-  🟢 fix69bh · <span id="vmMode"></span> v2026-09-01 · <span id="vmTime"></span> · <span id="vmDebug" style="font-weight:normal;opacity:.9;background:rgba(0,0,0,.2);padding:1px 6px;border-radius:3px"></span>
+  🟢 fix69bi · <span id="vmMode"></span> v2026-09-01 · <span id="vmTime"></span> · <span id="vmDebug" style="font-weight:normal;opacity:.9;background:rgba(0,0,0,.2);padding:1px 6px;border-radius:3px"></span>
 </div>
 <!-- fix69aa 终极诊断：独立小脚本（不在主282KB块内），测试JS能否执行 -->
 <script>
@@ -839,7 +839,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-09-01-fix69bh-remark-buttons-per-table';
+const APP_VERSION = '2026-09-01-fix69bi-aging-amount-fix';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -1782,7 +1782,23 @@ function buildAgingDetail(deptFilter){
   // 浮码价格索引（按 SKU 兜底；长库龄预警无日期列）
   const ppBySku={};
   (B().purchase||[]).forEach(r=>{ const sku=String(r.sku||'').trim(); const p=num(r.purchase); if(!isNaN(p)&&sku) ppBySku[sku]=p; });
-  const priceOf=sku=> ppBySku[sku]!==undefined ? ppBySku[sku] : undefined;
+  // fix69bi：产品名→数字SKU桥接表（aging_warn用product全名，purchase用数字SKU）
+  const prodNameToSku={};
+  (B().series||[]).forEach(sr=>{
+    const k=String(sr.sku||'').trim(); if(!k) return;
+    const sn=String(sr.shortName||sr['产品简称']||'').trim();
+    const pn=String(sr.product||sr.商品名称||sr.商品||'').trim();
+    if(sn) prodNameToSku[sn]=k;
+    if(pn) prodNameToSku[pn]=k;
+  });
+  // 三阶价格查找：①数字SKU直查 → ②产品名精确映射 → ③子串匹配
+  function resolvePrice(rawSku){
+    let sk=rawSku;
+    if(sk && ppBySku[sk]!==undefined) return ppBySku[sk];
+    if(sk && prodNameToSku[sk]){ sk=prodNameToSku[sk]; if(ppBySku[sk]!==undefined) return ppBySku[sk]; }
+    for(const pn in prodNameToSku){ if((rawSku&&rawSku.includes(pn))||(pn&&pn.includes(rawSku))){ const mk=prodNameToSku[pn]; if(ppBySku[mk]!==undefined) return ppBySku[mk]; } }
+    return undefined;
+  }
   const bySku={};
   rows.forEach(r=>{ const sku=agingSkuOf(r); if(sku) (bySku[sku]=bySku[sku]||[]).push(r); });
   const products=[]; let unclassified=0;
@@ -1792,7 +1808,7 @@ function buildAgingDetail(deptFilter){
     let totalQty=0, totalAmt=0, hasPrice=false;
     rs.forEach(r=>{
       const qty=(num(r['长库龄数量']||r['ext_长库龄数量'])||0)+(num(r['61-90天']||r['ext_61-90天'])||0);
-      const p=priceOf(sku);
+      const p=resolvePrice(sku);
       const amt = p!==undefined ? qty*p*1.129 : NaN;
       if(p!==undefined) hasPrice=true;
       totalQty+=qty;
