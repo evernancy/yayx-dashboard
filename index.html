@@ -55,8 +55,7 @@
   #saveStatus.warn .dot{background:#fbbf24}
   @keyframes pulse-red{0%,100%{opacity:1}50%{opacity:.5}}
   .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:6px}
-  /* fix69am：京准通推广 KPI（8 张卡）强制单行等宽 */
-  #jztTargetKpis{grid-template-columns:repeat(8,minmax(0,1fr))}
+  /* fix69cb：京准通 KPI 改为竖排（与销售目标达成一致），不再强制横排8列 */
   .kpi-sep{grid-column:1/-1;font-weight:700;font-size:14px;color:var(--blue,#2563eb);border-left:4px solid var(--blue,#2563eb);padding-left:8px;margin-top:6px}
   .kpi{background:linear-gradient(180deg,#fff,#fafbff);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
   .kpi .label{color:var(--muted);font-size:12px;white-space:nowrap}
@@ -71,6 +70,10 @@
   .zy-sales-grid #todo_sales{flex:2 1 500px;min-width:400px;margin:0}
   .zy-sales-grid #todo_sales .todo-col{display:flex;flex-direction:column}
   .zy-sales-grid #todo_sales .todo-box{flex:1 1 0;min-height:0;max-height:none}
+  /* fix69cb：京准通事项区（与销售目标达成并排布局一致） */
+  .zy-jzt-grid #todo_jzt{flex:2 1 500px;min-width:400px;margin:0}
+  .zy-jzt-grid #todo_jzt .todo-col{display:flex;flex-direction:column}
+  .zy-jzt-grid #todo_jzt .todo-box{flex:1 1 0;min-height:0;max-height:none}
   /* fix69l：系列明细树形表格 */
   .sd-tree-table{width:100%;border-collapse:collapse;font-size:13px}
   .sd-tree-table th{background:#f8fafc;padding:8px 10px;text-align:left;border-bottom:2px solid var(--border,#e5e7eb);font-weight:600;white-space:nowrap;position:sticky;top:0;z-index:1}
@@ -409,10 +412,13 @@
         <span class="muted" data-page-node-id="9hQrqHHd0ko1VwYDd4ASnD">只选一端=查看单日；两端都空=默认整月</span>
       </div>
       <div class="timeProgress" id="jztTimeProgress" data-page-node-id="Z8dnc9eDWHL1sgJHYL7TJ2"></div>
-      <div class="kpis" id="jztTargetKpis" data-page-node-id="uRKPGnyfoGEKX5S940ECSY"></div>
+      <!-- fix69cb：改用与销售目标达成一致的左右布局（左=竖排KPI卡，右=本周/上周事项） -->
+      <div class="zy-sales-grid zy-jzt-grid">
+        <div class="zy-kpi-col"><div class="zy-kpi-title">投放指标</div><div class="kpis kpis-vertical" id="jztTargetKpis" data-page-node-id="uRKPGnyfoGEKX5S940ECSY"></div></div>
+        <div class="todo-grid" id="todo_jzt" data-page-node-id="wT9xC9uur6EAEnuOixcPTl"></div>
+      </div>
       <div id="jztDataHint" class="hint warn" style="display:none" data-page-node-id="JcQUTFKkNaakRvi8hy0aQ7"></div>
     </div>
-    <div class="panel" data-page-node-id="8vIP0hEH1LdLq9YDAaMTHM"><div class="chart-title" data-page-node-id="XmVnIyBfAUiCTutmHyLciN">事项（上周 / 本周）</div><div class="todo-grid" id="todo_jzt" data-page-node-id="wT9xC9uur6EAEnuOixcPTl"></div></div>
     <div class="panel" data-page-node-id="69yzky8pxPbGxVbyHgmZL1"><div class="chart-title" data-page-node-id="g2D5SlFi2ypaHR8jKu9iVN">各渠道花费（MTD）</div><div id="jztScene" data-page-node-id="QTFYkw8v3Q4DBzhB86Ln1y"></div></div>
   </section>
   </section>
