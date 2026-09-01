@@ -3481,9 +3481,24 @@ document.addEventListener('DOMContentLoaded', function(){
     b.addEventListener('click', function(){
       var dir=this.getAttribute('data-dir');
       var ws=getFcalWeekStart();
-      if(dir==='today'){ fcalWeekStart=mondayOf(todayStr()); }
-      else if(dir==='prev'){ fcalWeekStart=ymdAdd(ws, -7); }
-      else if(dir==='next'){ fcalWeekStart=ymdAdd(ws, 7); }
+      if(dir==='today'){ fcalWeekStart=mondayOf(todayStr()); fcalViewMode='week'; var s=$('#fcalViewMode'); if(s) s.value='week'; }
+      else if(fcalViewMode==='month'){
+        /* 月视图：按月翻页 */
+        var ym=ws.slice(0,7); /* 当前网格起始的年月 */
+        if(dir==='prev'){
+          var pd=new Date(ym+'-01'); pd.setMonth(pd.getMonth()-1); var pYm=pd.getFullYear()+'-'+String(pd.getMonth()+1).padStart(2,'0');
+          var pf=new Date(pYm+'-01'); var fdw=pf.getDay(); var diff=(fdw===0?-6:1-fdw); pf.setDate(pf.getDate()+diff);
+          fcalWeekStart=fmtDate(pf);
+        } else {
+          var nd=new Date(ym+'-01'); nd.setMonth(nd.getMonth()+1); var nYm=nd.getFullYear()+'-'+String(nd.getMonth()+1).padStart(2,'0');
+          var nf=new Date(nYm+'-01'); var fdw=nf.getDay(); var diff=(fdw===0?-6:1-fdw); nf.setDate(nf.getDate()+diff);
+          fcalWeekStart=fmtDate(nf);
+        }
+      } else {
+        /* 周视图：按周翻页 */
+        if(dir==='prev'){ fcalWeekStart=ymdAdd(ws, -7); }
+        else if(dir==='next'){ fcalWeekStart=ymdAdd(ws, 7); }
+      }
       renderFeishuCalendar();
     });
   });
@@ -3491,15 +3506,18 @@ document.addEventListener('DOMContentLoaded', function(){
   var vmSel=$('#fcalViewMode');
   if(vmSel) vmSel.addEventListener('change', function(){
     fcalViewMode=this.value;
-    /* 切换到月视图时，将周起始对齐到当月1号所在周的周一 */
+    /* 切换到月视图时，默认显示当前月（而非跟随周导航位置） */
     if(fcalViewMode==='month'){
-      var ws=getFcalWeekStart();
-      var ym=ws.slice(0,7);
-      var firstDay=new Date(ym+'-01');
+      var curYm=todayStr().slice(0,7); /* 当前年月 YYYY-MM */
+      var firstDay=new Date(curYm+'-01');
       var fdw=firstDay.getDay(); /* 日=0..六=6 */
-      var mondayOffset=(fdw+6)%7;
-      fcalWeekStart=ymdAdd(ym+'-'+String(1-mondayOffset).padStart(2,'0'), 0);
-      if(fcalWeekStart>=ym+'-01') fcalWeekStart=ymdAdd(fcalWeekStart, -7);
+      /* 用 Date 算术回退到该周周一（避免字符串拼接产生负数日期的 bug） */
+      var diff=(fdw===0?-6:1-fdw);
+      firstDay.setDate(firstDay.getDate()+diff);
+      fcalWeekStart=fmtDate(firstDay);
+    } else {
+      /* 切回周视图时，用当前月视图的周一或今天 */
+      fcalWeekStart=mondayOf(todayStr());
     }
     renderFeishuCalendar();
   });
