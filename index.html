@@ -193,7 +193,7 @@
 <body data-page-node-id="TnJopYRx03FYyUEAnM7EON">
 <!-- fix69af 版本标记：厂直值改"厂直"+系列明细时间联动 -->
 <div id="versionMarker" style="background:linear-gradient(135deg,#16a34a,#2563eb);color:#fff;text-align:center;padding:4px 10px;font:bold 13px system-ui;position:relative;z-index:99998;">
-  🟢 fix69bk · <span id="vmMode"></span> v2026-09-01 · <span id="vmTime"></span> · <span id="vmDebug" style="font-weight:normal;opacity:.9;background:rgba(0,0,0,.2);padding:1px 6px;border-radius:3px"></span>
+  🟢 fix69bl · <span id="vmMode"></span> v2026-09-01 · <span id="vmTime"></span> · <span id="vmDebug" style="font-weight:normal;opacity:.9;background:rgba(0,0,0,.2);padding:1px 6px;border-radius:3px"></span>
 </div>
 <!-- fix69aa 终极诊断：独立小脚本（不在主282KB块内），测试JS能否执行 -->
 <script>
@@ -876,7 +876,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-09-01-fix69bk-jzt-kw-analysis';
+const APP_VERSION = '2026-09-01-fix69bl-jzt-kw-live';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -2065,6 +2065,43 @@ function posActualSum(start,end){
   const ds=dateRange(start,end);
   return sum(ds.map(d=>m[d]||0));
 }
+/* fix69bl：京准通关键词数据聚合（3.2 输入区）。
+   过滤条件：营销场景 = 关键词；按日期范围过滤后，按关键词名聚合。
+   返回 {byKeyword, byCategory, totals} —— byCategory 含 品牌词(含李锦记)/类目词 两组汇总。 */
+function computeJztKw(start,end){
+  const all=B().jzt_kw||[];
+  if(!all.length) return null;
+  // 字段读取：优先标准 key，回退 ext_ 前缀
+  const get=(r,...ks)=>{ for(const k of ks){ if(r[k]!==undefined&&r[k]!==null&&r[k]!=='') return r[k]; } return ''; };
+  const numOf=(r,...ks)=>{ const v=parseFloat(get(r,...ks)); return isNaN(v)?0:v; };
+  let rows=all;
+  if(start&&end) rows=rows.filter(r=>{ const d=String(r.date||'').slice(0,10); return d>=start&&d<=end; });
+  // 只保留 营销场景=关键词
+  rows=rows.filter(r=>{ const sc=String(get(r,'scene','ext_营销场景','营销场景')||'').trim(); return sc==='关键词'; });
+  if(!rows.length) return null;
+  // 按关键词聚合
+  const byKeyword={};
+  const byCategory={'品牌词':{spend:0,clicks:0,gmv:0,imp:0,orders:0},'类目词':{spend:0,clicks:0,gmv:0,imp:0,orders:0}};
+  rows.forEach(r=>{
+    let kw=String(get(r,'ext_关键词','关键词','keyword')||'').trim();
+    if(!kw) kw='(空关键词)';
+    const isBrand=kw.includes('李锦记');
+    const cat=isBrand?'品牌词':'类目词';
+    const sp=numOf(r,'spend','ext_花费','花费');
+    const cl=numOf(r,'clicks','ext_点击数','点击数');
+    const gm=numOf(r,'gmv','ext_总订单金额','总订单金额');
+    const im=numOf(r,'impressions','ext_展现数','展现数');
+    const or=numOf(r,'orders','ext_总订单行','总订单行');
+    // 按关键词
+    const o=byKeyword[kw]=byKeyword[kw]||{spend:0,clicks:0,gmv:0,imp:0,orders:0,isBrand};
+    o.spend+=sp; o.clicks+=cl; o.gmv+=gm; o.imp+=im; o.orders+=or; o.isBrand=isBrand;
+    // 按词类
+    const c=byCategory[cat]; c.spend+=sp; c.clicks+=cl; c.gmv+=gm; c.imp+=im; c.orders+=or;
+  });
+  const totals={spend:sum(Object.values(byKeyword).map(o=>o.spend)),clicks:sum(Object.values(byKeyword).map(o=>o.clicks)),gmv:sum(Object.values(byKeyword).map(o=>o.gmv)),imp:sum(Object.values(byKeyword).map(o=>o.imp)),orders:sum(Object.values(byKeyword).map(o=>o.orders))};
+  return {byKeyword,byCategory,totals};
+}
+
 function computeJzt(start,end){
   let rows=B().jzt;
   if(start&&end) rows=rows.filter(r=>{ const d=String(r.date||'').slice(0,10); return d>=start && d<=end; });
@@ -2190,54 +2227,86 @@ function renderJzt(){
   t+=cell(totRoi,yTotRoi,mTotRoi,(v)=>v.toFixed(2));
   t+='</tr></tbody></table>';
 
-  /* fix69as：关键词花费表（词类 + TOP关键词），列结构同渠道表（5指标×3期=15列）。
-     数据源后续接入，当前先搭骨架——无数据时各格显示 —。 */
+  /* fix69bl：关键词数据（词类汇总 + TOP50）——从 3.2 京准通关键词数据取 营销场景=关键词 的行，
+     判定规则：关键词含「李锦记」= 品牌词，其余 = 类目词；TOP 按花费降序取前 50。 */
   t+='<h3 style="color:#dc2626;margin:18px 0 10px;font-size:15px">关键词数据</h3>';
 
-  // ===== 词类表：类目词 / 品牌词 / 总计 =====
-  t+='<table class="tpl" style="margin-top:8px">';
-  t+='<thead><tr><th rowspan="2">词类</th>';
-  ['花费','点击','成交','CPC','ROI'].forEach(k=>{ t+=`<th colspan="3">${esc(k)}</th>`; });
-  t+='</tr><tr>';
-  for(let i=0;i<5;i++){ t+='<th style="font-size:11px">本期</th><th style="font-size:11px">同比</th><th style="font-size:11px">环比</th>'; }
-  t+='</tr></thead><tbody>';
-  // TODO：数据源待接入。当前从 computeJzt 的 rows 中按 keyword/word_type 列聚合。
-  // 预留行结构，无数据时 cell 显示 —。
-  const kwCategories=['类目词','品牌词'];
-  kwCategories.forEach(cat=>{
-    t+='<tr>';
-    t+=`<td>${esc(cat)}</td>`;
-    // 占位5组×3格=15个 —（等数据源接入后替换为真实值）
-    for(let g=0;g<5;g++) t+='<td>—</td><td>—</td><td>—</td>';
-    t+='</tr>';
-  });
-  // 总计行
-  t+='<tr style="font-weight:500;border-top:2px solid var(--border-secondary,rgba(0,0,0,.3))">';
-  t+='<td>总计</td>';
-  for(let g=0;g<5;g++) t+='<td>—</td><td>—</td><td>—</td>';
-  t+='</tr></tbody></table>';
+  // 三期数据：本期 / 同比 / 环比
+  const kwC=computeJztKw(start,end);
+  const kwY=computeJztKw(yStart,yEnd);
+  const kwM=computeJztKw(mStart,mEnd);
 
-  // ===== TOP关键词表 =====
-  t+='<table class="tpl" style="margin-top:12px">';
-  t+='<thead><tr><th rowspan="2">TOP关键词</th>';
-  ['花费','点击','成交','CPC','ROI'].forEach(k=>{ t+=`<th colspan="3">${esc(k)}</th>`; });
-  t+='</tr><tr>';
-  for(let i=0;i<5;i++){ t+='<th style="font-size:11px">本期</th><th style="font-size:11px">同比</th><th style="font-size:11px">环比</th>'; }
-  t+='</tr></thead><tbody>';
-  // TODO：数据源待接入。按 spend 降序取 Top N 关键词。
-  const topKeywords=[
-    '智能匹配关键词','李锦记','生抽','蚝油','酱油',
-    '薄盐生抽','叉烧酱','生抽京东自营','香油',
-    '李锦记蚝油','xo酱','李锦记京东自营旗舰店',
-    '耗油','薄盐','生抽李锦记'
-  ];
-  topKeywords.forEach(kw=>{
-    t+='<tr>';
-    t+=`<td>${esc(kw)}</td>`;
-    for(let g=0;g<5;g++) t+='<td>—</td><td>—</td><td>—</td>';
-    t+='</tr>';
-  });
-  t+='</tbody></table>';
+  if(kwC){
+    // ===== 词类表：类目词 / 品牌词 / 总计 =====
+    t+='<table class="tpl" style="margin-top:8px">';
+    t+='<thead><tr><th rowspan="2">词类</th>';
+    ['花费','点击','成交','CPC','ROI'].forEach(k=>{ t+=`<th colspan="3">${esc(k)}</th>`; });
+    t+='</tr><tr>';
+    for(let i=0;i<5;i++){ t+='<th style="font-size:11px">本期</th><th style="font-size:11px">同比</th><th style="font-size:11px">环比</th>'; }
+    t+='</tr></thead><tbody>';
+
+    const cats=['类目词','品牌词'];
+    cats.forEach(cat=>{
+      const c=kwC.byCategory[cat]||{spend:0,clicks:0,gmv:0,imp:0,orders:0};
+      const y=kwY?(kwY.byCategory[cat]||{spend:0,clicks:0,gmv:0,imp:0,orders:0}):null;
+      const m=kwM?(kwM.byCategory[cat]||{spend:0,clicks:0,gmv:0,imp:0,orders:0}):null;
+      const cpc=c.clicks>0?c.spend/c.clicks:0, roi=c.spend>0?c.gmv/c.spend:0;
+      const yc=y&&y.clicks>0?y.spend/y.clicks:0, yr=y&&y.spend>0?y.gmv/y.spend:0;
+      const mc=m&&m.clicks>0?m.spend/m.clicks:0, mr=m&&m.spend>0?m.gmv/m.spend:0;
+      t+='<tr>';
+      t+=`<td>${esc(cat)}</td>`;
+      t+=cell(c.spend,y?y.spend:null,m?m.spend:null,fmtMoney);
+      t+=cell(c.clicks,y?y.clicks:null,m?m.clicks:null,(v)=>fmt(v,0));
+      t+=cell(c.gmv,y?y.gmv:null,m?m.gmv:null,fmtMoney);
+      t+=cell(cpc,yc,mc,fmtMoney);
+      t+=cell(roi,yr,mr,(v)=>v.toFixed(2));
+      t+='</tr>';
+    });
+    // 总计行
+    const kt=kwC.totals, yt=kwY?kwY.totals:null, mt=kwM?kwM.totals:null;
+    const tc=kt.clicks>0?kt.spend/kt.clicks:0, tr_=kt.spend>0?kt.gmv/kt.spend:0;
+    const ytc=yt&&yt.clicks>0?yt.spend/yt.clicks:0, ytr_=yt&&yt.spend>0?yt.gmv/yt.spend:0;
+    const mtc=mt&&mt.clicks>0?mt.spend/mt.clicks:0, mtr_=mt&&mt.spend>0?mt.gmv/mt.spend:0;
+    t+='<tr style="font-weight:500;border-top:2px solid var(--border-secondary,rgba(0,0,0,.3))">';
+    t+='<td>总计</td>';
+    t+=cell(kt.spend,yt?yt.spend:null,mt?mt.spend:null,fmtMoney);
+    t+=cell(kt.clicks,yt?yt.clicks:null,mt?mt.clicks:null,(v)=>fmt(v,0));
+    t+=cell(kt.gmv,yt?yt.gmv:null,mt?mt.gmv:null,fmtMoney);
+    t+=cell(tc,ytc,mtc,fmtMoney);
+    t+=cell(tr_,ytr_,mtr_,(v)=>v.toFixed(2));
+    t+='</tr></tbody></table>';
+
+    // ===== TOP关键词表：按花费降序取 50 =====
+    const kwNames=Object.keys(kwC.byKeyword).sort((a,b)=>kwC.byKeyword[b].spend-kwC.byKeyword[a].spend);
+    const topKw=kwNames.slice(0,50);
+    t+='<table class="tpl" style="margin-top:12px">';
+    t+='<thead><tr><th rowspan="2">TOP关键词</th>';
+    ['花费','点击','成交','CPC','ROI'].forEach(k=>{ t+=`<th colspan="3">${esc(k)}</th>`; });
+    t+='</tr><tr>';
+    for(let i=0;i<5;i++){ t+='<th style="font-size:11px">本期</th><th style="font-size:11px">同比</th><th style="font-size:11px">环比</th>'; }
+    t+='</tr></thead><tbody>';
+    topKw.forEach(kw=>{
+      const o=kwC.byKeyword[kw];
+      const oy=kwY?kwY.byKeyword[kw]:null;
+      const om=kwM?kwM.byKeyword[kw]:null;
+      const cpc=o.clicks>0?o.spend/o.clicks:0, roi=o.spend>0?o.gmv/o.spend:0;
+      const yc=oy&&oy.clicks>0?oy.spend/oy.clicks:0, yr_=oy&&oy.spend>0?oy.gmv/oy.spend:0;
+      const mc=om&&om.clicks>0?om.spend/om.clicks:0, mr_=om&&om.spend>0?om.gmv/om.spend:0;
+      t+='<tr>';
+      t+=`<td>${esc(kw)}</td>`;
+      t+=cell(o.spend,oy?oy.spend:null,om?om.spend:null,fmtMoney);
+      t+=cell(o.clicks,oy?oy.clicks:null,om?om.clicks:null,(v)=>fmt(v,0));
+      t+=cell(o.gmv,oy?oy.gmv:null,om?om.gmv:null,fmtMoney);
+      t+=cell(cpc,yc,mc,fmtMoney);
+      t+=cell(roi,yr_,mr_,(v)=>v.toFixed(2));
+      t+='</tr>';
+    });
+    t+='</tbody></table>';
+    if(kwNames.length>50) t+='<div class="muted" style="margin-top:6px;font-size:12px">仅展示花费最高的 50 个关键词（共 '+kwNames.length+' 个）。</div>';
+  } else {
+    // 无关键词数据时显示提示
+    t+='<div class="empty" style="padding:12px 0;color:#888;font-size:13px">暂无「营销场景 = 关键词」的数据。请在「数据输入区 → 3.2 京东京准通关键词数据」粘贴含「营销场景」列（值为「关键词」）的明细。</div>';
+  }
 
   /* fix69av：系列数据表——系列常驻(展示系列汇总) + 各品(产品简称)折叠，默认收起可展开。
      匹配键 = 跟单SKU ID(followSkuId) → B().series 的 series + 产品简称；未匹配行不展示。 */
