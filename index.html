@@ -3317,7 +3317,16 @@ function parseGantt(text){
 /* fix69bv：飞书式周/月视图日历（数据日历专用）——替代原 renderGantt 的横向甘特图 */
 var fcalWeekStart=null; // 当前周起始（周一 YYYY-MM-DD）
 var fcalViewMode='week'; // 'week' | 'month'
+var fcalMonthYm=null; // 月视图当前显示的年月 'YYYY-M'（仅月视图有效，用于翻页）
 function getFcalWeekStart(){ if(!fcalWeekStart){ fcalWeekStart=mondayOf(todayStr()); } return fcalWeekStart; }
+/* 获取指定年月的月视图网格起始周一（用 Date 算术，避免字符串拼接负数日期的 off-by-one bug） */
+function getMonthViewMonday(ym){
+  var fd=new Date(ym+'-01');
+  var fdw=fd.getDay(); /* 日=0..六=6 */
+  var diff=(fdw===0?-6:1-fdw); /* 回退到该周周一 */
+  fd.setDate(fd.getDate()+diff);
+  return fmtDate(fd);
+}
 function fmtDateCN(d){ /* YYYY年M月D日 */ var p=d.match(/^(\d{4})-(\d{2})-(\d{2})$/); return p?(+p[2])+'月'+(+p[3])+'日':d; }
 function fmtRangeCN(s,e){ return fmtDateCN(s)+' - '+fmtDateCN(e); }
 /* 解析时间字符串 "HH:mm" → 分钟数(0~1440) */
@@ -3346,24 +3355,15 @@ function renderFeishuCalendar(){
   /* 构建日期列 */
   var days=[];
   if(isMonth){
-    var ym=ws.slice(0,7); /* YYYY-MM */
-    var d0=new Date(ym+'-01'), ld=new Date(+ym.slice(0,4), +ym.slice(5,7), 0).getDate();
-    for(var di=1;di<=ld;di++){
-      var dd=ym+'-'+String(di).padStart(2,'0');
-      days.push(dd);
-    }
-    /* 补齐到完整周网格：月初之前 + 月末之后 */
-    var fw=new Date(ym+'-01').getDay(); /* 周日=0..周六=6，转为周一=0 */
-    var firstMonday=((fw+6)%7);
-    for(var bi=firstMonday-1;bi>=0;bi--){
-      var bd=new Date(+ym.slice(0,4), +ym.slice(5,7)-1, 1-bi);
-      days.unshift(bd.getFullYear()+'-'+String(bd.getMonth()+1).padStart(2,'0')+'-'+String(bd.getDate()).padStart(2,'0'));
-    }
-    var lastDow=new Date(+ym.slice(0,4), +ym.slice(5,7), ld).getDay();
-    var tailDays=6-((lastDow+6)%7);
-    for(var ti=1;ti<=tailDays;ti++){
-      var td=new Date(+ym.slice(0,4), +ym.slice(5,7), ld+ti);
-      days.push(td.getFullYear()+'-'+String(td.getMonth()+1).padStart(2,'0')+'-'+String(td.getDate()).padStart(2,'0'));
+    /* 月视图：始终用 fcalMonthYm（或当前月）作为基准 */
+    var displayYm=fcalMonthYm||todayStr().slice(0,7);
+    var d0=new Date(displayYm+'-01'), ld=new Date(+displayYm.slice(0,4), +displayYm.slice(5,7), 0).getDate();
+    /* 用 getMonthViewMonday 算出网格起始周一（Date 算术，无 off-by-one） */
+    var gridStart=getMonthViewMonday(displayYm);
+    fcalWeekStart=gridStart; /* 同步周起始，供翻页和显示用 */
+    /* 从 gridStart 开始，生成 6 周 × 7 天 = 42 天（覆盖所有月份布局） */
+    for(var gi=0;gi<42;gi++){
+      days.push(ymdAdd(gridStart, gi));
     }
   } else {
     for(var wi=0;wi<7;wi++) days.push(ymdAdd(ws, wi));
@@ -3373,7 +3373,7 @@ function renderFeishuCalendar(){
   var dayIdx={}; days.forEach(function(d,i){ dayIdx[d]=i; });
   /* 更新日期范围文字 */
   $('#fcalDateRange').textContent = isMonth ?
-    (ws.slice(0,4)+'年'+(+ws.slice(5,7))+'月') :
+    (+displayYm.slice(0,4))+'年'+(+displayYm.slice(5,7))+'月' :
     fmtRangeCN(days[0], days[days.length-1]);
   /* 按日期分组事件 */
   var eventsByDay={}; days.forEach(function(d){ eventsByDay[d]=[]; });
@@ -3480,22 +3480,21 @@ document.addEventListener('DOMContentLoaded', function(){
   $$('.fcalNavBtn').forEach(function(b){
     b.addEventListener('click', function(){
       var dir=this.getAttribute('data-dir');
-      var ws=getFcalWeekStart();
-      if(dir==='today'){ fcalWeekStart=mondayOf(todayStr()); fcalViewMode='week'; var s=$('#fcalViewMode'); if(s) s.value='week'; }
-      else if(fcalViewMode==='month'){
-        /* 月视图：按月翻页 */
-        var ym=ws.slice(0,7); /* 当前网格起始的年月 */
-        if(dir==='prev'){
-          var pd=new Date(ym+'-01'); pd.setMonth(pd.getMonth()-1); var pYm=pd.getFullYear()+'-'+String(pd.getMonth()+1).padStart(2,'0');
-          var pf=new Date(pYm+'-01'); var fdw=pf.getDay(); var diff=(fdw===0?-6:1-fdw); pf.setDate(pf.getDate()+diff);
-          fcalWeekStart=fmtDate(pf);
-        } else {
-          var nd=new Date(ym+'-01'); nd.setMonth(nd.getMonth()+1); var nYm=nd.getFullYear()+'-'+String(nd.getMonth()+1).padStart(2,'0');
-          var nf=new Date(nYm+'-01'); var fdw=nf.getDay(); var diff=(fdw===0?-6:1-fdw); nf.setDate(nf.getDate()+diff);
-          fcalWeekStart=fmtDate(nf);
-        }
+      if(dir==='today'){
+        fcalWeekStart=mondayOf(todayStr());
+        fcalViewMode='week'; fcalMonthYm=null;
+        var s=$('#fcalViewMode'); if(s) s.value='week';
+      } else if(fcalViewMode==='month'){
+        /* 月视图：基于 fcalMonthYm 按月翻页（不用 ws.slice(0,7)，因为 ws 是起始周一可能属上月） */
+        var cur=fcalMonthYm||todayStr().slice(0,7);
+        var cy=+cur.slice(0,4), cm=+cur.slice(5,7);
+        if(dir==='prev'){ cm--; if(cm<1){ cm=12; cy--; } }
+        else { cm++; if(cm>12){ cm=1; cy++; } }
+        fcalMonthYm=cy+'-'+String(cm).padStart(2,'0');
+        fcalWeekStart=getMonthViewMonday(fcalMonthYm);
       } else {
         /* 周视图：按周翻页 */
+        var ws=getFcalWeekStart();
         if(dir==='prev'){ fcalWeekStart=ymdAdd(ws, -7); }
         else if(dir==='next'){ fcalWeekStart=ymdAdd(ws, 7); }
       }
@@ -3506,17 +3505,13 @@ document.addEventListener('DOMContentLoaded', function(){
   var vmSel=$('#fcalViewMode');
   if(vmSel) vmSel.addEventListener('change', function(){
     fcalViewMode=this.value;
-    /* 切换到月视图时，默认显示当前月（而非跟随周导航位置） */
+    /* 切换到月视图时，默认显示当前月份（当天所在月） */
     if(fcalViewMode==='month'){
-      var curYm=todayStr().slice(0,7); /* 当前年月 YYYY-MM */
-      var firstDay=new Date(curYm+'-01');
-      var fdw=firstDay.getDay(); /* 日=0..六=6 */
-      /* 用 Date 算术回退到该周周一（避免字符串拼接产生负数日期的 bug） */
-      var diff=(fdw===0?-6:1-fdw);
-      firstDay.setDate(firstDay.getDate()+diff);
-      fcalWeekStart=fmtDate(firstDay);
+      fcalMonthYm=todayStr().slice(0,7); /* 如 '2026-09' */
+      fcalWeekStart=getMonthViewMonday(fcalMonthYm);
     } else {
-      /* 切回周视图时，用当前月视图的周一或今天 */
+      /* 切回周视图：用今天所在周的周一 */
+      fcalMonthYm=null;
       fcalWeekStart=mondayOf(todayStr());
     }
     renderFeishuCalendar();
@@ -4182,6 +4177,8 @@ function setView(v){
     } catch(e) { /* 防止 STATE 未就绪时阻断 tab 高亮 */ }
   });
   if(v==='lijx'){ try{ setSubview(lijxSub); applyBrandSubtabs(); }catch(_){} }
+  /* 切换到数据日历时，默认重置为周视图+当周 */
+  if(v==='gantt_data'){ fcalViewMode='week'; fcalMonthYm=null; fcalWeekStart=mondayOf(todayStr()); var vs=$('#fcalViewMode'); if(vs) vs.value='week'; }
   try{ renderAll(); }catch(e){ console.error('[setView] renderAll error (non-fatal, view already switched):',e); }
 }
 $$('.tab').forEach(t=>t.addEventListener('click',()=>{
