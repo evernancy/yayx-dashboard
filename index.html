@@ -157,6 +157,35 @@
   .ganttTask{cursor:pointer}
   .ganttTask:hover{stroke:#111827;stroke-width:2}
   .ganttAddBtn{margin-left:10px}
+  /* fix69bv：飞书式周视图日历（数据日历） */
+  .feishu-calendar{border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;background:#fff;font-size:13px}
+  .fcal-head{display:flex;background:#f8fafc;border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:2}
+  .fcal-time-col{width:64px;flex-shrink:0;border-right:1px solid #e2e8f0;padding:8px 4px;text-align:center;font-size:11px;color:#9ca3af;font-weight:600}
+  .fcal-day-col{flex:1;min-width:0;padding:8px 4px;text-align:center;border-right:1px solid #eef0f4}
+  .fcal-day-col:last-child{border-right:none}
+  .fcal-day-name{font-size:11px;color:#9ca3af;margin-bottom:2px}
+  .fcal-day-num{font-size:16px;font-weight:700;color:#374151}
+  .fcal-day-num.today{color:#2563eb;background:#dbeafe;width:28px;height:28px;line-height:28px;border-radius:50%;display:inline-block}
+  .fcal-day-num.other-month{color:#d1d5db}
+  .fcal-body{display:flex;position:relative;min-height:520px;max-height:600px;overflow-y:auto}
+  .fcal-time-labels{width:64px;flex-shrink:0;border-right:1px solid #e2e8f0;position:sticky;left:0;background:#fafbfc;z-index:1}
+  .fcal-time-row{height:52px;border-bottom:1px solid #f1f3f5;display:flex;align-items:flex-start;justify-content:center;padding-top:-2px;position:relative}
+  .fcal-time-row::before{content:'';position:absolute;left:58px;right:0;top:26px;border-top:1px solid #f1f3f5;z-index:0}
+  .fcal-time-txt{font-size:10px;color:#9ca3af;position:relative;z-index:1;background:#fafbfc;padding:0 2px}
+  .fcal-grid{flex:1;display:flex;position:relative}
+  .fcal-col{flex:1;min-width:0;border-right:1px solid #f1f3f5;position:relative;cursor:pointer}
+  .fcal-col:last-child{border-right:none}
+  .fcal-col:hover{background:#fafbff}
+  .fcal-col.today-col{background:#fffbeb}
+  .fcal-event{position:absolute;left:3px;right:3px;border-radius:5px;padding:3px 6px;font-size:11px;cursor:pointer;z-index:3;overflow:hidden;border-left:3px solid;transition:box-shadow .15s,line-height .15s;white-space:nowrap;text-overflow:ellipsis;line-height:1.4}
+  .fcal-event:hover{box-shadow:0 2px 8px rgba(0,0,0,.12);z-index:5}
+  .fcal-event-name{font-weight:600;overflow:hidden;text-overflow:ellipsis}
+  .fcal-event-time{font-size:10px;opacity:.7;margin-top:1px}
+  .fcal-event[data-color="营销"]{background:#fef3c7;border-left-color:#f59e0b;color:#92400e}
+  .fcal-event[data-color="设计"]{background:#cffafe;border-left-color:#06b6d4;color:#155e75}
+  .fcal-event[data-color="数据"]{background:#ede9fe;border-left-color:#8b5cf6;color:#5b21b6}
+  .fcal-empty-hint{text-align:center;padding:40px 16px;color:#9ca3af;font-size:13px}
+  .fcalNavBtn:hover,.fcalAddBtn:hover{opacity:.85}
   /* fix69az→fix69bb：低/高周转系列表 + 长库龄预警表（库存周转模块） */
   .turn-tbl{width:100%;border-collapse:collapse;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;font-size:12px}
   .turn-tbl thead{background:#f8fafc}
@@ -419,20 +448,28 @@
     </div>
   </section>
 
-  <!-- GANTT 数据 -->
+  <!-- GANTT 数据（飞书式周视图日历） -->
   <section data-section="gantt_data" style="display:none" data-page-node-id="Gs9qEfTQrEdAv9uBz7Z0W9">
     <div class="panel" data-page-node-id="QbNu88JMyDI02ztTzAb33A">
-      <h2 data-page-node-id="DknJ7tGGTLAiyJkw7D4UsP">数据</h2>
-      <div style="margin:-2px 0 8px;font-size:13px;color:#374151" data-page-node-id="0fTxaXs2ntILvcifD5brgf">查看月份：<select class="ganttMonth" data-module="数据" style="padding:3px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px" data-page-node-id="gk5ME36HZ0gQ3OZKDUbjFt"></select><button class="btn2 primary btnApplyMonth" data-module="数据" style="background:var(--blue);color:#fff;border-color:var(--blue);margin-left:8px" data-page-node-id="yPDtdQKewCEIzmWZ1EVp7T">应用日期</button>（含历史月份，可切换查看）</div>
-      <div style="margin:2px 0 8px;font-size:13px;color:#374151" data-page-node-id="adL7VfcCpGYBCFnKmu4L3e">
-        <button class="btn2 ganttWeekBtn" data-module="数据" data-week="prev" style="margin-right:4px" data-page-node-id="ojwuRJE14HKhWTQ7WIBH2g">‹ 上一周</button>
-        <button class="btn2 ganttWeekBtn" data-module="数据" data-week="this" style="margin-right:4px" data-page-node-id="1YbOTXiRDF5UbYDCTg6rzX">本周</button>
-        <button class="btn2 ganttWeekBtn" data-module="数据" data-week="next" style="margin-right:4px" data-page-node-id="jxttcr8FEnO2TieQMhcDJA">下一周 ›</button>
-        <button class="btn2 primary ganttFullMonthBtn" data-module="数据" style="background:var(--blue);color:#fff;border-color:var(--blue)" data-page-node-id="W7KC7bIBn1ql2ZRW8HwYrg">📅 显示整月</button>
-        <span class="muted" data-page-node-id="NfyVCftuDyCkLxYuEsKQDC">（横轴=天·周一开始；点任务块可编辑）</span>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px" data-page-node-id="fcalHeader">
+        <span style="font-size:16px;font-weight:600;color:#1e293b">📅 日历</span>
+        <button class="btn2 primary fcalAddBtn" id="fcalAddDataBtn" style="font-size:12px;padding:4px 12px;background:var(--blue);color:#fff;border-color:var(--blue);border-radius:6px" data-page-node-id="fcalAddBtn">+ 新建事项</button>
       </div>
-      <p class="hint" data-page-node-id="4SSBZIp8cMJONvKqZkreGB">**周/月视图**：默认显示一周（可左右切换）；点「显示整月」查看月份全貌。任务条按负责人着色，跨周任务自动延展。点任务块可编辑。数据在「数据输入区」统一录入（含「模块」列自动分流）。</p>
-      <div id="ganttData" data-page-node-id="UMIxFtGHmlFGSyMJlQfjju"></div>
+      <!-- 工具栏：导航 + 日期范围 -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap" data-page-node-id="fcalToolbar">
+        <button class="btn2 fcalNavBtn" data-dir="today" style="padding:4px 10px;border-radius:6px;font-size:12px" data-page-node-id="fcalToday">今天</button>
+        <button class="btn2 fcalNavBtn" data-dir="prev" style="padding:4px 8px;border-radius:6px;font-size:14px" data-page-node-id="fcalPrev">‹</button>
+        <button class="btn2 fcalNavBtn" data-dir="next" style="padding:4px 8px;border-radius:6px;font-size:14px" data-page-node-id="fcalNext">›</button>
+        <span id="fcalDateRange" style="font-size:14px;font-weight:600;color:#1e293b;min-width:200px;text-align:center" data-page-node-id="fcalRange"></span>
+        <div style="flex:1"></div>
+        <select id="fcalViewMode" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:12px" data-page-node-id="fcalViewSel">
+          <option value="week">周视图</option>
+          <option value="month">月视图</option>
+        </select>
+      </div>
+      <!-- 飞书式日历网格容器 -->
+      <div id="feishuCalendar" class="feishu-calendar" data-page-node-id="feishuCalendarEl"></div>
+      <p class="hint" data-page-node-id="fcalHint">飞书式日历：点击空白格新增事项，点击已有事项编辑。支持按时间拖拽（开始/结束时间自动对齐）。数据与「数据输入区·甘特图」同步。</p>
     </div>
   </section>
 
@@ -3259,6 +3296,197 @@ function parseGantt(text){
   }
   return rows;
 }
+/* fix69bv：飞书式周/月视图日历（数据日历专用）——替代原 renderGantt 的横向甘特图 */
+var fcalWeekStart=null; // 当前周起始（周一 YYYY-MM-DD）
+var fcalViewMode='week'; // 'week' | 'month'
+function getFcalWeekStart(){ if(!fcalWeekStart){ fcalWeekStart=mondayOf(todayStr()); } return fcalWeekStart; }
+function fmtDateCN(d){ /* YYYY年M月D日 */ var p=d.match(/^(\d{4})-(\d{2})-(\d{2})$/); return p?(+p[2])+'月'+(+p[3])+'日':d; }
+function fmtRangeCN(s,e){ return fmtDateCN(s)+' - '+fmtDateCN(e); }
+/* 解析时间字符串 "HH:mm" → 分钟数(0~1440) */
+function timeToMin(t){ if(!t) return null; var m=t.match(/^(\d{1,2}):(\d{2})$/); return m? (+m[1])*60+(+m[2]):null; }
+function minToTime(m){ if(m==null) return ''; var h=Math.floor(m/60), mi=m%60; return String(h).padStart(2,'0')+':'+String(mi).padStart(2,'0'); }
+/* 获取事件在日历网格中的位置信息 {top%, height%} */
+function eventPos(startTime, endTime){
+  var s=timeToMin(startTime), e=timeToMin(endTime);
+  if(s==null && e==null){ s=9*60; e=10*60; } // 默认 09:00-10:00
+  else if(e==null) e=s+60;
+  else if(s==null) s=Math.max(0, e-60);
+  if(s<0) s=0; if(e>24*60) e=24*60;
+  if(e<=s) e=s+30;
+  var dayStart=7*60, dayEnd=19*60; /* 日程显示范围 07:00-19:00 */
+  var totalMin=dayEnd-dayStart;
+  var topPct=Math.max(0, ((s-dayStart)/totalMin)*100);
+  var hgtPct=Math.min(100-topPct, ((e-s)/totalMin)*100);
+  return {top:topPct, height:Math.max(hgtPct, 1.8)}; /* 最小高度约1.8%保证可点击 */
+}
+function renderFeishuCalendar(){
+  var el=$('#feishuCalendar'); if(!el) return;
+  var module='数据';
+  var all=(STATE.gantt||[]).filter(function(r){ return r.module===module && r.date; });
+  var ws=getFcalWeekStart();
+  var isMonth=(fcalViewMode==='month');
+  /* 构建日期列 */
+  var days=[];
+  if(isMonth){
+    var ym=ws.slice(0,7); /* YYYY-MM */
+    var d0=new Date(ym+'-01'), ld=new Date(+ym.slice(0,4), +ym.slice(5,7), 0).getDate();
+    for(var di=1;di<=ld;di++){
+      var dd=ym+'-'+String(di).padStart(2,'0');
+      days.push(dd);
+    }
+    /* 补齐到完整周网格：月初之前 + 月末之后 */
+    var fw=new Date(ym+'-01').getDay(); /* 周日=0..周六=6，转为周一=0 */
+    var firstMonday=((fw+6)%7);
+    for(var bi=firstMonday-1;bi>=0;bi--){
+      var bd=new Date(+ym.slice(0,4), +ym.slice(5,7)-1, 1-bi);
+      days.unshift(bd.getFullYear()+'-'+String(bd.getMonth()+1).padStart(2,'0')+'-'+String(bd.getDate()).padStart(2,'0'));
+    }
+    var lastDow=new Date(+ym.slice(0,4), +ym.slice(5,7), ld).getDay();
+    var tailDays=6-((lastDow+6)%7);
+    for(var ti=1;ti<=tailDays;ti++){
+      var td=new Date(+ym.slice(0,4), +ym.slice(5,7), ld+ti);
+      days.push(td.getFullYear()+'-'+String(td.getMonth()+1).padStart(2,'0')+'-'+String(td.getDate()).padStart(2,'0'));
+    }
+  } else {
+    for(var wi=0;wi<7;wi++) days.push(ymdAdd(ws, wi));
+  }
+  var today=todayStr();
+  var WD=['周日','周一','周二','周三','周四','周五','周六'];
+  var dayIdx={}; days.forEach(function(d,i){ dayIdx[d]=i; });
+  /* 更新日期范围文字 */
+  $('#fcalDateRange').textContent = isMonth ?
+    (ws.slice(0,4)+'年'+(+ws.slice(5,7))+'月') :
+    fmtRangeCN(days[0], days[days.length-1]);
+  /* 按日期分组事件 */
+  var eventsByDay={}; days.forEach(function(d){ eventsByDay[d]=[]; });
+  all.forEach(function(ev){
+    var ed=ev.date;
+    if(dayIdx[ed]!=null) eventsByDay[ed].push(ev);
+    else if(!isMonth){
+      /* 周视图：也显示跨周的（起止包围本周的） */
+      var eed=ev.endDate||ev.date;
+      if(ed<=days[days.length-1] && eed>=days[0]){
+        for(var ci=0;ci<days.length;ci++){
+          var cd=days[ci];
+          if(cd>=ed && cd<=eed) eventsByDay[cd].push(ev);
+        }
+      }
+    }
+  });
+  /* ── 渲染头部 ── */
+  var head='<div class="fcal-head">';
+  head+='<div class="fcal-time-col">GMT+8</div>';
+  days.forEach(function(d){
+    var dt=new Date(d.slice(0,4), d.slice(5,7)-1, d.slice(8,10));
+    var wd=dt.getDay(), dn=+d.slice(8,10);
+    var isToday=(d===today);
+    var isOtherMonth=isMonth && (d.slice(0,7)!==ws.slice(0,7));
+    head+='<div class="fcal-day-col'+(isToday?' today-col':'')+'">';
+    head+='<div class="fcal-day-name">'+WD[wd]+'</div>';
+    head+='<div class="fcal-day-num'+(isToday?' today':'')+(isOtherMonth?' other-month':'')+'">'+dn+'</div>';
+    head+='</div>';
+  });
+  head+='</div>';
+  /* ── 渲染时间网格 ── */
+  var body='<div class="fcal-body">';
+  /* 左侧时间标签 */
+  body+='<div class="fcal-time-labels">';
+  var startH=7, endH=19;
+  for(var hi=startH;hi<endH;hi++){
+    body+='<div class="fcal-time-row"><span class="fcal-time-txt">'+String(hi).padStart(2,'0')+':00</span></div>';
+  }
+  body+='</div>';
+  /* 日期列网格 */
+  body+='<div class="fcal-grid">';
+  days.forEach(function(d){
+    var isToday=(d===today);
+    var dayEvents=eventsByDay[d]||[];
+    body+='<div class="fcal-col'+(isToday?' today-col':'')+'" data-fcal-date="'+d+'">';
+    /* 渲染该日的事件块 */
+    dayEvents.forEach(function(ev){
+      var pos=eventPos(ev.startTime, ev.endTime);
+      var color=ev.module||module;
+      var name=(ev.task||'事项').trim();
+      var st=ev.startTime||'', et=ev.endTime||'';
+      var timeText=(st&&et)?(st+' - '+et):(st||et||'');
+      body+='<div class="fcal-event" data-gid="'+ev._gid+'" data-color="'+escAttr(color)+'" style="top:'+pos.top.toFixed(1)+'%;height:'+pos.height.toFixed(1)+'%" title="'+esc(name)+' ('+timeText+')">';
+      body+='<div class="fcal-event-name">'+esc(name)+'</div>';
+      if(timeText) body+='<div class="fcal-event-time">'+esc(timeText)+'</div>';
+      body+='</div>';
+    });
+    body+='</div>';
+  });
+  body+='</div></div>';
+  el.innerHTML=head+body;
+  /* 无数据提示 */
+  if(!all.length){
+    el.innerHTML='<div class="fcal-empty-hint">暂无数据日历事项<br><span style="font-size:12px;color:#b0b7c3">点击上方「+ 新建事项」或直接在日历空白处点击添加</span></div>'+head+body;
+  }
+  /* 绑定事件：点击事件块→编辑；点击空白格→新增 */
+  $$('.fcal-event', el).forEach(function(node){
+    node.addEventListener('click', function(e){
+      e.stopPropagation();
+      var gid=+this.getAttribute('data-gid');
+      if(gid) openGanttEditor(gid, module);
+    });
+  });
+  $$('.fcal-col', el).forEach(function(col){
+    col.addEventListener('click', function(e){
+      if(e.target.classList.contains('fcal-event')) return; /* 点事件块不触发新增 */
+      var date=this.getAttribute('data-fcal-date');
+      if(!date) return;
+      /* 根据点击位置估算时间 */
+      var rect=this.getBoundingClientRect();
+      var y=e.clientY-rect.top;
+      var pct=y/rect.height;
+      var min=Math.round(startH*60+pct*(endH-startH)*60);
+      var hh=Math.floor(min/60), mm=min%60;
+      var timeStr=String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0');
+      openGanttEditor(null, module);
+      /* 预填日期和时间 */
+      $('#gm_date').value=date;
+      $('#gm_startTime').value=timeStr;
+      var endMin=min+60;
+      var eh=Math.floor(endMin/60), em=endMin%60;
+      $('#gm_endTime').value=String(eh).padStart(2,'0')+':'+String(em).padStart(2,'0');
+    });
+  });
+}
+
+/* 飞书日历导航按钮绑定 */
+document.addEventListener('DOMContentLoaded', function(){
+  /* 新建按钮 */
+  var addBtn=$('#fcalAddDataBtn');
+  if(addBtn) addBtn.addEventListener('click', function(){ openGanttEditor(null, '数据'); });
+  /* 导航按钮 */
+  $$('.fcalNavBtn').forEach(function(b){
+    b.addEventListener('click', function(){
+      var dir=this.getAttribute('data-dir');
+      var ws=getFcalWeekStart();
+      if(dir==='today'){ fcalWeekStart=mondayOf(todayStr()); }
+      else if(dir==='prev'){ fcalWeekStart=ymdAdd(ws, -7); }
+      else if(dir==='next'){ fcalWeekStart=ymdAdd(ws, 7); }
+      renderFeishuCalendar();
+    });
+  });
+  /* 视图切换 */
+  var vmSel=$('#fcalViewMode');
+  if(vmSel) vmSel.addEventListener('change', function(){
+    fcalViewMode=this.value;
+    /* 切换到月视图时，将周起始对齐到当月1号所在周的周一 */
+    if(fcalViewMode==='month'){
+      var ws=getFcalWeekStart();
+      var ym=ws.slice(0,7);
+      var firstDay=new Date(ym+'-01');
+      var fdw=firstDay.getDay(); /* 日=0..六=6 */
+      var mondayOffset=(fdw+6)%7;
+      fcalWeekStart=ymdAdd(ym+'-'+String(1-mondayOffset).padStart(2,'0'), 0);
+      if(fcalWeekStart>=ym+'-01') fcalWeekStart=ymdAdd(fcalWeekStart, -7);
+    }
+    renderFeishuCalendar();
+  });
+});
+
 function ganttKey(r){ return (r.module||'')+'|'+(r.date||'')+'|'+(r.task||'任务'); }
 function mergeGantt(existing, incoming){
   const m=new Map();
@@ -3278,7 +3506,7 @@ function getGanttMonths(module){
   return Array.from(set).sort().reverse();
 }
 // 甘特图：已应用月份 / 可见周(周一) 记忆；点「应用日期」才切换月份
-const GANTT_EL={'营销':'#ganttMkt','设计':'#ganttDesign','数据':'#ganttData'};
+const GANTT_EL={'营销':'#ganttMkt','设计':'#ganttDesign'}; /* fix69bv：数据已改飞书式日历(#feishuCalendar)，不再走 renderGantt */
 const MODULE_COLORS={'营销':'#f59e0b','设计':'#06b6d4','数据':'#8b5cf6'}; // fix49: 甘特图模块主题色（原声明在 fix41/42 批量编辑中丢失）；设计=青色 数据=紫罗兰
 const ganttMonthSel={}; // module -> 已应用的 YYYY-MM
 const ganttWeekStart={}; // module -> 可见周的周一 YYYY-MM-DD
@@ -3490,7 +3718,9 @@ function ganttToText(){
   return lines.join('\n');
 }
 function renderAllGantt(){
-  ['营销','设计','数据'].forEach(m=>{ const ym=ganttMonthSel[m]||curMonth(); renderGantt(m, GANTT_EL[m], ym); });
+  ['营销','设计'].forEach(m=>{ const ym=ganttMonthSel[m]||curMonth(); renderGantt(m, GANTT_EL[m], ym); });
+  /* fix69bv：数据日历改用飞书式周视图 */
+  if(typeof renderFeishuCalendar==='function') renderFeishuCalendar();
 }
 function findGanttRow(gid){ return (STATE.gantt||[]).find(r=>r._gid===gid); }
 let gmEditingGid=null;
@@ -3549,7 +3779,8 @@ $('#gm_delete').addEventListener('click',deleteGanttEditor);
 $('#ganttModal').addEventListener('click',e=>{ if(e.target.id==='ganttModal') closeGanttEditor(); });
 document.addEventListener('keydown',e=>{ if(e.key==='Escape' && $('#ganttModal').classList.contains('show')) closeGanttEditor(); });
 // 点任务块 → 打开编辑（事件委托，innerHTML 重渲染不影响）
-['#ganttMkt','#ganttDesign','#ganttData'].forEach(id=>{ const el=$(id); if(el) el.addEventListener('click',e=>{ const t=e.target.closest && e.target.closest('[data-gid]'); if(t){ openGanttEditor(+t.getAttribute('data-gid')); } }); });
+['#ganttMkt','#ganttDesign'].forEach(id=>{ const el=$(id); if(el) el.addEventListener('click',e=>{ const t=e.target.closest && e.target.closest('[data-gid]'); if(t){ openGanttEditor(+t.getAttribute('data-gid')); } }); });
+/* fix69bv：飞书日历的点击编辑由 renderFeishuCalendar 内部绑定 */
 // 显示整月 / 返回周视图 切换按钮
 $$('.ganttFullMonthBtn').forEach(b=>b.addEventListener('click',()=>{
   const module=b.dataset.module;
@@ -3871,7 +4102,8 @@ $$('.clearBtn').forEach(b=>b.addEventListener('click',()=>openClearModal(b.datas
 function renderAll(){
   refreshInvDateOptions();
   renderSales(); renderInv(); renderJzt(); renderJztTargets(); renderTargets(); renderOverview();
-  populateGanttMonth('营销','#ganttMkt'); populateGanttMonth('设计','#ganttDesign'); populateGanttMonth('数据','#ganttData');
+  populateGanttMonth('营销','#ganttMkt'); populateGanttMonth('设计','#ganttDesign');
+  /* fix69bv：数据日历已改飞书式，不再需要月份下拉 */
   updateTimeProgress();
   // fix69w：#lastUpdate 已替换为 #saveStatus（由 updateSaveStatus 管理），此处不再单独更新
   try{ const lu=$('#lastUpdate'); if(lu) lu.textContent='更新于 '+new Date().toLocaleString('zh-CN'); }catch(e){}
