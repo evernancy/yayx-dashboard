@@ -181,9 +181,9 @@
   .fcal-event:hover{box-shadow:0 2px 8px rgba(0,0,0,.12);z-index:5}
   .fcal-event-name{font-weight:600;overflow:hidden;text-overflow:ellipsis}
   .fcal-event-time{font-size:10px;opacity:.7;margin-top:1px}
-  .fcal-event[data-color="营销"]{background:#fef3c7;border-left-color:#f59e0b;color:#92400e}
-  .fcal-event[data-color="设计"]{background:#cffafe;border-left-color:#06b6d4;color:#155e75}
-  .fcal-event[data-color="数据"]{background:#ede9fe;border-left-color:#8b5cf6;color:#5b21b6}
+  .fcal-event[data-urgency="非常紧急"]{background:#fee2e2;border-left-color:#dc2626;color:#991b1b}
+  .fcal-event[data-urgency="紧急"]{background:#ffedd5;border-left-color:#ea580c;color:#9a3412}
+  .fcal-event[data-urgency="常规"]{background:#ede9fe;border-left-color:#8b5cf6;color:#5b21b6}
   .fcal-empty-hint{text-align:center;padding:40px 16px;color:#9ca3af;font-size:13px}
   .fcalNavBtn:hover,.fcalAddBtn:hover{opacity:.85}
   /* fix69az→fix69bb：低/高周转系列表 + 长库龄预警表（库存周转模块） */
@@ -466,6 +466,13 @@
           <option value="week">周视图</option>
           <option value="month">月视图</option>
         </select>
+      </div>
+      <!-- 紧急度图例 -->
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:8px;flex-wrap:wrap;font-size:12px;color:#475569" data-page-node-id="fcalLegend">
+        <span style="font-weight:600">紧急度：</span>
+        <span style="display:inline-flex;align-items:center;gap:5px"><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:#fee2e2;border-left:3px solid #dc2626"></span>非常紧急</span>
+        <span style="display:inline-flex;align-items:center;gap:5px"><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:#ffedd5;border-left:3px solid #ea580c"></span>紧急</span>
+        <span style="display:inline-flex;align-items:center;gap:5px"><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:#ede9fe;border-left:3px solid #8b5cf6"></span>常规</span>
       </div>
       <!-- 飞书式日历网格容器 -->
       <div id="feishuCalendar" class="feishu-calendar" data-page-node-id="feishuCalendarEl"></div>
@@ -825,6 +832,13 @@
       <label data-page-node-id="D1s8gP51FiGjLy0kX5ND8C">负责人<input id="gm_owner" type="text" placeholder="如：张三" data-page-node-id="rHqzSGExjEyVT0llUYxAOZ"></label>
       <label data-page-node-id="QlAz1OmDqdmvw13hpYDdDw">进度（%）<input id="gm_progress" type="number" min="0" max="100" step="1" data-page-node-id="FKSpKznjpG3VUSs5tIrlLo"></label>
       <label data-page-node-id="hOp0I8foV7S2GS7a3UgFn4">状态<input id="gm_status" type="text" placeholder="如：进行中 / 已完成" data-page-node-id="NLxABGTkFOsaeDgd8aAY93"></label>
+      <label data-page-node-id="urgGanttSel">紧急度
+        <select id="gm_urgency" data-page-node-id="urgGanttSel2">
+          <option value="常规" data-page-node-id="urgN">常规（淡紫）</option>
+          <option value="紧急" data-page-node-id="urgU">紧急（橙色）</option>
+          <option value="非常紧急" data-page-node-id="urgV">非常紧急（红色）</option>
+        </select>
+      </label>
     </div>
     <label style="display:block;margin:10px 0 0;font-size:12px;color:#475569" data-page-node-id="4o6RLCaaDMmbsKkosH8fhf">备注
       <textarea id="gm_note" rows="2" style="width:100%;font-size:13px;padding:6px 8px;border:1px solid #d1d5db;border-radius:7px;color:var(--ink);resize:vertical"></textarea>
@@ -3236,9 +3250,10 @@ const GANTT_FIELDS=[
   {key:'owner', names:['负责人','负责','owner','person','who']},
   {key:'progress', names:['进度','完成度','进度%','完成率','progress','pct']},
   {key:'status', names:['状态','status','state']},
+  {key:'urgency', names:['紧急度','紧急程度','优先级','紧急级别','urgency','priority','level']},
   {key:'note', names:['备注','说明','note','remark','desc']},
 ];
-const GANTT_DEFAULT_ORDER=['module','date','endDate','startTime','endTime','task','owner','progress','status','note'];
+const GANTT_DEFAULT_ORDER=['module','date','endDate','startTime','endTime','task','owner','progress','status','note','urgency'];
 function normalizeModule(s){ s=String(s||'').trim(); if(/营销/.test(s)) return '营销'; if(/设计/.test(s)) return '设计'; if(/数据/.test(s)) return '数据'; return s; }
 
 // ── 中国法定节假日（按年维护；来源：国务院办公厅放假安排，覆盖 2026）──
@@ -3292,7 +3307,10 @@ function parseGantt(text){
     const startTime=normTime(o.startTime);   // 起止时间（时:分），可选
     const endTime=normTime(o.endTime);
     let progress=parseFloat(String(o.progress||'').replace(/[%\s]/g,'')); if(isNaN(progress)) progress=0;
-    rows.push({ module, date, endDate, startTime, endTime, task:(o.task||'').trim()||'任务', owner:(o.owner||'').trim(), progress:Math.max(0,Math.min(100,progress)), status:(o.status||'').trim(), note:(o.note||'').trim() });
+    let urgency=String(o.urgency||'').trim();
+    if(urgency && !['非常紧急','紧急','常规'].includes(urgency)) urgency='常规';
+    if(!urgency) urgency='常规';
+    rows.push({ module, date, endDate, startTime, endTime, task:(o.task||'').trim()||'任务', owner:(o.owner||'').trim(), progress:Math.max(0,Math.min(100,progress)), status:(o.status||'').trim(), note:(o.note||'').trim(), urgency });
   }
   return rows;
 }
@@ -3405,11 +3423,11 @@ function renderFeishuCalendar(){
     /* 渲染该日的事件块 */
     dayEvents.forEach(function(ev){
       var pos=eventPos(ev.startTime, ev.endTime);
-      var color=ev.module||module;
+      var urg=ev.urgency||'常规';
       var name=(ev.task||'事项').trim();
       var st=ev.startTime||'', et=ev.endTime||'';
       var timeText=(st&&et)?(st+' - '+et):(st||et||'');
-      body+='<div class="fcal-event" data-gid="'+ev._gid+'" data-color="'+escAttr(color)+'" style="top:'+pos.top.toFixed(1)+'%;height:'+pos.height.toFixed(1)+'%" title="'+esc(name)+' ('+timeText+')">';
+      body+='<div class="fcal-event" data-gid="'+ev._gid+'" data-urgency="'+escAttr(urg)+'" style="top:'+pos.top.toFixed(1)+'%;height:'+pos.height.toFixed(1)+'%" title="'+esc(name)+' ('+timeText+') · 紧急度：'+esc(urg)+'">';
       body+='<div class="fcal-event-name">'+esc(name)+'</div>';
       if(timeText) body+='<div class="fcal-event-time">'+esc(timeText)+'</div>';
       body+='</div>';
@@ -3738,6 +3756,7 @@ function openGanttEditor(gid, module){
   $('#gm_owner').value = row? (row.owner||'') : '';
   $('#gm_progress').value = row? (row.progress!=null?row.progress:'') : '';
   $('#gm_status').value = row? (row.status||'') : '';
+  $('#gm_urgency').value = row? (row.urgency||'常规') : '常规';
   $('#gm_note').value = row? (row.note||'') : '';
   $('#gm_delete').style.display = isNew ? 'none' : '';
   $('#ganttModal').classList.add('show');
@@ -3752,7 +3771,8 @@ function saveGanttEditor(){
   const startTime=normTime($('#gm_startTime').value);
   const endTime=normTime($('#gm_endTime').value);
   let progress=parseFloat(($('#gm_progress').value||'').replace(/[%\s]/g,'')); if(isNaN(progress)) progress=0; progress=Math.max(0,Math.min(100,progress));
-  const obj={ module, date, endDate, startTime, endTime, task:($('#gm_task').value||'').trim()||'任务', owner:($('#gm_owner').value||'').trim(), progress, status:($('#gm_status').value||'').trim(), note:($('#gm_note').value||'').trim() };
+  let urgency=($('#gm_urgency').value||'常规').trim(); if(!['非常紧急','紧急','常规'].includes(urgency)) urgency='常规';
+  const obj={ module, date, endDate, startTime, endTime, task:($('#gm_task').value||'').trim()||'任务', owner:($('#gm_owner').value||'').trim(), progress, status:($('#gm_status').value||'').trim(), note:($('#gm_note').value||'').trim(), urgency };
   if(gmEditingGid!=null){ const idx=(STATE.gantt||[]).findIndex(r=>r._gid===gmEditingGid); if(idx>=0){ obj._gid=gmEditingGid; STATE.gantt[idx]=obj; } }
   else { ensureGanttIds(); obj._gid=_gidSeq++; STATE.gantt.push(obj); }
   // 回写文本框，保持「数据输入区」与图表一致；set .value 不会触发 input 事件，不会死循环
