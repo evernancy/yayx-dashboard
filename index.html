@@ -61,22 +61,25 @@
   .kpi .label{color:var(--muted);font-size:12px;white-space:nowrap}
   .kpi .value{font-size:20px;font-weight:700;margin-top:3px}
   .kpi .value.green{color:var(--green)} .kpi .value.red{color:var(--red)} .kpi .value.blue{color:var(--blue)} .kpi .value.amber{color:var(--amber)}
-  /* fix69ch：三列左中右 —— 左=目标达成(KPI竖排)，中=本周事项，右=上周事项，等高；右上角保存+日期 */
+  /* fix69ci：三列等高 —— 标题行(目标达成|本周|上周)同行 + 内容三列grid对齐 */
   .zy-sales-wrap{margin-top:8px}
-  .zy-sales-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:4px}
-  .zy-sales-head .zy-kpi-title{margin-bottom:0}
-  .zy-sales-grid{display:flex;flex-wrap:nowrap;gap:16px;align-items:stretch;margin-top:0}
-  .zy-kpi-col{flex:1 1 300px;min-width:240px;display:flex;flex-direction:column}
+  .zy-sales-head{display:grid;grid-template-columns:1.2fr 1fr 1fr auto;gap:16px;align-items:end;margin-bottom:6px;padding-bottom:6px;border-bottom:2px solid var(--line,#e5e7eb)}
+  .zy-sales-head .zy-kpi-title{font-size:15px;font-weight:600;color:var(--text,#1f2937);margin-bottom:0}
+  .zy-sales-head .zy-col-hdr{font-size:14px;font-weight:600;color:var(--text,#1f2937)}
+  .zy-sales-grid{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:16px;align-items:start;margin-top:0}
+  .zy-kpi-col{display:flex;flex-direction:column;min-width:0}
   .zy-kpi-title{font-size:15px;font-weight:600;color:var(--text,#1f2937);margin-bottom:10px}
   .kpis-vertical{grid-template-columns:1fr}
-  /* 右侧事项区 = 本周+上周两列（占 ~2 倍宽，使三列视觉等高等宽） */
-  .zy-sales-grid #todo_sales{flex:2 1 600px;min-width:480px;margin:0}
-  .zy-sales-grid #todo_sales .todo-col{display:flex;flex-direction:column;flex:1 1 0}
+  /* 右侧两列 = 本周+上周（todo-grid 内部仍为 1fr 1fr 两列） */
+  .zy-sales-grid #todo_sales{margin:0;min-width:0}
+  .zy-sales-grid #todo_sales .todo-col{display:flex;flex-direction:column;flex:1 1 0;min-height:0}
   .zy-sales-grid #todo_sales .todo-box{flex:1 1 0;min-height:0;max-height:none}
-  .zy-jzt-grid #todo_jzt{flex:2 1 600px;min-width:480px;margin:0}
-  .zy-jzt-grid #todo_jzt .todo-col{display:flex;flex-direction:column;flex:1 1 0}
+  .zy-jzt-grid #todo_jzt{margin:0;min-width:0}
+  .zy-jzt-grid #todo_jzt .todo-col{display:flex;flex-direction:column;flex:1 1 0;min-height:0}
   .zy-jzt-grid #todo_jzt .todo-box{flex:1 1 0;min-height:0;max-height:none}
-  /* 保存/日期筛选定位到右上角（与标题同行右侧），不再占满整行 */
+  /* 隐藏事项面板内部的 h4 本周/上周（已由外层标题行提供） */
+  .zy-sales-grid .todo-col > h4{display:none}
+  /* 保存/日期筛选定位到右上角 */
   .todo-bar.todo-bar-head{flex:0 0 auto;margin:0;background:transparent;border:none;padding:0}
   .todo-hist-banner{flex:1 1 100%}
   /* fix69l：系列明细树形表格 */
@@ -247,7 +250,7 @@
 <body data-page-node-id="TnJopYRx03FYyUEAnM7EON">
 <!-- fix69af 版本标记：厂直值改"厂直"+系列明细时间联动 -->
 <div id="versionMarker" style="background:linear-gradient(135deg,#16a34a,#2563eb);color:#fff;text-align:center;padding:4px 10px;font:bold 13px system-ui;position:relative;z-index:99998;">
-  🟢 fix69ch · <span id="vmMode"></span> v2026-09-02 · <span id="vmTime"></span> · <span id="vmDebug" style="font-weight:normal;opacity:.9;background:rgba(0,0,0,.2);padding:1px 6px;border-radius:3px"></span>
+  🟢 fix69ci · <span id="vmMode"></span> v2026-09-02 · <span id="vmTime"></span> · <span id="vmDebug" style="font-weight:normal;opacity:.9;background:rgba(0,0,0,.2);padding:1px 6px;border-radius:3px"></span>
 </div>
 <!-- fix69aa 终极诊断：独立小脚本（不在主282KB块内），测试JS能否执行 -->
 <script>
@@ -329,7 +332,9 @@
       <div class="timeProgress" id="tvTimeProgress" data-page-node-id="A0uYhUeGQVX13yZ863L14g"></div>
       <div class="zy-sales-wrap">
         <div class="zy-sales-head">
-          <div class="zy-kpi-title">目标达成情况</div>
+          <span class="zy-kpi-title">目标达成情况</span>
+          <span class="zy-col-hdr">本周</span>
+          <span class="zy-col-hdr">上周</span>
           <div id="todoBar_sales" class="todo-bar todo-bar-head"></div>
         </div>
         <div class="zy-sales-grid">
@@ -440,7 +445,9 @@
       <!-- fix69cg：左=竖排KPI卡，右=本周/上周事项；保存/日期筛选置于右上角 -->
       <div class="zy-sales-wrap">
         <div class="zy-sales-head">
-          <div class="zy-kpi-title">投放指标</div>
+          <span class="zy-kpi-title">投放指标</span>
+          <span class="zy-col-hdr">本周</span>
+          <span class="zy-col-hdr">上周</span>
           <div id="todoBar_jzt" class="todo-bar todo-bar-head"></div>
         </div>
         <div class="zy-sales-grid zy-jzt-grid">
@@ -947,7 +954,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-09-02-fix69ch-sales-3col-layout';
+const APP_VERSION = '2026-09-02-fix69ci-header-same-line';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
