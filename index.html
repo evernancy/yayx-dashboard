@@ -61,17 +61,17 @@
   .kpi .label{color:var(--muted);font-size:12px;white-space:nowrap}
   .kpi .value{font-size:20px;font-weight:700;margin-top:3px}
   .kpi .value.green{color:var(--green)} .kpi .value.red{color:var(--red)} .kpi .value.blue{color:var(--blue)} .kpi .value.amber{color:var(--amber)}
-  /* fix69f：李锦记销售目标达成 —— 竖版三栏：左=目标KPI竖排，中=本周事项，右=上周事项 */
+  /* fix69cg：恢复三列左中右布局 —— KPI横排多列(左/中) + 事项面板(右) */
   .zy-sales-grid{display:flex;flex-wrap:wrap;gap:16px;align-items:stretch;margin-top:8px}
-  .zy-kpi-col{flex:1 1 340px;min-width:260px;display:flex;flex-direction:column}
+  .zy-kpi-col{flex:3 1 520px;min-width:400px;display:flex;flex-direction:column}
   .zy-kpi-title{font-size:15px;font-weight:600;color:var(--text,#1f2937);margin-bottom:10px}
   .kpis-vertical{grid-template-columns:1fr}
-  /* fix69i：右侧本周/上周保持并排（左中右三栏），输入框拉高对齐左侧底部 */
-  .zy-sales-grid #todo_sales{flex:2 1 500px;min-width:400px;margin:0}
+  /* fix69cg：右侧事项面板收窄（KPI区占 ~60-70%） */
+  .zy-sales-grid #todo_sales{flex:1 1 340px;min-width:300px;margin:0}
   .zy-sales-grid #todo_sales .todo-col{display:flex;flex-direction:column}
   .zy-sales-grid #todo_sales .todo-box{flex:1 1 0;min-height:0;max-height:none}
-  /* fix69cb：京准通事项区（与销售目标达成并排布局一致） */
-  .zy-jzt-grid #todo_jzt{flex:2 1 500px;min-width:400px;margin:0}
+  /* fix69cg：京准通事项区（与销售目标达成一致，KPI横排+事项右） */
+  .zy-jzt-grid #todo_jzt{flex:1 1 340px;min-width:300px;margin:0}
   .zy-jzt-grid #todo_jzt .todo-col{display:flex;flex-direction:column}
   .zy-jzt-grid #todo_jzt .todo-box{flex:1 1 0;min-height:0;max-height:none}
   /* fix69l：系列明细树形表格 */
@@ -242,7 +242,7 @@
 <body data-page-node-id="TnJopYRx03FYyUEAnM7EON">
 <!-- fix69af 版本标记：厂直值改"厂直"+系列明细时间联动 -->
 <div id="versionMarker" style="background:linear-gradient(135deg,#16a34a,#2563eb);color:#fff;text-align:center;padding:4px 10px;font:bold 13px system-ui;position:relative;z-index:99998;">
-  🟢 fix69cf · <span id="vmMode"></span> v2026-09-01 · <span id="vmTime"></span> · <span id="vmDebug" style="font-weight:normal;opacity:.9;background:rgba(0,0,0,.2);padding:1px 6px;border-radius:3px"></span>
+  🟢 fix69cg · <span id="vmMode"></span> v2026-09-02 · <span id="vmTime"></span> · <span id="vmDebug" style="font-weight:normal;opacity:.9;background:rgba(0,0,0,.2);padding:1px 6px;border-radius:3px"></span>
 </div>
 <!-- fix69aa 终极诊断：独立小脚本（不在主282KB块内），测试JS能否执行 -->
 <script>
@@ -323,7 +323,7 @@
       </div>
       <div class="timeProgress" id="tvTimeProgress" data-page-node-id="A0uYhUeGQVX13yZ863L14g"></div>
       <div class="zy-sales-grid">
-        <div class="zy-kpi-col"><div class="zy-kpi-title">目标达成情况</div><div class="kpis kpis-vertical" id="zyTargetKpis" data-page-node-id="QUFVBFpS2uHPapypX3vf5L"></div></div>
+        <div class="zy-kpi-col"><div class="zy-kpi-title">目标达成情况</div><div class="kpis" id="zyTargetKpis" data-page-node-id="QUFVBFpS2uHPapypX3vf5L"></div></div>
         <div class="todo-grid" id="todo_sales" data-page-node-id="hlaa0TCQWevzQNcTJsBsqS"></div>
       </div>
     </div>
@@ -428,7 +428,7 @@
       <div class="timeProgress" id="jztTimeProgress" data-page-node-id="Z8dnc9eDWHL1sgJHYL7TJ2"></div>
       <!-- fix69cb：改用与销售目标达成一致的左右布局（左=竖排KPI卡，右=本周/上周事项） -->
       <div class="zy-sales-grid zy-jzt-grid">
-        <div class="zy-kpi-col"><div class="zy-kpi-title">投放指标</div><div class="kpis kpis-vertical" id="jztTargetKpis" data-page-node-id="uRKPGnyfoGEKX5S940ECSY"></div></div>
+        <div class="zy-kpi-col"><div class="zy-kpi-title">投放指标</div><div class="kpis" id="jztTargetKpis" data-page-node-id="uRKPGnyfoGEKX5S940ECSY"></div></div>
         <div class="todo-grid" id="todo_jzt" data-page-node-id="wT9xC9uur6EAEnuOixcPTl"></div>
       </div>
       <div id="jztDataHint" class="hint warn" style="display:none" data-page-node-id="JcQUTFKkNaakRvi8hy0aQ7"></div>
@@ -930,7 +930,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-09-01-fix69cf-todo-save-history';
+const APP_VERSION = '2026-09-02-fix69cg-kpi-3col-restore';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
