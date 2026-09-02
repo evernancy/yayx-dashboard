@@ -63,9 +63,10 @@
   .kpi .value.green{color:var(--green)} .kpi .value.red{color:var(--red)} .kpi .value.blue{color:var(--blue)} .kpi .value.amber{color:var(--amber)}
   /* fix69cm：三列等高 —— 保存按钮独立行(右上)，标题行严格三格(flex:1:1:1)对齐内容 */
   .zy-sales-wrap{margin-top:8px}
-  /* 工具栏行：保存+日期筛选，右对齐，不占下方空间 */
-  .zy-sales-toolbar{display:flex!important;justify-content:flex-end!important;align-items:center;gap:8px;width:100%;margin-bottom:4px}
-  .zy-sales-toolbar .todo-bar{background:transparent;border:none;padding:0;display:inline-flex;gap:8px}
+  /* 工具栏行：保存+日期筛选，右对齐 */
+  .zy-sales-toolbar{text-align:right;margin-bottom:4px}
+  /* 关键：必须覆盖全局 .todo-bar 的 flex:0 0 100%（否则占满整行无法右推） */
+  .zy-sales-toolbar .todo-bar{background:transparent;border:none;padding:0;display:inline-flex!important;align-items:center;gap:8px;flex:none!important;width:auto}
   /* 标题行：严格三格，flex 比例与内容区完全一致(1:1:1) */
   .zy-sales-head{display:flex;align-items:flex-end;gap:20px;margin-bottom:6px;padding-bottom:6px;border-bottom:2px solid var(--line,#e5e7eb)}
   .zy-sales-head .zy-kpi-title{font-size:15px;font-weight:600;color:var(--text,#1f2937);margin-bottom:0;flex:1 1 0%;min-width:0;text-align:center}
@@ -253,7 +254,7 @@
 <body data-page-node-id="TnJopYRx03FYyUEAnM7EON">
 <!-- fix69af 版本标记：厂直值改"厂直"+系列明细时间联动 -->
 <div id="versionMarker" style="background:linear-gradient(135deg,#16a34a,#2563eb);color:#fff;text-align:center;padding:4px 10px;font:bold 13px system-ui;position:relative;z-index:99998;">
-  🟢 fix69cn · <span id="vmMode"></span> v2026-09-02 · <span id="vmTime"></span> · <span id="vmDebug" style="font-weight:normal;opacity:.9;background:rgba(0,0,0,.2);padding:1px 6px;border-radius:3px"></span>
+  🟢 fix69co · <span id="vmMode"></span> v2026-09-02 · <span id="vmTime"></span> · <span id="vmDebug" style="font-weight:normal;opacity:.9;background:rgba(0,0,0,.2);padding:1px 6px;border-radius:3px"></span>
 </div>
 <!-- fix69aa 终极诊断：独立小脚本（不在主282KB块内），测试JS能否执行 -->
 <script>
@@ -957,7 +958,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-09-02-fix69cn-toolbar-right-align';
+const APP_VERSION = '2026-09-02-fix69co-toolbar-flex-none';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
