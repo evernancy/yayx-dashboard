@@ -61,23 +61,24 @@
   .kpi .label{color:var(--muted);font-size:12px;white-space:nowrap}
   .kpi .value{font-size:20px;font-weight:700;margin-top:3px}
   .kpi .value.green{color:var(--green)} .kpi .value.red{color:var(--red)} .kpi .value.blue{color:var(--blue)} .kpi .value.amber{color:var(--amber)}
-  /* fix69cj：三列等高 —— display:contents 让 todo 子元素提升到外层grid，标题与内容严格对齐 */
+  /* fix69ck：Flexbox三列等宽 —— 彻底避免嵌套grid问题 */
   .zy-sales-wrap{margin-top:8px}
-  .zy-sales-head{display:grid;grid-template-columns:1.2fr 1fr 1fr auto;gap:16px;align-items:end;margin-bottom:6px;padding-bottom:6px;border-bottom:2px solid var(--line,#e5e7eb)}
-  .zy-sales-head .zy-kpi-title{font-size:15px;font-weight:600;color:var(--text,#1f2937);margin-bottom:0}
-  .zy-sales-head .zy-col-hdr{font-size:14px;font-weight:600;color:var(--text,#1f2937)}
-  .zy-sales-grid{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:16px;align-items:start;margin-top:0}
-  .zy-kpi-col{display:flex;flex-direction:column;min-width:0}
+  .zy-sales-head{display:flex;align-items:flex-end;gap:24px;margin-bottom:6px;padding-bottom:6px;border-bottom:2px solid var(--line,#e5e7eb)}
+  .zy-sales-head .zy-kpi-title{font-size:15px;font-weight:600;color:var(--text,#1f2937);margin-bottom:0;min-width:100px}
+  .zy-sales-head .zy-col-hdr{font-size:14px;font-weight:600;color:var(--text,#1f2937);min-width:60px}
+  /* 内容区：flex 三列等分 */
+  .zy-sales-grid{display:flex;gap:20px;align-items:stretch;margin-top:0}
+  .zy-kpi-col{flex:1 1 0%;min-width:200px;display:flex;flex-direction:column}
   .zy-kpi-title{font-size:15px;font-weight:600;color:var(--text,#1f2937);margin-bottom:10px}
   .kpis-vertical{grid-template-columns:1fr}
-  /* 关键：#todo_sales / #todo_jzt 在外层 grid 中"透明"，子元素 .todo-col 直接成为外层 grid 的第2、3列 */
+  /* #todo_sales / #todo_jzt 覆盖全局 .todo-grid 的 grid 布局，改为 flex 横排两列(本周|上周各占一半) */
   .zy-sales-grid #todo_sales,
-  .zy-jzt-grid #todo_jzt{display:contents}
-  .zy-sales-grid .todo-col,
-  .zy-jzt-grid .todo-col{display:flex;flex-direction:column;min-height:0}
-  .zy-sales-grid .todo-box,
-  .zy-jzt-grid .todo-box{flex:1 1 0;min-height:0;max-height:none}
-  /* 隐藏事项面板内部的 h4 本周/上周（已由外层标题行提供） */
+  .zy-jzt-grid #todo_jzt{flex:2 2 0%;min-width:400px;display:flex!important;gap:16px}
+  .zy-sales-grid #todo_sales .todo-col,
+  .zy-jzt-grid #todo_jzt .todo-col{flex:1 1 0%;display:flex;flex-direction:column;min-width:0;min-height:0}
+  .zy-sales-grid #todo_sales .todo-box,
+  .zy-jzt-grid #todo_jzt .todo-box{flex:1 1 0;min-height:0;max-height:none}
+  /* 隐藏事项面板内部的 h4（已由外层标题行提供） */
   .zy-sales-grid .todo-col > h4,
   .zy-jzt-grid .todo-col > h4{display:none}
   /* 保存/日期筛选定位到右上角 */
@@ -251,7 +252,7 @@
 <body data-page-node-id="TnJopYRx03FYyUEAnM7EON">
 <!-- fix69af 版本标记：厂直值改"厂直"+系列明细时间联动 -->
 <div id="versionMarker" style="background:linear-gradient(135deg,#16a34a,#2563eb);color:#fff;text-align:center;padding:4px 10px;font:bold 13px system-ui;position:relative;z-index:99998;">
-  🟢 fix69cj · <span id="vmMode"></span> v2026-09-02 · <span id="vmTime"></span> · <span id="vmDebug" style="font-weight:normal;opacity:.9;background:rgba(0,0,0,.2);padding:1px 6px;border-radius:3px"></span>
+  🟢 fix69ck · <span id="vmMode"></span> v2026-09-02 · <span id="vmTime"></span> · <span id="vmDebug" style="font-weight:normal;opacity:.9;background:rgba(0,0,0,.2);padding:1px 6px;border-radius:3px"></span>
 </div>
 <!-- fix69aa 终极诊断：独立小脚本（不在主282KB块内），测试JS能否执行 -->
 <script>
@@ -955,7 +956,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-09-02-fix69cj-align-cols';
+const APP_VERSION = '2026-09-02-fix69ck-flexbox-3col';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
