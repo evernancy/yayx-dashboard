@@ -61,7 +61,7 @@
   .kpi .label{color:var(--muted);font-size:12px;white-space:nowrap}
   .kpi .value{font-size:20px;font-weight:700;margin-top:3px}
   .kpi .value.green{color:var(--green)} .kpi .value.red{color:var(--red)} .kpi .value.blue{color:var(--blue)} .kpi .value.amber{color:var(--amber)}
-  /* fix69ci：三列等高 —— 标题行(目标达成|本周|上周)同行 + 内容三列grid对齐 */
+  /* fix69cj：三列等高 —— display:contents 让 todo 子元素提升到外层grid，标题与内容严格对齐 */
   .zy-sales-wrap{margin-top:8px}
   .zy-sales-head{display:grid;grid-template-columns:1.2fr 1fr 1fr auto;gap:16px;align-items:end;margin-bottom:6px;padding-bottom:6px;border-bottom:2px solid var(--line,#e5e7eb)}
   .zy-sales-head .zy-kpi-title{font-size:15px;font-weight:600;color:var(--text,#1f2937);margin-bottom:0}
@@ -70,15 +70,16 @@
   .zy-kpi-col{display:flex;flex-direction:column;min-width:0}
   .zy-kpi-title{font-size:15px;font-weight:600;color:var(--text,#1f2937);margin-bottom:10px}
   .kpis-vertical{grid-template-columns:1fr}
-  /* 右侧两列 = 本周+上周（todo-grid 内部仍为 1fr 1fr 两列） */
-  .zy-sales-grid #todo_sales{margin:0;min-width:0}
-  .zy-sales-grid #todo_sales .todo-col{display:flex;flex-direction:column;flex:1 1 0;min-height:0}
-  .zy-sales-grid #todo_sales .todo-box{flex:1 1 0;min-height:0;max-height:none}
-  .zy-jzt-grid #todo_jzt{margin:0;min-width:0}
-  .zy-jzt-grid #todo_jzt .todo-col{display:flex;flex-direction:column;flex:1 1 0;min-height:0}
-  .zy-jzt-grid #todo_jzt .todo-box{flex:1 1 0;min-height:0;max-height:none}
+  /* 关键：#todo_sales / #todo_jzt 在外层 grid 中"透明"，子元素 .todo-col 直接成为外层 grid 的第2、3列 */
+  .zy-sales-grid #todo_sales,
+  .zy-jzt-grid #todo_jzt{display:contents}
+  .zy-sales-grid .todo-col,
+  .zy-jzt-grid .todo-col{display:flex;flex-direction:column;min-height:0}
+  .zy-sales-grid .todo-box,
+  .zy-jzt-grid .todo-box{flex:1 1 0;min-height:0;max-height:none}
   /* 隐藏事项面板内部的 h4 本周/上周（已由外层标题行提供） */
-  .zy-sales-grid .todo-col > h4{display:none}
+  .zy-sales-grid .todo-col > h4,
+  .zy-jzt-grid .todo-col > h4{display:none}
   /* 保存/日期筛选定位到右上角 */
   .todo-bar.todo-bar-head{flex:0 0 auto;margin:0;background:transparent;border:none;padding:0}
   .todo-hist-banner{flex:1 1 100%}
@@ -250,7 +251,7 @@
 <body data-page-node-id="TnJopYRx03FYyUEAnM7EON">
 <!-- fix69af 版本标记：厂直值改"厂直"+系列明细时间联动 -->
 <div id="versionMarker" style="background:linear-gradient(135deg,#16a34a,#2563eb);color:#fff;text-align:center;padding:4px 10px;font:bold 13px system-ui;position:relative;z-index:99998;">
-  🟢 fix69ci · <span id="vmMode"></span> v2026-09-02 · <span id="vmTime"></span> · <span id="vmDebug" style="font-weight:normal;opacity:.9;background:rgba(0,0,0,.2);padding:1px 6px;border-radius:3px"></span>
+  🟢 fix69cj · <span id="vmMode"></span> v2026-09-02 · <span id="vmTime"></span> · <span id="vmDebug" style="font-weight:normal;opacity:.9;background:rgba(0,0,0,.2);padding:1px 6px;border-radius:3px"></span>
 </div>
 <!-- fix69aa 终极诊断：独立小脚本（不在主282KB块内），测试JS能否执行 -->
 <script>
@@ -954,7 +955,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-09-02-fix69ci-header-same-line';
+const APP_VERSION = '2026-09-02-fix69cj-align-cols';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
