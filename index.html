@@ -402,12 +402,12 @@
         <div class="sd-nd-card">
           <div class="sd-nd-head">新品情况 <span class="muted">（今年有销售 · 去年同期无销售）</span></div>
           <div class="sd-nd-summary" id="sdNewSummary"></div>
-          <table class="tbl sd-tree-table" id="sdNewTable"><thead><tr><th>产品简称</th><th>系列</th><th>大类</th><th class="sd-gmv">今年GMV</th><th class="sd-gmv">去年GMV</th></tr></thead><tbody id="sdNewTbody"></tbody></table>
+          <table class="tbl sd-tree-table" id="sdNewTable"><colgroup><col style="width:380px"><col style="width:140px"></colgroup><thead><tr><th>类目（大类 › 中类 › 系列，产品简称）</th><th class="sd-gmv">今年GMV</th></tr></thead><tbody id="sdNewTbody"></tbody></table>
         </div>
         <div class="sd-nd-card">
           <div class="sd-nd-head">下架品情况 <span class="muted">（今年无销售 · 去年同期有销售）</span></div>
           <div class="sd-nd-summary" id="sdDiscSummary"></div>
-          <table class="tbl sd-tree-table" id="sdDiscTable"><thead><tr><th>产品简称</th><th>系列</th><th>大类</th><th class="sd-gmv">今年GMV</th><th class="sd-gmv">去年GMV</th></tr></thead><tbody id="sdDiscTbody"></tbody></table>
+          <table class="tbl sd-tree-table" id="sdDiscTable"><colgroup><col style="width:380px"><col style="width:140px"></colgroup><thead><tr><th>类目（大类 › 中类 › 系列，产品简称）</th><th class="sd-gmv">去年GMV</th></tr></thead><tbody id="sdDiscTbody"></tbody></table>
         </div>
       </div>
     </div>
@@ -3506,6 +3506,15 @@ function mkNDCell(text, cls){
   const td=document.createElement('td'); if(cls) td.className=cls;
   td.textContent=(text==null||text==='')?'—':String(text); return td;
 }
+function ndPath(it){
+  // 与系列明细主表一致的类目路径：大类 › 中类 › 系列，产品简称
+  const parts=[];
+  if(it.catL) parts.push(it.catL);
+  if(it.catM && it.catM!=='(空)') parts.push(it.catM);
+  if(it.series && it.series!=='(空系列)') parts.push(it.series);
+  const prefix=parts.join(' \u203A ');
+  return it.name ? (prefix ? (prefix+'，'+it.name) : it.name) : (prefix||'—');
+}
 function renderNewDiscontinued(start, end, filtFactory){
   const wrap=$('#sdNewDiscWrap'); if(!wrap) return;
   if(!start || !end){
@@ -3513,38 +3522,32 @@ function renderNewDiscontinued(start, end, filtFactory){
     return;
   }
   const res=buildNewDiscontinued(start, end, filtFactory);
-  // 左：新品情况
+  // 左：新品情况（今年有销售，去年无 → 只显示今年GMV）
   const newBody=$('#sdNewTbody'), newSum=$('#sdNewSummary');
   if(newBody){
     newBody.innerHTML='';
     if(!res.newList.length){
-      newBody.innerHTML='<tr><td colspan="5" class="sd-nd-empty">今年有销售、去年同期无销售的新品：暂无</td></tr>';
+      newBody.innerHTML='<tr><td colspan="2" class="sd-nd-empty">今年有销售、去年同期无销售的新品：暂无</td></tr>';
     } else {
       res.newList.forEach(it=>{
         const tr=document.createElement('tr');
-        tr.appendChild(mkNDCell(it.name));
-        tr.appendChild(mkNDCell(it.series));
-        tr.appendChild(mkNDCell(it.catL));
+        tr.appendChild(mkNDCell(ndPath(it)));
         tr.appendChild(mkNDCell(fmtMoney(it.gmvThis),'sd-gmv'));
-        tr.appendChild(mkNDCell('0','sd-gmv'));
         newBody.appendChild(tr);
       });
     }
   }
   if(newSum) newSum.textContent='共 '+res.newList.length+' 个新品 · 今年合计GMV '+fmtMoney(res.newList.reduce((s,x)=>s+x.gmvThis,0));
-  // 右：下架品情况
+  // 右：下架品情况（今年无销售，去年有 → 只显示去年GMV）
   const discBody=$('#sdDiscTbody'), discSum=$('#sdDiscSummary');
   if(discBody){
     discBody.innerHTML='';
     if(!res.discList.length){
-      discBody.innerHTML='<tr><td colspan="5" class="sd-nd-empty">今年无销售、去年同期有销售的下架品：暂无</td></tr>';
+      discBody.innerHTML='<tr><td colspan="2" class="sd-nd-empty">今年无销售、去年同期有销售的下架品：暂无</td></tr>';
     } else {
       res.discList.forEach(it=>{
         const tr=document.createElement('tr');
-        tr.appendChild(mkNDCell(it.name));
-        tr.appendChild(mkNDCell(it.series));
-        tr.appendChild(mkNDCell(it.catL));
-        tr.appendChild(mkNDCell('0','sd-gmv'));
+        tr.appendChild(mkNDCell(ndPath(it)));
         tr.appendChild(mkNDCell(fmtMoney(it.gmvLast),'sd-gmv'));
         discBody.appendChild(tr);
       });
