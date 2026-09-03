@@ -1316,6 +1316,62 @@ function splitJztSections(text){
   });
   return out.filter(s=>s.rows.length||s.header);
 }
+/* fix69bz：京准通「营销场景」归一化。
+   京准通导出的推广计划名/营销场景列常因编码问题出现乱码（◆/� 替代中文），
+   导致同一推广方式被拆成多个「渠道」、花费/点击分散。
+   本函数将各种乱码变体映射到 7 个标准名称，保证聚合正确。
+   匹配策略：①精确匹配标准名；②清理乱码符后按关键片段匹配（支持汉字部分损坏）；
+   ③未知类型原样保留（避免吞掉新渠道）。 */
+const SCENE_STANDARD_NAMES=[
+  '常规推广-关键词','常规推广-智能化','全店商品推广',
+  '京东定向','新客转化','常规推广-商品成交','-'
+];
+/* 辅助：检查 cleaned 是否包含 target 的足够长连续子串（默认需覆盖 ≥50% 原字）。
+   例如 target='关键词'(3字)，minRatio=0.5 → 需至少2个连续原字出现在 cleaned 中。 */
+function _hasPartial(cleaned, target, minRatio){
+  minRatio=minRatio||0.5;
+  const minLen=Math.ceil(target.length*minRatio);
+  for(let len=minLen;len<=target.length;len++){
+    for(let s=0;s<=target.length-len;s++){
+      if(cleaned.indexOf(target.substr(s,len))>=0) return true;
+    }
+  }
+  return false;
+}
+function normalizeScene(raw){
+  if(raw===undefined||raw===null) return raw;
+  const s=String(raw).trim();
+  if(!s) return s;
+  // 精确匹配标准名 → 直接返回
+  if(SCENE_STANDARD_NAMES.includes(s)) return s;
+  // 清理常见乱码符（菱形/U+25C6、实心圆/U+25CF、方块/U+25A0、替换符/U+FFFD、问号/U+003F 等）
+  const cleaned=s.replace(/[\u25c6\u25cf\u25a0\uFFFD\u003F]+/g,'').replace(/\s+/g,'');
+  if(!cleaned) return '-';
+  // ── 第一优先：完整可辨关键词匹配（无损坏或轻微损坏）──
+  if(cleaned.includes('关键词')&&(cleaned.includes('常规')||cleaned.includes('推广'))) return '常规推广-关键词';
+  if(cleaned.includes('智能化')&&(cleaned.includes('常规')||cleaned.includes('推广'))) return '常规推广-智能化';
+  if((cleaned.includes('全店')&&cleaned.includes('推广'))||(cleaned.includes('全店')&&cleaned.includes('商品'))) return '全店商品推广';
+  if(cleaned.includes('京东')&&cleaned.includes('定向')) return '京东定向';
+  if(cleaned.includes('新客')&&cleaned.includes('转化')) return '新客转化';
+  if(cleaned.includes('商品成交')&&cleaned.includes('推广')) return '常规推广-商品成交';
+  // ── 第二优先：片段模糊匹配（关键字本身被部分乱码破坏的情况）──
+  // 「关键词」损坏→残留「关键」前缀 / 「键词」中段 / 「词」尾 + 推广上下文
+  if((_hasPartial(cleaned,'关键词',0.5)||cleaned.includes('关键')||cleaned.indexOf('词')>=0)&&(cleaned.includes('常规')||cleaned.includes('推广')||cleaned.indexOf('广')>=0)) return '常规推广-关键词';
+  // 「智能化」损坏→残留「智能」前缀 / 「能化」中段 / 「化」尾 + 推广上下文
+  if((_hasPartial(cleaned,'智能化',0.5)||cleaned.includes('智能')||cleaned.indexOf('化')>=0)&&(cleaned.includes('常规')||cleaned.includes('推广')||cleaned.indexOf('广')>=0)) return '常规推广-智能化';
+  // 「全店商品推广」损坏→残留「店商品推广」/「全店商品」/「全店」+「推广」
+  if((cleaned.includes('店商品')||cleaned.includes('全店')||_hasPartial(cleaned,'全店商品推广',0.5))&&(cleaned.includes('推广')||cleaned.indexOf('广')>=0)) return '全店商品推广';
+  // 「商品成交」损坏
+  if((_hasPartial(cleaned,'商品成交',0.5)||cleaned.includes('商品成')||cleaned.includes('品成交'))&&(cleaned.includes('推广')||cleaned.indexOf('广')>=0)) return '常规推广-商品成交';
+  // ── 第三优先：仅凭单字段强特征兜底 ──
+  if(_hasPartial(cleaned,'关键词',0.5)||cleaned.includes('关键')) return '常规推广-关键词';
+  if(_hasPartial(cleaned,'智能化',0.5)||cleaned.includes('智能')) return '常规推广-智能化';
+  if(cleaned.includes('全店')||_hasPartial(cleaned,'全店商品推广',0.4)) return '全店商品推广';
+  if(_hasPartial(cleaned,'商品成交',0.5)) return '常规推广-商品成交';
+  // 无法识别 → 原样保留（避免吞掉未知的新渠道类型）
+  return s;
+}
+
 function parseJztRaw(text){
   if(!text||!text.trim()) return [];
   const sections=splitJztSections(text);
@@ -1325,6 +1381,13 @@ function parseJztRaw(text){
     if(!secText.trim()) return;
     const secRows=parseTable(secText);
     if(!secRows.length) return;
+    // fix69baz：逐行归一化 scene/channel 字段（乱码→标准名）
+    secRows.forEach(r=>{
+      if(r.scene!==undefined) r.scene=normalizeScene(r.scene);
+      if(r.channel!==undefined) r.channel=normalizeScene(r.channel);
+      // ext_ 营销场景 也归一（某些表头用原名）
+      if(r['ext_营销场景']!==undefined) r['ext_营销场景']=normalizeScene(r['ext_营销场景']);
+    });
     // 仅当该 section 自身表头含全站口径标记时，才打全站营销 channel；无表头（纯数据）默认按老版本识别
     let isFs=false;
     if(sec.header){ const hc=sec.header.split(detectDelimOf(sec.header)).map(h=>String(h||'').trim().toLowerCase()); isFs=JZT_FULLSITE_MARKERS.some(m=>hc.includes(m.toLowerCase())); }
@@ -2185,7 +2248,7 @@ function computeJztKw(start,end){
   const numOf=(r,...ks)=>{ const v=parseFloat(get(r,...ks)); return isNaN(v)?0:v; };
   let rows=all;
   if(start&&end) rows=rows.filter(r=>{ const d=String(r.date||'').slice(0,10); return d>=start&&d<=end; });
-  rows=rows.filter(r=>{ const sc=String(get(r,'scene','ext_营销场景','营销场景')||'').trim(); return sc.includes('关键词'); });
+  rows=rows.filter(r=>{ const sc=normalizeScene(String(get(r,'scene','ext_营销场景','营销场景')||'').trim()); return sc.includes('关键词'); });
   if(!rows.length) return null;
   const byKeyword={};
   const byCategory={'品牌词':{spend:0,clicks:0,gmv:0,imp:0,orders:0},'品类词':{spend:0,clicks:0,gmv:0,imp:0,orders:0}};
@@ -2233,7 +2296,8 @@ function computeJzt(start,end){
   const byDate={}; rows.forEach(r=>{ const k=r.date||'未知'; byDate[k]=byDate[k]||{spend:0,gmv:0}; byDate[k].spend+=num(r.spend); byDate[k].gmv+=num(r.gmv); });
   const byPlan={}; rows.forEach(r=>{ const k=r.campaign||'未知'; byPlan[k]=byPlan[k]||{spend:0,gmv:0}; byPlan[k].spend+=num(r.spend); byPlan[k].gmv+=num(r.gmv); });
   // 按渠道分组：全站口径数据归「全站营销」，原京准通数据按营销场景（无渠道列时回退 scene）；花费 / 点击 / 成交金额
-  const byScene={}; rows.forEach(r=>{ const k=((r.channel||'').trim()||(r.scene||'').trim()||'未知'); const s=byScene[k]=byScene[k]||{spend:0,clicks:0,gmv:0}; s.spend+=num(r.spend); s.clicks+=num(r.clicks); s.gmv+=num(r.gmv); });
+  // fix69baz：scene/channel 取值先经 normalizeScene 归一化（乱码→标准名），避免同一推广方式因编码差异被拆成多行
+  const byScene={}; rows.forEach(r=>{ const k=normalizeScene((r.channel||'').trim()||(r.scene||'').trim()||'未知'); const s=byScene[k]=byScene[k]||{spend:0,clicks:0,gmv:0}; s.spend+=num(r.spend); s.clicks+=num(r.clicks); s.gmv+=num(r.gmv); });
   return {totalSpend,totalImp,totalClk,totalOrd,totalGmv,dirAmt,indirAmt,preAmt,totalCart,newCustOrders,newCustAmt,favItem,favShop,dealUsers,ctr,cpc,cpm,cvr,cpa,roi,feeRatio:feeDenom>0?totalSpend/feeDenom:0,byDate,byPlan,byScene};
 }
 /* fix69at：京准通按「SKU → 系列」聚合（系列来源 = B().series 的 sku→series 映射）。
@@ -6620,7 +6684,7 @@ async function boot(){
     const kwSpend=(function(){
       try {
         const mw=STATE.brands['麦维他']; if(!mw) return '-';
-        const rows=(mw.jzt||[]).filter(r=>/(关键词)/.test(r.scene||''));
+        const rows=(mw.jzt||[]).filter(r=>/(关键词)/.test(normalizeScene(r.scene)||''));
         return rows.reduce((s,r)=>s+(Number(r.spend)||0),0).toFixed(2);
       }catch(e){ return 'err'; }
     })();
