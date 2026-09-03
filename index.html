@@ -401,13 +401,13 @@
       <div class="sd-nd-wrap" id="sdNewDiscWrap">
         <div class="sd-nd-card">
           <div class="sd-nd-head">新品情况 <span class="muted">（今年有销售 · 去年同期无销售）</span></div>
-          <div class="sd-nd-summary" id="sdNewSummary"></div>
-          <table class="tbl sd-tree-table" id="sdNewTable"><colgroup><col style="width:380px"><col style="width:140px"></colgroup><thead><tr><th>类目（大类 › 中类 › 系列，产品简称）</th><th class="sd-gmv">今年GMV</th></tr></thead><tbody id="sdNewTbody"></tbody></table>
+          <div style="display:flex;align-items:center;gap:8px"><div class="sd-nd-summary" id="sdNewSummary"></div><button class="btn2 ghost" id="sdSaveLaunchBtn" style="font-size:12px;padding:3px 10px">保存上架时间</button></div>
+          <table class="tbl sd-tree-table" id="sdNewTable"><colgroup><col style="width:360px"><col style="width:120px"><col style="width:120px"></colgroup><thead><tr><th>类目（大类 › 中类 › 系列，产品简称）</th><th>上架时间</th><th class="sd-gmv">今年GMV</th></tr></thead><tbody id="sdNewTbody"></tbody></table>
         </div>
         <div class="sd-nd-card">
           <div class="sd-nd-head">下架品情况 <span class="muted">（今年无销售 · 去年同期有销售）</span></div>
-          <div class="sd-nd-summary" id="sdDiscSummary"></div>
-          <table class="tbl sd-tree-table" id="sdDiscTable"><colgroup><col style="width:380px"><col style="width:140px"></colgroup><thead><tr><th>类目（大类 › 中类 › 系列，产品简称）</th><th class="sd-gmv">去年GMV</th></tr></thead><tbody id="sdDiscTbody"></tbody></table>
+          <div style="display:flex;align-items:center;gap:8px"><div class="sd-nd-summary" id="sdDiscSummary"></div><button class="btn2 ghost" id="sdSaveDiscLaunchBtn" style="font-size:12px;padding:3px 10px">保存上架时间</button></div>
+          <table class="tbl sd-tree-table" id="sdDiscTable"><colgroup><col style="width:360px"><col style="width:120px"><col style="width:120px"></colgroup><thead><tr><th>类目（大类 › 中类 › 系列，产品简称）</th><th>上架时间</th><th class="sd-gmv">去年GMV</th></tr></thead><tbody id="sdDiscTbody"></tbody></table>
         </div>
       </div>
     </div>
@@ -3525,6 +3525,8 @@ renderNodes(tree, 1, '', null);
 }
 
 // fix69cd：新品 / 下架品 板块渲染（可折叠树形，与系列明细主表样式一致）
+// fix69ce：新增「上架时间」可编辑列 + 合计行占比 + 保存按钮
+var _ndLaunchDates={};  // sku -> 上架时间文本（失焦时缓存）
 function renderNewDiscontinued(start, end, filtFactory){
   const wrap=$('#sdNewDiscWrap'); if(!wrap) return;
   if(!start || !end){
@@ -3532,13 +3534,24 @@ function renderNewDiscontinued(start, end, filtFactory){
     return;
   }
   const res=buildNewDiscontinued(start, end, filtFactory);
+  const b=B();
+  // 计算本月TOTAL GMV（用于占比分母）
+  function totalGmvOf(periodStart, periodEnd){
+    let t=0; (b.sales||[]).forEach(r=>{ const d=String(r.date||'').slice(0,10); if(d>=periodStart&&d<=periodEnd) t+=num(r.amount); }); return t;
+  }
+  const thisTotal=totalGmvOf(start,end);
+  const lastStart=start.length>=10?(String(Number(start.slice(0,4))-1)+start.slice(4)):'';
+  const lastEnd=end.length>=10?(String(Number(end.slice(0,4))-1)+end.slice(4)):'';
+  const lastTotal=(lastStart&&lastEnd)?totalGmvOf(lastStart,lastEnd):0;
+  // 恢复已保存的上架时间
+  if(STATE._ndLaunchDates) _ndLaunchDates=Object.assign({}, STATE._ndLaunchDates);
 
-  // 可折叠树渲染器（复用主表 renderNodes 的折叠逻辑）
-  function renderNDTree(tbody, tree, gmvLabel){
+  // 可折叠树渲染器
+  function renderNDTree(tbody, tree, gmvKey){
     if(!tbody) return;
     tbody.innerHTML='';
     if(!tree || !tree.children || !tree.children.length){
-      tbody.innerHTML='<tr><td colspan="2" class="sd-nd-empty">暂无数据</td></tr>';
+      tbody.innerHTML='<tr><td colspan="3" class="sd-nd-empty">\u6682\u65e0\u6570\u636e</td></tr>';
       return;
     }
     var allRows=[];
@@ -3549,7 +3562,7 @@ function renderNewDiscontinued(start, end, filtFactory){
         var pk=pKey+n.label;
         var isLeaf=n.isLeaf;
         var hasKids=!!(n.children&&n.children.length);
-        var isFoldParent=(depth===3);  // 系列层折叠产品
+        var isFoldParent=(depth===3);  // 系列层默认折叠产品
         var defCollapsed=!!(hasKids&&isFoldParent);
         var tr=document.createElement('tr');
         tr.className=isLeaf?'sd-row-leaf':'sd-row-group';
@@ -3580,10 +3593,25 @@ function renderNewDiscontinued(start, end, filtFactory){
         if(hasKids){ td1.style.cursor='pointer'; td1.classList.add('sd-foldable'); }
         tr.appendChild(td1);
 
-        // 列2：GMV
-        var td2=document.createElement('td'); td2.className='sd-gmv';
-        td2.textContent=(isLeaf||hasKids)?fmtMoney(n.gmv||0):'—';
+        // 列2：上架时间（仅叶子节点可编辑）
+        var td2=document.createElement('td');
+        if(isLeaf && n.sku){
+          td2.className='sd-rem';
+          var existing=_ndLaunchDates[n.sku]||'';
+          var remSp=document.createElement('span'); remSp.className='rem-edit'; remSp.contentEditable='true'; remSp.spellcheck=false;
+          remSp.setAttribute('data-sku', n.sku);
+          remSp.textContent=existing||''; if(!existing) remSp.setAttribute('data-placeholder','1');
+          remSp.addEventListener('blur', function(){ _ndLaunchDates[n.sku]=this.textContent.trim(); });
+          td2.appendChild(remSp);
+        } else {
+          td2.textContent='—';
+        }
         tr.appendChild(td2);
+
+        // 列3：GMV
+        var td3=document.createElement('td'); td3.className='sd-gmv';
+        td3.textContent=(isLeaf||hasKids)?fmtMoney(n.gmv||0):'—';
+        tr.appendChild(td3);
 
         tbody.appendChild(tr);
         allRows.push({tr:tr, node:n});
@@ -3607,25 +3635,51 @@ function renderNewDiscontinued(start, end, filtFactory){
 
   // 左：新品情况
   const newBody=$('#sdNewTbody'), newSum=$('#sdNewSummary');
+  const newTotalGmv=res.newList.reduce((s,x)=>s+x.gmvThis,0);
   if(newBody){
     if(!res.newTree || !res.newTree.children || !res.newTree.children.length){
-      newBody.innerHTML='<tr><td colspan="2" class="sd-nd-empty">今年有销售、去年同期无销售的新品：暂无</td></tr>';
+      newBody.innerHTML='<tr><td colspan="3" class="sd-nd-empty">\u4eca\u5e74\u6709\u9500\u552e\u3001\u53bb\u5e74\u540c\u671f\u65e0\u9500\u552e\u7684\u65b0\u54c1\uff1a\u6682\u65e0</td></tr>';
     } else {
       renderNDTree(newBody, res.newTree, 'gmvThis');
     }
   }
-  if(newSum) newSum.textContent='\u5171 '+res.newList.length+' \u4e2a\u65b0\u54c1 \u00b7 \u4eca\u5e74\u5408\u8ba1GMV '+fmtMoney(res.newList.reduce((s,x)=>s+x.gmvThis,0));
+  // 新品合计 + 占比
+  var newSharePct=(thisTotal>0)?(newTotalGmv/thisTotal*100):null;
+  var newShareTxt=newSharePct!=null?newSharePct.toFixed(1)+'%':'—';
+  if(newSum) newSum.innerHTML='\u5171 '+res.newList.length+' \u4e2a\u65b0\u54c1 \u00b7 \u4eca\u5e74\u5408\u8ba1GMV <b>'+fmtMoney(newTotalGmv)+'</b> \u00b7 \u5360\u672c\u671fTOTAL <b style="color:#2563eb">'+newShareTxt+'</b>';
 
   // 右：下架品情况
   const discBody=$('#sdDiscTbody'), discSum=$('#sdDiscSummary');
+  const discTotalGmv=res.discList.reduce((s,x)=>s+x.gmvLast,0);
   if(discBody){
     if(!res.discTree || !res.discTree.children || !res.discTree.children.length){
-      discBody.innerHTML='<tr><td colspan="2" class="sd-nd-empty">今年无销售、去年同期有销售的下架品：暂无</td></tr>';
+      discBody.innerHTML='<tr><td colspan="3" class="sd-nd-empty">\u4eca\u5e74\u65e0\u9500\u552e\u3001\u53bb\u5e74\u540c\u671f\u6709\u9500\u552e\u7684\u4e0b\u67b6\u54c1\uff1a\u6682\u65e0</td></tr>';
     } else {
       renderNDTree(discBody, res.discTree, 'gmvLast');
     }
   }
-  if(discSum) discSum.textContent='\u5171 '+res.discList.length+' \u4e2a\u4e0b\u67b6\u54c1 \u00b7 \u53bb\u5e74\u5408\u8ba1GMV '+fmtMoney(res.discList.reduce((s,x)=>s+x.gmvLast,0));
+  // 下架品合计 + 占比
+  var discSharePct=(lastTotal>0)?(discTotalGmv/lastTotal*100):null;
+  var discShareTxt=discSharePct!=null?discSharePct.toFixed(1)+'%':'—';
+  if(discSum) discSum.innerHTML='\u5171 '+res.discList.length+' \u4e2a\u4e0b\u67b6\u54c1 \u00b7 \u53bb\u5e74\u5408\u8ba1GMV <b>'+fmtMoney(discTotalGmv)+'</b> \u00b7 \u5360\u53bb\u5e74TOTAL <b style="color:#2563eb">'+discShareTxt+'</b>';
+
+  // 保存上架时间按钮事件
+  var saveBtn=$('#sdSaveLaunchBtn');
+  if(saveBtn) saveBtn.onclick=function(){
+    STATE._ndLaunchDates=Object.assign({}, _ndLaunchDates);
+    markDirty();
+    saveToService(function(ok){
+      toast(ok?'\u4e0a\u67b6\u65f6\u95f4\u5df2\u4fdd\u5b58':'\u4fdd\u5b58\u5931\u8d25\uff0c\u8bf7\u91cd\u8bd5');
+    });
+  };
+  var saveDiscBtn=$('#sdSaveDiscLaunchBtn');
+  if(saveDiscBtn) saveDiscBtn.onclick=function(){
+    STATE._ndLaunchDates=Object.assign({}, _ndLaunchDates);
+    markDirty();
+    saveToService(function(ok){
+      toast(ok?'\u4e0a\u67b6\u65f6\u95f4\u5df2\u4fdd\u5b58':'\u4fdd\u5b58\u5931\u8d25\uff0c\u8bf7\u91cd\u8bd5');
+    });
+  };
 }
 
 // 麦维他专用：销售目标达成区分自营/POP 两渠道 —— 拆成两个面板（自营/POP），各自 KPI + 图表，合并明细表
