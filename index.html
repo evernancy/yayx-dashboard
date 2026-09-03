@@ -3556,10 +3556,13 @@ renderNodes(tree, 1, '', null);
 var _ndLaunchDates={};  // sku -> 上架时间文本（失焦时缓存）
 function renderNewDiscontinued(start, end, filtFactory){
   const wrap=$('#sdNewDiscWrap'); if(!wrap) return;
-  if(!start || !end){
-    wrap.innerHTML='<div class="sd-nd-card" style="flex:1 1 100%"><div class="sd-nd-summary">请先在上方「销售目标达成」选择日期范围，再查看新品 / 下架品情况（数据来源：商智销售明细）。</div></div>';
-    return;
-  }
+  // fix69cf-2：新品/下架品始终基于「今年至今 vs 去年至今」完整数据判断，不依赖当前窄日期选择（用户要求"全部展示"）
+  const _n=new Date();
+  const _ty=_n.getFullYear(), _tm=_n.getMonth(), _td=_n.getDate();
+  const _yT1=new Date(_ty,_tm,_td-1); // T-1（业务数据为 T-1）
+  const _p2=n=>String(n).padStart(2,'0');
+  const _fmt=d=>d.getFullYear()+'-'+_p2(d.getMonth()+1)+'-'+_p2(d.getDate());
+  start=_ty+'-01-01'; end=_fmt(_yT1);
   const res=buildNewDiscontinued(start, end, filtFactory);
   const b=B();
   // 计算本月TOTAL GMV（用于占比分母）
