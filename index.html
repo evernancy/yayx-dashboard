@@ -335,6 +335,7 @@
         <div class="subtab active" data-view="sales" data-page-node-id="H03kwUpic97xJmvGkJCkCy">销售数据</div>
         <div class="subtab" data-view="jzt" data-page-node-id="xG1Y1VqgQK38ha64dx2BdJ">京准通推广</div>
         <div class="subtab" data-view="inventory" data-page-node-id="nJfbxFC5YvaCGx9E9tBfnB">库存周转</div>
+        <div class="subtab" data-view="kefu" data-page-node-id="KefuTab01">客服</div>
         <div class="subtab" data-view="zhongtai" data-page-node-id="GpFQIicoTxHBhMFXCH0h3X">中台</div>
       </div>
 
@@ -458,12 +459,19 @@
     <div class="panel" data-page-node-id="5DbKXH4DBFoMzLgZt17vSq"><div style="display:flex;align-items:center;gap:8px"><div class="chart-title" id="invTableTitle" data-page-node-id="4UEEhrJideth0FD7RESylt" style="margin:0">库存结构明细</div><button id="saveAgingRemark" class="save-rem-btn">保存备注</button></div><div id="invTable" data-page-node-id="yteDG4wKsbCMrxjJteGh3a"></div></div>
   </section>
 
+  <!-- KEFU 客服看板（独立模块，fix69cf 从中台拆出） -->
+  <section data-sub="kefu" data-page-node-id="KefuSecMain01">
+    <div class="panel" data-page-node-id="KefuPnl01">
+      <h2 data-page-node-id="KefuHd01">客服看板</h2>
+      <p class="hint" data-page-node-id="KefuHint01">客服数据看板，后续设计样式。</p>
+    </div>
+  </section>
+
   <!-- ZHONGTAI 中台 -->
   <section data-sub="zhongtai" data-page-node-id="UPDTCu97aDYfyv6R2Glycj">
     <div class="panel" data-page-node-id="XBfPSV8vX0WLezu8JBQt12"><h2 data-page-node-id="FPfEmuof5oWdwNam8ncwtu">中台 · 营销</h2><div class="chart-title" data-page-node-id="QJQNOWqqeYq0QSs6EpuCeG">事项（上周 / 本周）</div><div class="todo-grid" id="todo_mt_marketing" data-page-node-id="bQuDjrEiKsGFVlA13liwXc"></div></div>
     <div class="panel" data-page-node-id="kap6rHlidF823Ap6MZuJEU"><h2 data-page-node-id="Dygyi3LihkgMMoHdd0npGX">中台 · 设计</h2><div class="chart-title" data-page-node-id="HpR0QyjCsyKk3IVKOwHPgn">事项（上周 / 本周）</div><div class="todo-grid" id="todo_mt_design" data-page-node-id="SkdkLAIGVefuztZqRzJ8qJ"></div></div>
     <div class="panel" data-page-node-id="ZQ58BhD65qlhjtCUB0ilZ0"><h2 data-page-node-id="g7UIBceRqBUtvCLMrTGUQw">中台 · 数据</h2><div class="chart-title" data-page-node-id="sypjSGgEfnCQpKCkznM0gc">事项（上周 / 本周）</div><div class="todo-grid" id="todo_mt_data" data-page-node-id="OSJHVs3jE8JzSkzX5RThh1"></div></div>
-    <div class="panel" data-page-node-id="aMtSvcPnl01XLezu8J"><h2 data-page-node-id="aMtSvcHd02WdwNam8n">中台 · 客服</h2><div class="chart-title" data-page-node-id="aMtSvcCt03QpKzCkz">事项（上周 / 本周）</div><div class="todo-grid" id="todo_mt_service" data-page-node-id="aMtSvcGd04SkzX5R"></div></div>
   </section>
 
   <!-- JZT -->
@@ -3243,6 +3251,25 @@ function buildSeriesAgg(start, end){
   // 排序：按 GMV 降序
   const sortNode=(arr)=>{ arr.sort((a,b)=>b.gmv-a.gmv); arr.forEach(n=>{ if(n.children&&n.children.length) sortNode(n.children); }); };
   sortNode(root);
+  // fix69cf：剪枝今年无数据的空节点 —— 若某节点（含非叶子）GMV=0 且无有效子节点，则移除；
+  //   向上递归清理：子级全被剪掉后父级若变空也一并移除，确保系列/中类/大类无 SKU 时不显示。
+  function pruneEmpty(nodes){
+    if(!nodes) return [];
+    const kept=[];
+    for(var i=0;i<nodes.length;i++){
+      var n=nodes[i];
+      if(n.children && n.children.length){
+        n.children=pruneEmpty(n.children);
+        n.gmv=n.children.reduce(function(s,c){return s+c.gmv;},0); // 重新汇总
+      }
+      // 叶子节点 gmv>0 保留；非叶子有子节点保留；其余丢弃
+      if((n.isLeaf && n.gmv>0) || (!n.isLeaf && n.children && n.children.length)){
+        kept.push(n);
+      }
+    }
+    return kept;
+  }
+  root=pruneEmpty(root);
   return {root, brandTarget, brandPosTarget};
 }
 // fix69cb：新品 / 下架品 识别（数据来源：商智销售明细 b.sales，与系列明细同口径）
