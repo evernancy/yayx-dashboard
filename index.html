@@ -96,6 +96,10 @@
   .sd-tree-table .sd-yoy.pos{color:#dc2626}
   .sd-tree-table .sd-yoy.neg{color:#16a34a}
   .sd-toggle{display:inline-block;width:16px;text-align:center;cursor:pointer;color:#6b7280;font-size:12px;user-select:none;margin-right:2px;flex-shrink:0}
+  .sd-tree-table td.sd-cat{white-space:nowrap}
+  .sd-tree-table td.sd-cat .sd-cat-name{vertical-align:middle}
+  .sd-tree-table td.sd-foldable:hover{background:#eef2ff}
+  .sd-tree-table .sd-yoy.amber{color:#d97706}
   .sd-toggle:hover{color:#2563eb}
   .sd-indent{padding-left:20px}
   .sd-indent-l2{padding-left:40px}
@@ -374,8 +378,9 @@
           </label>
           <span class="muted" style="font-size:12px" id="sdDateRange"></span>
           <span class="muted" style="font-size:12px" id="sdSummary"></span>
+          <button class="btn2 ghost" id="sdExportBtn" style="margin-left:auto">导出（含去年GMV）</button>
         </div>
-        <table class="tbl sd-tree-table" id="seriesDetailTable"><colgroup><col style="width:36px"><col style="width:90px"><col style="width:180px"><col style="width:130px"><col style="width:110px"><col style="width:80px"><col style="width:110px"></colgroup><thead><tr><th></th><th>大类</th><th>中类</th><th>系列</th><th>GMV</th><th>YOY%</th><th>去年GMV</th></tr></thead><tbody id="seriesDetailTbody"></tbody></table>
+        <table class="tbl sd-tree-table" id="seriesDetailTable"><colgroup><col style="width:340px"><col style="width:110px"><col style="width:110px"><col style="width:80px"><col style="width:70px"><col style="width:80px"></colgroup><thead><tr><th>类目（大类 › 中类 › 系列）</th><th class="sd-gmv">目标</th><th class="sd-gmv">达成(GMV)</th><th class="sd-yoy">达成率</th><th>占比</th><th class="sd-yoy">同比</th></tr></thead><tbody id="seriesDetailTbody"></tbody></table>
       </div>
     </div>
   </section>
@@ -2983,8 +2988,42 @@ function buildSeriesAgg(start, end){
     const k=String(r.sku||'').trim(); if(!k) return;
     gmvBySku[k]=(gmvBySku[k]||0)+num(r.amount);
   });
-  // 3. 四层树节点：{label, gmv, children[], level, isLeaf, sku}
-  // fix69ay 层级：catL(大类,L1) → catM(中类,L2) → series(系列,L3) → shortName(产品简称,L4 leaf)
+  // 2.5 构建 SKU → 目标值映射（从品牌目标数据中查找）
+  // 目标类型：brand/procure/internal/SKU(货号)
+  // 使用 rangeTargetOf 的逻辑：优先 day > month > year
+  const tgtBySku={};
+  const ry=(typeof targetRefYear==='function')?targetRefYear():(new Date().getFullYear());
+  const tgtRows=b.targets||[];
+  const tgtMap={}; // "type|gran|period" → value
+  tgtRows.forEach(r=>{ const t=normType(r.ttype), p=normType?normPeriod(r.period||r.tperiod,ry):(r.tperiod||''); let g=normType?normGran(r.tgran):r.tgran; if(!g) g=p&&p.length===10?'day':(p.length===7?'month':'year'); const v=num(r.tvalue); if(t&&g&&p) tgtMap[t+'|'+g+'|'+p]=v; });
+  // 对每个有销售的SKU，查找其目标（按SKU货号匹配ttype）
+  Object.keys(gmvBySku).forEach(sku=>{
+    let t=0;
+    // 尝试 SKU 级别目标
+    if(tgtMap[sku+'|day|'+start]||tgtMap[sku+'|day|'+end]) { /* 有日目标，后面range计算 */ }
+    else if(tgtMap[sku+'|month|'+start.slice(0,7)]) { /* 有月目标 */ }
+    // 用 rangeTarget 逻辑求和
+    const ds=[]; for(var dd=start;dd<=end;){ds.push(dd);var nd=new Date(dd);nd.setDate(nd.getDate()+1);dd=nd.toISOString().slice(0,10);}
+    let hasDay=false;
+    ds.forEach(d=>{ var v=tgtMap[sku+'|day|'+d]; if(v!==undefined){t+=v;hasDay=true;} });
+    if(!hasDay){
+      const months=[...new Set(ds.map(d=>d.slice(0,7)))];
+      months.forEach(ym=>{ var v=tgtMap[sku+'|month|'+ym]; if(v!==undefined)t+=v; });
+    }
+    if(!t){
+      var y=start.slice(0,4); var v=tgtMap[sku+'|year|'+y]; if(v!==undefined)t=v;
+    }
+    if(t>0) tgtBySku[sku]=t;
+  });
+  // 也取品牌级目标作为兜底（用于无SKU目标的节点）
+  let brandTarget=0;
+  { const ds2=[]; for(var dd2=start;dd2<=end;){ds2.push(dd2);var nd2=new Date(dd2);nd2.setDate(nd2.getDate()+1);dd2=nd2.toISOString().slice(0,10);}
+    let hd=false;
+    ds2.forEach(d=>{ var v=tgtMap['brand|day|'+d]; if(v!==undefined){brandTarget+=v;hd=true;} });
+    if(!hd){ const m2=[...new Set(ds2.map(d=>d.slice(0,7)))]; m2.forEach(ym=>{ var v=tgtMap['brand|month|'+ym]; if(v!==undefined)brandTarget+=v; }); }
+    if(!brandTarget){ var v=tgtMap['brand|year|'+start.slice(0,4)]; if(v!==undefined)brandTarget=v; }
+  }
+  // 3. 四层树节点：{label, gmv, target, children[], level, isLeaf, sku}
   const root=[];
   const l1Map={}, l2Map={}, l3Map={};
   Object.keys(gmvBySku).forEach(sku=>{
@@ -2992,28 +3031,31 @@ function buildSeriesAgg(start, end){
     if(!sr) return;
     const cL=String(sr.catL||'').trim()||'未分类';
     const cM=String(sr.catM||'').trim()||(String(sr.catS||'').trim())||'(空)';
-    const cS=String(sr.series||'').trim()||'(空系列)'; // fix69ay：新增系列层
+    const cS=String(sr.series||'').trim()||'(空系列)';
     const sName=String(sr.shortName||sr.sku||'').trim()||sku;
     const g=gmvBySku[sku];
+    const skut=tgtBySku[sku]||0;
     // L1: 大类
-    if(!l1Map[cL]){ l1Map[cL]={key:cL,level:1,label:cL,gmv:0,children:[],factoryDirect:sr.factoryDirect}; root.push(l1Map[cL]); }
-    l1Map[cL].gmv+=g;
+    if(!l1Map[cL]){ l1Map[cL]={key:cL,level:1,label:cL,gmv:0,target:0,children:[],factoryDirect:sr.factoryDirect}; root.push(l1Map[cL]); }
+    l1Map[cL].gmv+=g; l1Map[cL].target+=skut;
     // L2: 中类
     const l2key=cL+'||'+cM;
-    if(!l2Map[l2key]){ l2Map[l2key]={key:l2key,level:2,label:cM,gmv:0,children:[],parent:l1Map[cL]}; l1Map[cL].children.push(l2Map[l2key]); }
-    l2Map[l2key].gmv+=g;
-    // L3: 系列（fix69ay 新增）
+    if(!l2Map[l2key]){ l2Map[l2key]={key:l2key,level:2,label:cM,gmv:0,target:0,children:[],parent:l1Map[cL]}; l1Map[cL].children.push(l2Map[l2key]); }
+    l2Map[l2key].gmv+=g; l2Map[l2key].target+=skut;
+    // L3: 系列
     const l3key=l2key+'||'+cS;
-    if(!l3Map[l3key]){ l3Map[l3key]={key:l3key,level:3,label:cS,gmv:0,children:[],parent:l2Map[l2key]}; l2Map[l2key].children.push(l3Map[l3key]); }
-    l3Map[l3key].gmv+=g;
+    if(!l3Map[l3key]){ l3Map[l3key]={key:l3key,level:3,label:cS,gmv:0,target:0,children:[],parent:l2Map[l2key]}; l2Map[l2key].children.push(l3Map[l3key]); }
+    l3Map[l3key].gmv+=g; l3Map[l3key].target+=skut;
     // L4: 叶子(产品简称/SKU)
-    l3Map[l3key].children.push({level:4,label:sName,gmv:g,isLeaf:true,sku:sku});
+    l3Map[l3key].children.push({level:4,label:sName,gmv:g,target:skut,isLeaf:true,sku:sku});
   });
   // 排序：按 GMV 降序
   const sortNode=(arr)=>{ arr.sort((a,b)=>b.gmv-a.gmv); arr.forEach(n=>{ if(n.children&&n.children.length) sortNode(n.children); }); };
   sortNode(root);
-  return root;
+  return {root, brandTarget};
 }
+// fix69af：系列明细使用销售目标达成的时间范围（resolveTvRange），不再按年份筛选
+
 // fix69af：系列明细使用销售目标达成的时间范围（resolveTvRange），不再按年份筛选
 function renderSeriesDetail(){
   const tbody=$('#seriesDetailTbody'); const summaryEl=$('#sdSummary'); const dateRangeEl=$('#sdDateRange');
@@ -3025,20 +3067,23 @@ function renderSeriesDetail(){
   // 显示当前时间范围
   if(dateRangeEl) dateRangeEl.textContent=(start&&end)?('时间：'+start+' ~ '+end):'（使用上方销售目标达成的时间选择）';
   if(!start || !end){
-    tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:20px;color:#9ca3af">请先在上方「销售目标达成」选择日期范围</td></tr>';
+    tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;color:#9ca3af">请先在上方「销售目标达成」选择日期范围</td></tr>';
     if(summaryEl) summaryEl.textContent=''; return;
   }
   // 厂直过滤（值改为 '厂直' / '__nonfactory__'）
   const filtFactory=$('#sdFilterFactory')?.value||'';
-  // 构建当年树（3层：大类→中类→产品简称）—— 使用 start/end 日期范围
-  let tree=buildSeriesAgg(start, end);
+  // 构建当年树 —— 使用 start/end 日期范围，返回 {root, brandTarget}
+  let aggResult=buildSeriesAgg(start, end);
+  let tree=aggResult.root || [];
+  const brandTarget=aggResult.brandTarget || 0;
   // 厂直过滤
   if(filtFactory==='厂直') tree=tree.filter(n=>String(n.factoryDirect||'').trim()==='厂直');
   else if(filtFactory==='__nonfactory__') tree=tree.filter(n=>String(n.factoryDirect||'').trim()!=='厂直');
   // 构建去年同期树（仅用于 YOY%）：同起止月日，年份-1
   const lastStart=start.length>=10?(String(Number(start.slice(0,4))-1)+start.slice(4)):'';
   const lastEnd=end.length>=10?(String(Number(end.slice(0,4))-1)+end.slice(4)):'';
-  const lastTree=(lastStart&&lastEnd)?buildSeriesAgg(lastStart, lastEnd):[];
+  const lastAgg=(lastStart&&lastEnd)?buildSeriesAgg(lastStart, lastEnd):{root:[]};
+  const lastTree=lastAgg.root || [];
   // 扁平化去年数据为 { labelPath → gmv }
   const lastGmv={};
   (function flatten(nodes, prefix){
@@ -3048,37 +3093,26 @@ function renderSeriesDetail(){
       if(n.children) flatten(n.children, key+'>');
     });
   })(lastTree, '');
-  // 总 GMV
+  // 总 GMV / 总目标
   var totalGmv=tree.reduce(function(s,n){ return s+n.gmv; }, 0);
+  var totalTarget=tree.reduce(function(s,n){ return s+(n.target||0); }, 0) || brandTarget;
   var lastTotalGmv=Object.values(lastGmv).reduce(function(s,v){ return typeof v==='number'?s+v:s; }, 0)||0;
   var totalYoy=lastTotalGmv?((totalGmv-lastTotalGmv)/lastTotalGmv*100):null;
   if(summaryEl){
-    summaryEl.textContent='合计：'+fmtMoney(totalGmv)+' · YOY '+(totalYoy!=null?((totalYoy>=0?'+':'')+totalYoy.toFixed(2)+'%'):'—')+' · '+tree.reduce(function(s,n){ return s+countLeaves(n); }, 0)+' 个 SKU';
+    var rateTxt=totalTarget?fmtPct(totalGmv/totalTarget):'—';
+    summaryEl.textContent='合计：'+fmtMoney(totalGmv)+' / 目标'+fmtMoney(totalTarget)+' · 达成率 '+rateTxt+' · YOY '+(totalYoy!=null?((totalYoy>=0?'+':'')+totalYoy.toFixed(2)+'%'):'—')+' · '+tree.reduce(function(s,n){ return s+countLeaves(n); }, 0)+' 个 SKU';
   }
 
   // ===== DOM 渲染 =====
   tbody.innerHTML='';
   function countLeaves(n){ if(!n.children||!n.children.length) return 1; return n.children.reduce((s,c)=>s+countLeaves(c),0); }
   function makeCell(text, cls){
-    const td=document.createElement('td'); if(cls) td.className=cls; td.textContent=text==null?'':String(text); return td;
-  }
-  function makeToggleCell(node, pathKey){
-    const td=document.createElement('td');
-    if(node.children&&node.children.length){
-      const sp=document.createElement('span'); sp.className='sd-toggle'; sp.textContent='\u229E'; // ⊖
-      sp.style.cursor='pointer'; sp.style.color='#6b7280'; sp.style.fontSize='12px';
-      sp.onclick=function(e){ e.stopPropagation(); toggleSubtree(sp, tr); };
-      td.appendChild(sp);
-    } else {
-      const sp=document.createElement('span'); sp.className='sd-toggle'; sp.style.visibility='hidden'; td.appendChild(sp);
-    }
-    var tr=null; // will be set below
-    return td;
+    const td=document.createElement('td'); if(cls) td.className=cls;
+    if(typeof text==='number'&&text!==text) text='—'; // NaN
+    td.textContent=text==null?'':String(text); return td;
   }
   var allRows=[]; // 收集所有行引用，供折叠用
-  /* fix69ay：折叠状态沿祖先链继承。每行有自己的 _foldState{ collapsed, parent }，
-     子行的 _parentState 指向父行的 _foldState。展开父行时，若任一祖先仍处于折叠态，
-     该行保持隐藏——避免「大类折叠再展开」把系列下已折叠的产品全部冲开。 */
+  /* fix69ay：折叠状态沿祖先链继承 */
   function ancestorCollapsed(state){
     while(state){ if(state.collapsed) return true; state=state.parent; }
     return false;
@@ -3090,116 +3124,93 @@ function renderSeriesDetail(){
     nodes.forEach(function(n){
       var pathKey=parentKey+n.label;
       var lg=n.gmv||0;
+      var lt=n.target||0;
       var lgLast=lastGmv[pathKey]||0;
       var yoy=lgLast?((lg-lgLast)/lgLast*100):null;
       var yoyCls=yoy==null?'':(yoy>=0?'pos':'neg');
       var yoyTxt=yoy!=null?(yoy>=0?'+':'')+yoy.toFixed(2)+'%':'—';
+      var achRate=(lt>0)?(lg/lt):null;
+      var achCls=achRate==null?'':(achRate>=1?'pos':(achRate>=0.8?'amber':'neg'));
+      var achTxt=achRate!=null?fmtPct(achRate):'—';
+      var share=(totalGmv>0)?(lg/totalGmv*100):null;
+      var shareTxt=share!=null?share.toFixed(1)+'%':'—';
+
       var rowClass=n.isLeaf?'sd-row-leaf':'sd-row-group';
-
       var tr=document.createElement('tr'); tr.className=rowClass; tr.dataset.path=pathKey;
-      // fix69ay：本行的折叠状态（isFoldParent 决定初始是否折叠其子行）
       tr._parentState=parentState||null;
-      tr._foldState={ collapsed:!!(n.children&&n.children.length&&depth===3), parent:parentState||null };
+      var hasKids=!!(n.children&&n.children.length);
+      var isFoldParent=(depth===3);
+      var collapsedDefault=!!(hasKids&&isFoldParent);
+      tr._foldState={ collapsed:collapsedDefault, parent:parentState||null };
+      tr._lastGmv=lgLast;
 
-      // 列1：展开/收起图标
-      var td1=document.createElement('td');
-      if(n.children&&n.children.length){
-        var sp=document.createElement('span'); sp.className='sd-toggle';
-        /* fix69ay：4 层树 大类(L1)→中类(L2)→系列(L3)→产品简称(L4)。
-           折叠规则：仅「系列(L3)」折叠其下产品简称(L4)；大类/中类/系列本身都不折叠。 */
-        var isFoldParent=(depth===3);
-        sp.textContent=isFoldParent?'\u25B6':'\u229E'; // ▶(收起) / ⊖(展开)
-        sp.style.cursor='pointer'; sp.style.color=isFoldParent?'#dc2626':'#6b7280'; sp.style.fontSize='12px';
-        (function(childNodes, myTr, collapsed){ // closure
-          sp.onclick=function(e){ e.stopPropagation(); collapsed=!collapsed;
-            childNodes.forEach(function(cn){ cn.tr.style.display=visibleOrNot(cn.tr, collapsed); });
-            sp.textContent=collapsed?'\u25B6':'\u229E'; // ▶ / ⊖
-            sp.style.color=collapsed?'#dc2626':'#6b7280';
-          };
-        })(n.children.map(function(cn){ return {tr:null}; }), tr, isFoldParent);
-        // 下面在创建子行后回填 tr 引用
-        sp._childPlaceHolder=true;
-        sp._isCollapsed=isFoldParent; // 供回填时读取默认折叠状态
-      } else {
-        var sp2=document.createElement('span'); sp2.className='sd-toggle'; sp2.style.visibility='hidden'; td1.appendChild(sp2);
+      // 列1：类目（合并 大类/中类/系列/产品简称，缩进显示层级）+ 左侧箭头
+      var td1=document.createElement('td'); td1.className='sd-cat';
+      var indent=(depth-1)*20;
+      var indentSpan=document.createElement('span');
+      indentSpan.style.display='inline-block'; indentSpan.style.width=indent+'px';
+      td1.appendChild(indentSpan);
+      var arrowSpan=null;
+      if(hasKids){
+        arrowSpan=document.createElement('span'); arrowSpan.className='sd-toggle';
+        arrowSpan.textContent=collapsedDefault?'\u25B6':'\u25BC';
+        arrowSpan.style.color=collapsedDefault?'#dc2626':'#6b7280';
+        arrowSpan.style.fontSize='11px';
+        td1.appendChild(arrowSpan);
       }
-      if(n.children&&n.children.length) td1.appendChild(sp); else {}
+      var nameSpan=document.createElement('span'); nameSpan.className='sd-cat-name';
+      nameSpan.textContent=n.label;
+      if(depth===1){ nameSpan.style.fontWeight='700'; }
+      else if(depth===2){ nameSpan.style.fontWeight='600'; }
+      if(depth>=4){ nameSpan.style.color='#4b5563'; nameSpan.style.fontWeight='400'; }
+      td1.appendChild(nameSpan);
+      if(isFoldParent&&hasKids){
+        var hint=document.createElement('span'); hint.style.fontWeight='400'; hint.style.color='#888'; hint.style.fontSize='11px'; hint.style.marginLeft='4px'; hint.textContent='（点名称展开各品）';
+        td1.appendChild(hint);
+      }
+      if(hasKids){ td1.style.cursor='pointer'; td1.classList.add('sd-foldable'); }
       tr.appendChild(td1);
 
-      // fix69ay：可折叠的父行（系列 L3）加提示 + 可点击样式
-      var hint=null;
-      if(isFoldParent){
-        tr.style.cursor='pointer';
-        tr.style.background='#f7f8fa';
-        hint=document.createElement('span');
-        hint.style.fontWeight='400'; hint.style.color='#888'; hint.style.fontSize='11px';
-        hint.textContent=' (点开看各品)';
-      }
-
-      // 列2：大类（仅 L1 显示）
-      var td2=document.createElement('td');
-      if(depth===1){ td2.textContent=n.label; td2.style.fontWeight='700'; }
+      // 列2：目标
+      var td2=document.createElement('td'); td2.className='sd-gmv';
+      td2.textContent=lt?fmtMoney(lt):(depth<=3&&brandTarget?fmtMoney(brandTarget):'—');
       tr.appendChild(td2);
-
-      // 列3：中类（仅 L2 显示）
-      var td3=document.createElement('td');
-      if(depth===2){ td3.textContent=n.label; td3.style.fontWeight='600'; }
-      tr.appendChild(td3);
-
-      // 列4：系列（L3 显示）/ 产品简称（L4 叶子，缩进显示）
-      var td4=document.createElement('td');
-      if(depth===3){ td4.textContent=n.label; }
-      else if(depth>=4){
-        td4.innerHTML='<span style="display:inline-block;width:20px"></span>';
-        td4.appendChild(document.createTextNode(n.label));
-        td4.style.color='#4b5563';
-      }
-      if(hint) td4.appendChild(hint);
-      tr.appendChild(td4);
-
-      // 列5-7：GMV / YOY% / 去年GMV
-      var td5=document.createElement('td'); td5.className='sd-gmv'; td5.textContent=fmtMoney(lg); tr.appendChild(td5);
-      var td6=document.createElement('td'); td6.className='sd-yoy '+(yoyCls||''); td6.textContent=yoyTxt; tr.appendChild(td6);
-      var td7=document.createElement('td'); td7.className='sd-gmv'; td7.textContent=fmtMoney(lgLast); tr.appendChild(td7);
+      // 列3：达成(GMV)
+      var td3=document.createElement('td'); td3.className='sd-gmv'; td3.textContent=fmtMoney(lg); tr.appendChild(td3);
+      // 列4：达成率
+      var td4=document.createElement('td'); td4.className='sd-yoy '+achCls; td4.textContent=achTxt; tr.appendChild(td4);
+      // 列5：占比
+      var td5=document.createElement('td'); td5.textContent=shareTxt; tr.appendChild(td5);
+      // 列6：同比(YOY%)
+      var td6=document.createElement('td'); td6.className='sd-yoy '+yoyCls; td6.textContent=yoyTxt; tr.appendChild(td6);
 
       tbody.appendChild(tr);
       allRows.push({tr:tr, node:n});
 
-      // 子节点（默认全展开，除系列行下的产品简称）
-      if(n.children&&n.children.length){
+      if(hasKids){
         var childRows=[];
-        /* fix69ay：原来用 allRows.length-n.children.length 计算起点，在多层嵌套下会算错
-           （子孙行也会被计入，导致只取到最后一个子孙）。改为记录递归前的索引——
-           DFS 前序遍历保证从 mark 到末尾的所有行都是本节点的子孙，整棵子树都能正确折叠。 */
         var mark=allRows.length;
         renderNodes(n.children, depth+1, pathKey+'>', tr._foldState);
         for(var ci=mark; ci<allRows.length; ci++){ childRows.push(allRows[ci].tr); }
-        // 找到刚才添加的 toggle span 并绑定子行列表
-        var toggleSp=td1.querySelector('.sd-toggle');
-        if(toggleSp&&toggleSp._childPlaceHolder){
-          (function(childList, tSp, myState){
-            // fix69ay：读取创建时标记的默认折叠状态
-            var collapsed=!!tSp._isCollapsed;
-            myState.collapsed=collapsed;
-            // 初始隐藏子行（系列行下的产品简称默认折叠）
-            childList.forEach(function(ct){ ct.style.display=visibleOrNot(ct, collapsed); });
-            tSp.onclick=function(e){ e.stopPropagation(); collapsed=!collapsed;
-              myState.collapsed=collapsed;
-              childList.forEach(function(ct){ ct.style.display=visibleOrNot(ct, collapsed); });
-              tSp.textContent=collapsed?'\u25B6':'\u229E';
-              tSp.style.color=collapsed?'#dc2626':'#6b7280';
-            };
-          })(childRows, toggleSp, tr._foldState);
-          delete toggleSp._childPlaceHolder;
-        }
+        // 初始按默认折叠态设置子孙可见性（沿用 fix69ay 递归前索引，确保多层嵌套都正确隐藏）
+        childRows.forEach(function(ct){ ct.style.display=visibleOrNot(ct, collapsedDefault); });
+        // 点击类目单元格（或箭头）切换展开/收起
+        var toggleSp=arrowSpan;
+        var doToggle=function(e){ if(e) e.stopPropagation();
+          var st=tr._foldState; st.collapsed=!st.collapsed;
+          childRows.forEach(function(ct){ ct.style.display=visibleOrNot(ct, st.collapsed); });
+          if(toggleSp){ toggleSp.textContent=st.collapsed?'\u25B6':'\u25BC'; toggleSp.style.color=st.collapsed?'#dc2626':'#6b7280'; }
+        };
+        td1.onclick=doToggle;
+        if(toggleSp) toggleSp.onclick=function(e){ e.stopPropagation(); doToggle(e); };
       }
     });
   }
-  renderNodes(tree, 1, '', null);
+renderNodes(tree, 1, '', null);
 
   if(!tree.length){
     var emptyRow=document.createElement('tr');
-    var emptyCell=document.createElement('td'); emptyCell.colSpan=7;
+    var emptyCell=document.createElement('td'); emptyCell.colSpan=6;
     emptyCell.style.textAlign='center'; emptyCell.style.padding='20px'; emptyCell.style.color='#9ca3af';
     emptyCell.textContent=filtFactory?'当前厂直筛选无匹配数据':'暂无系列划分数据（请先在「系列划分」区录入 SKU 映射表）';
     emptyRow.appendChild(emptyCell); tbody.appendChild(emptyRow);
@@ -4589,6 +4600,39 @@ const seriesCopyBtn=$('#seriesCopyBtn'); if(seriesCopyBtn) seriesCopyBtn.addEven
   a.href=URL.createObjectURL(new Blob([tsv],{type:'text/tab-separated-values;charset=utf-8'}));
   a.download=fname; a.click();
   toast('已导出 '+rows.length+' 行为 '+fname);
+});
+
+// 系列明细表导出：网页隐藏「去年GMV」，导出时补回该列
+const sdExportBtn=$('#sdExportBtn'); if(sdExportBtn) sdExportBtn.addEventListener('click',async()=>{
+  var _tv; try{ _tv=resolveTvRange(); }catch(e){ _tv=['','']; }
+  const start=_tv[0]||'', end=_tv[1]||'';
+  if(!start||!end){ toast('请先在上方「销售目标达成」选择日期范围'); return; }
+  let agg=buildSeriesAgg(start,end); let tree=agg.root||[];
+  const filt=($('#sdFilterFactory')&&$('#sdFilterFactory').value)||'';
+  if(filt==='厂直') tree=tree.filter(n=>String(n.factoryDirect||'').trim()==='厂直');
+  else if(filt==='__nonfactory__') tree=tree.filter(n=>String(n.factoryDirect||'').trim()!=='厂直');
+  // 去年同期（同起止月日，年份-1）
+  const lastStart=start.length>=10?(String(Number(start.slice(0,4))-1)+start.slice(4)):'';
+  const lastEnd=end.length>=10?(String(Number(end.slice(0,4))-1)+end.slice(4)):'';
+  const lastAgg=(lastStart&&lastEnd)?buildSeriesAgg(lastStart,lastEnd):{root:[]};
+  const lastGmv={}; (function f(ns,p){ ns.forEach(function(n){ var k=p+n.label; lastGmv[k]=n.gmv; if(n.children) f(n.children,k+'>'); }); })(lastAgg.root||[],'');
+  const totalGmv=tree.reduce(function(s,n){ return s+n.gmv; },0);
+  const rows=[];
+  (function f(ns,p){
+    ns.forEach(function(n){
+      var path=p+n.label;
+      var lg=n.gmv||0, lt=n.target||0, lgLast=lastGmv[path]||0;
+      var yoy=lgLast?((lg-lgLast)/lgLast*100):null;
+      var ach=lt>0?(lg/lt):null;
+      var share=totalGmv>0?(lg/totalGmv*100):null;
+      rows.push([path, lt||'', lg, ach!=null?fmtPct(ach):'—', share!=null?share.toFixed(1)+'%':'—', yoy!=null?(yoy>=0?'+':'')+yoy.toFixed(2)+'%':'—', lgLast||'']);
+      if(n.children) f(n.children, path+'>');
+    });
+  })(tree,'');
+  const header=['类目','目标','达成(GMV)','达成率','占比','同比(YOY%)','去年GMV'];
+  const tsv=[header.join('\t')].concat(rows.map(function(r){ return r.join('\t'); })).join('\n');
+  try{ if(navigator.clipboard&&navigator.clipboard.writeText){ await navigator.clipboard.writeText(tsv); toast('已复制 '+rows.length+' 行（含去年GMV）到剪贴板'); return; } }catch(e){}
+  const a2=document.createElement('a'); a2.href=URL.createObjectURL(new Blob([tsv],{type:'text/tab-separated-values;charset=utf-8'})); a2.download='系列明细_'+(start+'~'+end)+'.tsv'; a2.click(); toast('已导出 '+rows.length+' 行');
 });
 
 
