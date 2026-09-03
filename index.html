@@ -3301,9 +3301,10 @@ function buildNewDiscontinued(start, end, filtFactory){
   const newList=[], discList=[];
   allSkus.forEach(sku=>{
     const sr=skuMap[sku];
-    if(!sr) return;  // 仅纳入已建立系列映射的 SKU（与系列明细主表一致，避免主表无此行却在此出现）
-    // 厂直过滤
-    if(filtFactory){
+    // fix69cg：不再要求必须有系列映射——线上 series 表可能为空，导致新品/下架品全部被静默过滤
+    // 无系列映射的 SKU 仍纳入判断，用 SKU 本身作名称，归入「未分类」类目
+    // 厂直过滤：无 series 记录时无法判定厂直属性，默认保留（不按厂直过滤）
+    if(filtFactory && sr){
       const fd=String(sr.factoryDirect||'').trim();
       if(filtFactory==='厂直' && fd!=='厂直') return;
       if(filtFactory==='__nonfactory__' && fd==='厂直') return;
