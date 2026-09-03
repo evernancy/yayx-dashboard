@@ -5890,6 +5890,16 @@ async function fetchSnapshotGitee(){
     return null;
   }catch(e){ return null; }
 }
+// fix69cp：快照拉取加超时，避免国内无 VPN 时 github.io 长时间挂起导致页面卡在「检测中…」/「打不开」
+// （连不上时在数秒内快速失败，立即回退到本机 IndexedDB 缓存或下一个候选地址）
+function fetchWithTimeout(url, opts, ms){
+  opts = opts || {};
+  if(typeof AbortController==='undefined') return fetch(url, opts); // 老浏览器兜底
+  var ctrl = new AbortController();
+  var t = setTimeout(function(){ try{ ctrl.abort(); }catch(_){} }, ms || 8000);
+  var o = Object.assign({}, opts, { signal: ctrl.signal });
+  return fetch(url, o).then(function(r){ clearTimeout(t); return r; }, function(e){ clearTimeout(t); throw e; });
+}
 async function fetchPublicSnapshot(){
   // Gitee 后端：快照仓私有，优先用令牌经 API 读（同事已粘贴共享令牌即免 VPN 读国内数据）
   if(BACKEND_TYPE==='gitee' && ghToken()){
@@ -5901,7 +5911,7 @@ async function fetchPublicSnapshot(){
   for(var ci=0;ci<candidates.length;ci++){
     try{
       var url=candidates[ci];
-      var r=await fetch(url,{cache:'no-cache'});
+      var r=await fetchWithTimeout(url,{cache:'no-cache'}, 8000);
       if(!r.ok) continue;
       var snap=await r.json();
       // 从成功 URL 推导 base（用于拉取各品牌文件）
@@ -5911,7 +5921,7 @@ async function fetchPublicSnapshot(){
         var brands={};
         for(var i=0;i<snap.brands.length;i++){
           var b=snap.brands[i];
-          try{ var br=await fetch(base+'data__'+encodeURIComponent(b)+'.json',{cache:'no-cache'}); if(br.ok){ var bj=await br.json(); brands[b]=bj.data||{}; } }catch(_){}
+          try{ var br=await fetchWithTimeout(base+'data__'+encodeURIComponent(b)+'.json',{cache:'no-cache'}, 30000); if(br.ok){ var bj=await br.json(); brands[b]=bj.data||{}; } }catch(_){}
           if(!brands[b]) brands[b]={};
         }
         var state={ brands:brands, currentBrand:snap.currentBrand||'李锦记', brandOrder:snap.brandOrder||BRANDS.slice(), gantt:snap.gantt||[], ganttRaw:snap.ganttRaw||'', memo:snap.memo||{} };
