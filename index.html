@@ -3295,7 +3295,30 @@ function buildNewDiscontinued(start, end, filtFactory){
   });
   newList.sort((a,b)=>b.gmvThis-a.gmvThis);
   discList.sort((a,b)=>b.gmvLast-a.gmvLast);
-  return {newList, discList};
+  // fix69cd：构建树形结构（大类 › 中类 › 系列 › 产品），供可折叠渲染
+  function buildNDTree(list, gmvKey){
+    const root={label:'', children:[], gmv:0, isLeaf:false};
+    list.forEach(it=>{
+      const cl=it.catL||'未分类', cm=it.catM||'(空)', sr=it.series||'(空系列)';
+      // L1 大类
+      let n1=root.children.find(c=>c.label===cl); if(!n1){ n1={label:cl, children:[], gmv:0, isLeaf:false}; root.children.push(n1); }
+      // L2 中类
+      let n2=n1.children.find(c=>c.label===cm); if(!n2){ n2={label:cm, children:[], gmv:0, isLeaf:false}; n1.children.push(n2); }
+      // L3 系列
+      let n3=n2.children.find(c=>c.label===sr); if(!n3){ n3={label:sr, children:[], gmv:0, isLeaf:false}; n2.children.push(n3); }
+      // L4 叶子（产品简称）
+      const leaf={label:it.name, children:null, gmv:it[gmvKey]||0, isLeaf:true, sku:it.sku};
+      n3.children.push(leaf);
+    });
+    // 向上汇总 GMV
+    function sumUp(node){ if(!node.isLeaf&&node.children){ node.children.forEach(c=>{ sumUp(c); node.gmv+=c.gmv; }); } }
+    sumUp(root);
+    // 排序：同级按 GMV 降序
+    function sortNode(node){ if(node.children) node.children.sort((a,b)=>(b.gmv||0)-(a.gmv||0)).forEach(sortNode); }
+    sortNode(root);
+    return root;
+  }
+  return {newList, discList, newTree:buildNDTree(newList,'gmvThis'), discTree:buildNDTree(discList,'gmvLast')};
 }
 // fix69af：系列明细使用销售目标达成的时间范围（resolveTvRange），不再按年份筛选
 
@@ -3501,20 +3524,7 @@ renderNodes(tree, 1, '', null);
   renderNewDiscontinued(start, end, filtFactory);
 }
 
-// fix69cb：新品 / 下架品 板块渲染
-function mkNDCell(text, cls){
-  const td=document.createElement('td'); if(cls) td.className=cls;
-  td.textContent=(text==null||text==='')?'—':String(text); return td;
-}
-function ndPath(it){
-  // 与系列明细主表一致的类目路径：大类 › 中类 › 系列，产品简称
-  const parts=[];
-  if(it.catL) parts.push(it.catL);
-  if(it.catM && it.catM!=='(空)') parts.push(it.catM);
-  if(it.series && it.series!=='(空系列)') parts.push(it.series);
-  const prefix=parts.join(' \u203A ');
-  return it.name ? (prefix ? (prefix+'，'+it.name) : it.name) : (prefix||'—');
-}
+// fix69cd：新品 / 下架品 板块渲染（可折叠树形，与系列明细主表样式一致）
 function renderNewDiscontinued(start, end, filtFactory){
   const wrap=$('#sdNewDiscWrap'); if(!wrap) return;
   if(!start || !end){
@@ -3522,38 +3532,100 @@ function renderNewDiscontinued(start, end, filtFactory){
     return;
   }
   const res=buildNewDiscontinued(start, end, filtFactory);
-  // 左：新品情况（今年有销售，去年无 → 只显示今年GMV）
+
+  // 可折叠树渲染器（复用主表 renderNodes 的折叠逻辑）
+  function renderNDTree(tbody, tree, gmvLabel){
+    if(!tbody) return;
+    tbody.innerHTML='';
+    if(!tree || !tree.children || !tree.children.length){
+      tbody.innerHTML='<tr><td colspan="2" class="sd-nd-empty">暂无数据</td></tr>';
+      return;
+    }
+    var allRows=[];
+    function ancCollapsed(st){ while(st){ if(st.collapsed) return true; st=st.parent; } return false; }
+    function visOrNot(tr, fh){ return (fh||ancCollapsed(tr._pState))?'none':''; }
+    function renderNodes(nodes, depth, pKey, pState){
+      nodes.forEach(function(n){
+        var pk=pKey+n.label;
+        var isLeaf=n.isLeaf;
+        var hasKids=!!(n.children&&n.children.length);
+        var isFoldParent=(depth===3);  // 系列层折叠产品
+        var defCollapsed=!!(hasKids&&isFoldParent);
+        var tr=document.createElement('tr');
+        tr.className=isLeaf?'sd-row-leaf':'sd-row-group';
+        tr.dataset.path=pk; tr._pState=pState||null;
+        tr._fState={collapsed:defCollapsed, parent:pState||null};
+
+        // 列1：类目名 + 缩进 + 箭头
+        var td1=document.createElement('td'); td1.className='sd-cat';
+        var indent=(depth)*20;
+        var isp=document.createElement('span'); isp.style.display='inline-block'; isp.style.width=indent+'px';
+        td1.appendChild(isp);
+        var arrow=null;
+        if(hasKids){
+          arrow=document.createElement('span'); arrow.className='sd-toggle';
+          arrow.textContent=defCollapsed?'\u25B6':'\u25BC';
+          arrow.style.color=defCollapsed?'#dc2626':'#6b7280'; arrow.style.fontSize='11px';
+          td1.appendChild(arrow);
+        }
+        var nm=document.createElement('span'); nm.className='sd-cat-name'; nm.textContent=n.label;
+        if(depth===0) nm.style.fontWeight='700';
+        else if(depth===1) nm.style.fontWeight='600';
+        else if(depth>=3) { nm.style.color='#4b5563'; nm.style.fontWeight='400'; }
+        td1.appendChild(nm);
+        if(isFoldParent&&hasKids){
+          var ht=document.createElement('span'); ht.style.fontWeight='400'; ht.style.color='#888'; ht.style.fontSize='11px'; ht.style.marginLeft='4px'; ht.textContent='\uff08\u70b9\u540d\u79f0\u5c55\u5f00\u5404\u54c1\uff09';
+          td1.appendChild(ht);
+        }
+        if(hasKids){ td1.style.cursor='pointer'; td1.classList.add('sd-foldable'); }
+        tr.appendChild(td1);
+
+        // 列2：GMV
+        var td2=document.createElement('td'); td2.className='sd-gmv';
+        td2.textContent=(isLeaf||hasKids)?fmtMoney(n.gmv||0):'—';
+        tr.appendChild(td2);
+
+        tbody.appendChild(tr);
+        allRows.push({tr:tr, node:n});
+
+        if(hasKids){
+          var cRows=[]; var mk=allRows.length;
+          renderNodes(n.children, depth+1, pk+'>', tr._fState);
+          for(var ci=mk;ci<allRows.length;ci++) cRows.push(allRows[ci].tr);
+          cRows.forEach(function(ct){ ct.style.display=visOrNot(ct, defCollapsed); });
+          var doTog=function(e){ if(e) e.stopPropagation();
+            var st=tr._fState; st.collapsed=!st.collapsed;
+            cRows.forEach(function(ct){ ct.style.display=visOrNot(ct, st.collapsed); });
+            if(arrow){ arrow.textContent=st.collapsed?'\u25B6':'\u25BC'; arrow.style.color=st.collapsed?'#dc2626':'#6b7280'; }
+          };
+          td1.onclick=doTog; if(arrow) arrow.onclick=function(e){ e.stopPropagation(); doTog(e); };
+        }
+      });
+    }
+    renderNodes(tree.children, 0, '', null);
+  }
+
+  // 左：新品情况
   const newBody=$('#sdNewTbody'), newSum=$('#sdNewSummary');
   if(newBody){
-    newBody.innerHTML='';
-    if(!res.newList.length){
+    if(!res.newTree || !res.newTree.children || !res.newTree.children.length){
       newBody.innerHTML='<tr><td colspan="2" class="sd-nd-empty">今年有销售、去年同期无销售的新品：暂无</td></tr>';
     } else {
-      res.newList.forEach(it=>{
-        const tr=document.createElement('tr');
-        tr.appendChild(mkNDCell(ndPath(it)));
-        tr.appendChild(mkNDCell(fmtMoney(it.gmvThis),'sd-gmv'));
-        newBody.appendChild(tr);
-      });
+      renderNDTree(newBody, res.newTree, 'gmvThis');
     }
   }
-  if(newSum) newSum.textContent='共 '+res.newList.length+' 个新品 · 今年合计GMV '+fmtMoney(res.newList.reduce((s,x)=>s+x.gmvThis,0));
-  // 右：下架品情况（今年无销售，去年有 → 只显示去年GMV）
+  if(newSum) newSum.textContent='\u5171 '+res.newList.length+' \u4e2a\u65b0\u54c1 \u00b7 \u4eca\u5e74\u5408\u8ba1GMV '+fmtMoney(res.newList.reduce((s,x)=>s+x.gmvThis,0));
+
+  // 右：下架品情况
   const discBody=$('#sdDiscTbody'), discSum=$('#sdDiscSummary');
   if(discBody){
-    discBody.innerHTML='';
-    if(!res.discList.length){
+    if(!res.discTree || !res.discTree.children || !res.discTree.children.length){
       discBody.innerHTML='<tr><td colspan="2" class="sd-nd-empty">今年无销售、去年同期有销售的下架品：暂无</td></tr>';
     } else {
-      res.discList.forEach(it=>{
-        const tr=document.createElement('tr');
-        tr.appendChild(mkNDCell(ndPath(it)));
-        tr.appendChild(mkNDCell(fmtMoney(it.gmvLast),'sd-gmv'));
-        discBody.appendChild(tr);
-      });
+      renderNDTree(discBody, res.discTree, 'gmvLast');
     }
   }
-  if(discSum) discSum.textContent='共 '+res.discList.length+' 个下架品 · 去年合计GMV '+fmtMoney(res.discList.reduce((s,x)=>s+x.gmvLast,0));
+  if(discSum) discSum.textContent='\u5171 '+res.discList.length+' \u4e2a\u4e0b\u67b6\u54c1 \u00b7 \u53bb\u5e74\u5408\u8ba1GMV '+fmtMoney(res.discList.reduce((s,x)=>s+x.gmvLast,0));
 }
 
 // 麦维他专用：销售目标达成区分自营/POP 两渠道 —— 拆成两个面板（自营/POP），各自 KPI + 图表，合并明细表
