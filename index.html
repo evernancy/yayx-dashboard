@@ -100,6 +100,11 @@
   .sd-tree-table td.sd-cat .sd-cat-name{vertical-align:middle}
   .sd-tree-table td.sd-foldable:hover{background:#eef2ff}
   .sd-tree-table .sd-yoy.amber{color:#d97706}
+  .sd-tree-table td.sd-rem{padding:2px 6px;vertical-align:middle}
+  .sd-tree-table .rem-edit{display:inline-block;min-width:60px;min-height:18px;padding:2px 6px;border-radius:4px;outline:none;cursor:text;color:#334155;font-size:12px;line-height:1.4;word-break:break-all;max-width:180px}
+  .sd-tree-table .rem-edit:hover{background:#f1f5ff}
+  .sd-tree-table .rem-edit:focus{background:#fff7ed;border:1px solid #fb923c;box-shadow:0 0 0 2px rgba(251,146,60,.18)}
+  .sd-tree-table .rem-edit:empty:before{content:'点击填写';color:#94a3b8;font-style:italic;cursor:text}
   .sd-toggle:hover{color:#2563eb}
   .sd-indent{padding-left:20px}
   .sd-indent-l2{padding-left:40px}
@@ -379,8 +384,9 @@
           <span class="muted" style="font-size:12px" id="sdDateRange"></span>
           <span class="muted" style="font-size:12px" id="sdSummary"></span>
           <button class="btn2 ghost" id="sdExportBtn" style="margin-left:auto">导出（含去年GMV/POS）</button>
+          <button class="btn2 ghost" id="sdSaveRemarkBtn" style="margin-left:6px">保存备注</button>
         </div>
-        <table class="tbl sd-tree-table" id="seriesDetailTable"><colgroup><col style="width:340px"><col style="width:108px"><col style="width:108px"><col style="width:78px"><col style="width:66px"><col style="width:78px"><col style="width:108px"><col style="width:108px"><col style="width:78px"><col style="width:66px"><col style="width:78px"></colgroup><thead><tr><th>类目（大类 › 中类 › 系列）</th><th class="sd-gmv">GMV目标</th><th class="sd-gmv">GMV达成</th><th class="sd-yoy">GMV达成率</th><th>GMV占比</th><th class="sd-yoy">GMV同比</th><th class="sd-gmv">POS目标</th><th class="sd-gmv">POS达成</th><th class="sd-yoy">POS达成率</th><th>POS占比</th><th class="sd-yoy">POS同比</th></tr></thead><tbody id="seriesDetailTbody"></tbody></table>
+        <table class="tbl sd-tree-table" id="seriesDetailTable"><colgroup><col style="width:340px"><col style="width:108px"><col style="width:108px"><col style="width:78px"><col style="width:66px"><col style="width:78px"><col style="width:108px"><col style="width:108px"><col style="width:78px"><col style="width:66px"><col style="width:78px"><col style="width:140px"></colgroup><thead><tr><th>类目（大类 › 中类 › 系列）</th><th class="sd-gmv">GMV目标</th><th class="sd-gmv">GMV达成</th><th class="sd-yoy">GMV达成率</th><th>GMV占比</th><th class="sd-yoy">GMV同比</th><th class="sd-gmv">POS目标</th><th class="sd-gmv">POS达成</th><th class="sd-yoy">POS达成率</th><th>POS占比</th><th class="sd-yoy">POS同比</th><th>备注</th></tr></thead><tbody id="seriesDetailTbody"></tbody></table>
       </div>
     </div>
   </section>
@@ -1372,6 +1378,53 @@ function normalizeScene(raw){
   return s;
 }
 
+/* fix69ca：产品简称/商品名乱码修复。
+   京准通/商智导出的产品名称常因编码问题出现乱码（U+FFFD 替代符替代汉字），
+   导致「薄盐��抽」显示为乱码而非「薄盐生抽」。
+   本函数通过上下文模式匹配修复常见损坏。 */
+function normalizeShortName(raw){
+  if(raw===undefined||raw===null) return raw;
+  const s=String(raw).trim();
+  if(!s) return s;
+  // 无乱码符 → 直接返回
+  if(!s.includes('\uFFFD')&&!s.includes('\u25C6')&&!s.includes('\u25CF')&&!s.includes('\u25A0')&&!s.includes('\u003F')) return s;
+  // 常见产品名修复规则（按优先级排序，先匹配更长的模式）
+  const GARBAGE='[\uFFFD\u25C6\u25CF\u25A0\u003F]';  // 乱码符集合
+  const rules=[
+    // 酱油类：X抽 → X生抽 / X老抽（"抽"字前面缺一字）
+    [new RegExp('^薄盐'+GARBAGE+'*抽'), '薄盐生抽'],
+    [new RegExp('^薄盐'+GARBAGE+'*老抽'), '薄盐老抽'],
+    [new RegExp('^锦珍'+GARBAGE+'*抽'), '锦珍生抽'],
+    [new RegExp('^金标'+GARBAGE+'*抽'), '金标生抽'],
+    [new RegExp('^([^\\s'+GARBAGE+']+)'+GARBAGE+'*抽$'), '$1生抽'],  // 通用：XX抽 → XX生抽
+    // 蚝油类
+    [new RegExp(GARBAGE+'*油$'), '蚝油'],           // XX�油 → XX蚝油
+    [new RegExp('^耗'+GARBAGE+'*$'), '蚝油'],
+    [/薄盐蚝油/, '薄盐蚝油'],         // 保护正确名称
+    // 调味品类
+    [new RegExp('^味极'+GARBAGE+'*$'), '味极鲜'],
+    [/^味极鲜/, '味极鲜'],
+    [new RegExp('^'+GARBAGE+'*精$'), '味精'],
+    [new RegExp('鸡'+GARBAGE+'*'), '鸡精'],
+    // 酱类
+    [new RegExp(GARBAGE+'*酱$'), '酱'],             // XX�酱 → XX酱
+    [new RegExp('^卤'+GARBAGE+'*$'), '卤水'],
+    [new RegExp('^芝麻'+GARBAGE+'*$'), '芝麻油'],
+    [/^香油/, '香油'],
+    // 通用：清除所有剩余乱码符
+    [new RegExp('['+GARBAGE+']+', 'g'), ''],
+  ];
+  let result=s;
+  for(const [pattern,replacement] of rules){
+    if(pattern instanceof RegExp){
+      result=result.replace(pattern, replacement);
+    }
+  }
+  // 清理多余空格
+  result=result.replace(/\s+/g,' ').trim();
+  return result||s;
+}
+
 function parseJztRaw(text){
   if(!text||!text.trim()) return [];
   const sections=splitJztSections(text);
@@ -2058,6 +2111,7 @@ function renderAgingTable(el, detail){
    单元格 .rem-edit(contenteditable) 失焦时仅缓存到 pendingRemarks（不自动保存）。
    点击各表旁「保存备注」按钮才回写数据并持久化。 */
 var _pendingRemarks={};  // rk -> 文本值（失焦时缓存）
+var _sdRemarks={};     // 系列备注：pathKey -> 备注文本（fix69ca）
 function onRemarkEdit(e){
   const el=e.target;
   if(!el || !el.classList || !el.classList.contains('rem-edit')) return;
@@ -2114,6 +2168,31 @@ function saveTableRemarks(tableType){
     toast('⚠️ 无需保存的备注修改');
   }
 }
+/* fix69ca：系列明细备注保存 —— 遍历 seriesDetailTable 内所有 .rem-edit，写入 _sdRemarks 并持久化 */
+function saveSdRemarks(){
+  const tbl=$('#seriesDetailTable'); if(!tbl){ toast('⚠️ 找不到系列明细表'); return; }
+  const edits=tbl.querySelectorAll('.rem-edit');
+  var n=0;
+  edits.forEach(function(el){
+    var rk=(el.getAttribute('data-rk')||'').trim();
+    if(!rk||rk.indexOf('sd|')!==0) return;  // 只处理系列明细的备注
+    var val=el.textContent.replace(/ /g,' ').replace(/\n/g,' ').trim();
+    if(val==='点击填写') val='';
+    var pathKey=rk.substring(3);  // 去掉 "sd|" 前缀
+    if(val){
+      _sdRemarks[pathKey]=val; n++;
+    } else {
+      delete _sdRemarks[pathKey];
+    }
+  });
+  // 持久化到 STATE（按品牌隔离）
+  if(!STATE._sdRemarks) STATE._sdRemarks={};
+  STATE._sdRemarks[STATE.currentBrand||'default']=JSON.parse(JSON.stringify(_sdRemarks));
+  if(typeof markDirty==='function') markDirty(STATE.currentBrand);
+  saveToService();
+  toast(n>0 ? '✅ 系列备注已保存（'+n+' 条）':'⚠️ 无需保存的备注修改');
+}
+
 function renderInv(){
   // fix69az：两张面板统一为低/高周转系列表（所有品牌共用）
   const td=buildTurnoverDetail(invAsOf, $('#invDept')?.value||'');
@@ -3120,7 +3199,7 @@ function buildSeriesAgg(start, end){
     const cL=String(sr.catL||'').trim()||'未分类';
     const cM=String(sr.catM||'').trim()||(String(sr.catS||'').trim())||'(空)';
     const cS=String(sr.series||'').trim()||'(空系列)';
-    const sName=String(sr.shortName||sr.sku||'').trim()||sku;
+    const sName=normalizeShortName(String(sr.shortName||sr.sku||'').trim())||sku;
     const g=gmvBySku[sku];
     const skut=tgtBySku[sku]||0;
     const skp=posBySku[sku]||0;
@@ -3150,6 +3229,10 @@ function buildSeriesAgg(start, end){
 function renderSeriesDetail(){
   const tbody=$('#seriesDetailTbody'); const summaryEl=$('#sdSummary'); const dateRangeEl=$('#sdDateRange');
   if(!tbody) return;
+  // fix69ca：从 STATE 恢复系列备注（按当前品牌）
+  if(STATE._sdRemarks && STATE._sdRemarks[STATE.currentBrand||'default']){
+    _sdRemarks=STATE._sdRemarks[STATE.currentBrand||'default']||{};
+  }
   // fix69af：使用与销售目标达成相同的时间选择器
   var _tvRange;
   try { _tvRange=resolveTvRange(); } catch(e) { _tvRange=['','']; }
@@ -3300,6 +3383,13 @@ function renderSeriesDetail(){
       var posYoy=posLast?((n.pos-posLast)/posLast*100):null;
       var posYoyCls=posYoy==null?'':(posYoy>=0?'pos':'neg');
       var td11=document.createElement('td'); td11.className='sd-yoy '+posYoyCls; td11.textContent=posYoy!=null?(posYoy>=0?'+':'')+posYoy.toFixed(2)+'%':'—'; tr.appendChild(td11);
+      // 列12：备注（可编辑，类似库存周转备注）
+      var td12=document.createElement('td'); td12.className='sd-rem';
+      var rk='sd|'+pathKey;
+      var existingRemark=(_sdRemarks&&_sdRemarks[pathKey])?_sdRemarks[pathKey]:'';
+      var remSpan=document.createElement('span'); remSpan.className='rem-edit'; remSpan.contentEditable='true'; remSpan.spellcheck=false; remSpan.setAttribute('data-rk',rk);
+      remSpan.textContent=existingRemark||''; if(!existingRemark) remSpan.setAttribute('data-placeholder','1');
+      td12.appendChild(remSpan); tr.appendChild(td12);
 
       tbody.appendChild(tr);
       allRows.push({tr:tr, node:n});
@@ -3327,7 +3417,7 @@ renderNodes(tree, 1, '', null);
 
   if(!tree.length){
     var emptyRow=document.createElement('tr');
-    var emptyCell=document.createElement('td'); emptyCell.colSpan=11;
+    var emptyCell=document.createElement('td'); emptyCell.colSpan=12;
     emptyCell.style.textAlign='center'; emptyCell.style.padding='20px'; emptyCell.style.color='#9ca3af';
     emptyCell.textContent=filtFactory?'当前厂直筛选无匹配数据':'暂无系列划分数据（请先在「系列划分」区录入 SKU 映射表）';
     emptyRow.appendChild(emptyCell); tbody.appendChild(emptyRow);
@@ -4719,6 +4809,9 @@ const seriesCopyBtn=$('#seriesCopyBtn'); if(seriesCopyBtn) seriesCopyBtn.addEven
   toast('已导出 '+rows.length+' 行为 '+fname);
 });
 
+// 系列明细保存备注按钮
+const sdSaveRemarkBtn=$('#sdSaveRemarkBtn'); if(sdSaveRemarkBtn) sdSaveRemarkBtn.addEventListener('click',()=>{ saveSdRemarks(); });
+
 // 系列明细表导出：网页隐藏「去年GMV」，导出时补回该列
 const sdExportBtn=$('#sdExportBtn'); if(sdExportBtn) sdExportBtn.addEventListener('click',async()=>{
   var _tv; try{ _tv=resolveTvRange(); }catch(e){ _tv=['','']; }
@@ -4749,11 +4842,12 @@ const sdExportBtn=$('#sdExportBtn'); if(sdExportBtn) sdExportBtn.addEventListene
       var posShare=totalPos>0?(pos/totalPos*100):null;
       rows.push([path,
         lt||'', lg, ach!=null?fmtPct(ach):'—', share!=null?share.toFixed(1)+'%':'—', yoy!=null?(yoy>=0?'+':'')+yoy.toFixed(2)+'%':'—', lgLast||'',
-        posT||'', pos, posAch!=null?fmtPct(posAch):'—', posShare!=null?posShare.toFixed(1)+'%':'—', posYoy!=null?(posYoy>=0?'+':'')+posYoy.toFixed(2)+'%':'—', posLast||'']);
+        posT||'', pos, posAch!=null?fmtPct(posAch):'—', posShare!=null?posShare.toFixed(1)+'%':'—', posYoy!=null?(posYoy>=0?'+':'')+posYoy.toFixed(2)+'%':'—', posLast||'',
+        (_sdRemarks&&_sdRemarks[pathKey])||'']);
       if(n.children) f(n.children, path+'>');
     });
   })(tree,'');
-  const header=['类目','GMV目标','GMV达成','GMV达成率','GMV占比','GMV同比','去年GMV','POS目标','POS达成','POS达成率','POS占比','POS同比','去年POS'];
+  const header=['类目','GMV目标','GMV达成','GMV达成率','GMV占比','GMV同比','去年GMV','POS目标','POS达成','POS达成率','POS占比','POS同比','去年POS','备注'];
   const tsv=[header.join('\t')].concat(rows.map(function(r){ return r.join('\t'); })).join('\n');
   try{ if(navigator.clipboard&&navigator.clipboard.writeText){ await navigator.clipboard.writeText(tsv); toast('已复制 '+rows.length+' 行（含去年GMV/POS）到剪贴板'); return; } }catch(e){}
   const a2=document.createElement('a'); a2.href=URL.createObjectURL(new Blob([tsv],{type:'text/tab-separated-values;charset=utf-8'})); a2.download='系列明细_'+(start+'~'+end)+'.tsv'; a2.click(); toast('已导出 '+rows.length+' 行（含去年GMV/POS）');
