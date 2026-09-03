@@ -378,9 +378,9 @@
           </label>
           <span class="muted" style="font-size:12px" id="sdDateRange"></span>
           <span class="muted" style="font-size:12px" id="sdSummary"></span>
-          <button class="btn2 ghost" id="sdExportBtn" style="margin-left:auto">导出（含去年GMV）</button>
+          <button class="btn2 ghost" id="sdExportBtn" style="margin-left:auto">导出（含去年GMV/POS）</button>
         </div>
-        <table class="tbl sd-tree-table" id="seriesDetailTable"><colgroup><col style="width:340px"><col style="width:110px"><col style="width:110px"><col style="width:80px"><col style="width:70px"><col style="width:80px"></colgroup><thead><tr><th>类目（大类 › 中类 › 系列）</th><th class="sd-gmv">目标</th><th class="sd-gmv">达成(GMV)</th><th class="sd-yoy">达成率</th><th>占比</th><th class="sd-yoy">同比</th></tr></thead><tbody id="seriesDetailTbody"></tbody></table>
+        <table class="tbl sd-tree-table" id="seriesDetailTable"><colgroup><col style="width:340px"><col style="width:108px"><col style="width:108px"><col style="width:78px"><col style="width:66px"><col style="width:78px"><col style="width:108px"><col style="width:108px"><col style="width:78px"><col style="width:66px"><col style="width:78px"></colgroup><thead><tr><th>类目（大类 › 中类 › 系列）</th><th class="sd-gmv">GMV目标</th><th class="sd-gmv">GMV达成</th><th class="sd-yoy">GMV达成率</th><th>GMV占比</th><th class="sd-yoy">GMV同比</th><th class="sd-gmv">POS目标</th><th class="sd-gmv">POS达成</th><th class="sd-yoy">POS达成率</th><th>POS占比</th><th class="sd-yoy">POS同比</th></tr></thead><tbody id="seriesDetailTbody"></tbody></table>
       </div>
     </div>
   </section>
@@ -2989,41 +2989,65 @@ function buildSeriesAgg(start, end){
     gmvBySku[k]=(gmvBySku[k]||0)+num(r.amount);
   });
   // 2.5 构建 SKU → 目标值映射（从品牌目标数据中查找）
-  // 目标类型：brand/procure/internal/SKU(货号)
+  // 目标类型：brand/procure/internal/pos/SKU(货号)；SKU 的 POS 目标用 ttype = "skp-<货号>"
   // 使用 rangeTargetOf 的逻辑：优先 day > month > year
-  const tgtBySku={};
+  const tgtBySku={}, posTgtBySku={};
   const ry=(typeof targetRefYear==='function')?targetRefYear():(new Date().getFullYear());
   const tgtRows=b.targets||[];
-  const tgtMap={}; // "type|gran|period" → value
-  tgtRows.forEach(r=>{ const t=normType(r.ttype), p=normType?normPeriod(r.period||r.tperiod,ry):(r.tperiod||''); let g=normType?normGran(r.tgran):r.tgran; if(!g) g=p&&p.length===10?'day':(p.length===7?'month':'year'); const v=num(r.tvalue); if(t&&g&&p) tgtMap[t+'|'+g+'|'+p]=v; });
-  // 对每个有销售的SKU，查找其目标（按SKU货号匹配ttype）
-  Object.keys(gmvBySku).forEach(sku=>{
-    let t=0;
-    // 尝试 SKU 级别目标
-    if(tgtMap[sku+'|day|'+start]||tgtMap[sku+'|day|'+end]) { /* 有日目标，后面range计算 */ }
-    else if(tgtMap[sku+'|month|'+start.slice(0,7)]) { /* 有月目标 */ }
-    // 用 rangeTarget 逻辑求和
-    const ds=[]; for(var dd=start;dd<=end;){ds.push(dd);var nd=new Date(dd);nd.setDate(nd.getDate()+1);dd=nd.toISOString().slice(0,10);}
-    let hasDay=false;
-    ds.forEach(d=>{ var v=tgtMap[sku+'|day|'+d]; if(v!==undefined){t+=v;hasDay=true;} });
-    if(!hasDay){
-      const months=[...new Set(ds.map(d=>d.slice(0,7)))];
-      months.forEach(ym=>{ var v=tgtMap[sku+'|month|'+ym]; if(v!==undefined)t+=v; });
-    }
-    if(!t){
-      var y=start.slice(0,4); var v=tgtMap[sku+'|year|'+y]; if(v!==undefined)t=v;
-    }
-    if(t>0) tgtBySku[sku]=t;
+  const tgtMap={};      // "type|gran|period" → value （GMV / 品牌级目标）
+  const posSkuMap={};   // "sku|gran|period" → value （仅 SKU 的 POS 目标）
+  tgtRows.forEach(r=>{
+    const t=normType(r.ttype), p=normPeriod(r.period||r.tperiod,ry);
+    let g=normGran(r.tgran); if(!g) g=p.length===10?'day':(p.length===7?'month':'year');
+    const v=num(r.tvalue); if(!t||!g||!p) return;
+    tgtMap[t+'|'+g+'|'+p]=v;
+    // SKU 的 POS 目标：ttype 形如 "skp-69012345" / "skp69012345"
+    const m=String(r.ttype||'').match(/^skp[-_]?(\d+)/i);
+    if(m){ posSkuMap[m[1]+'|'+g+'|'+p]=v; }
   });
-  // 也取品牌级目标作为兜底（用于无SKU目标的节点）
-  let brandTarget=0;
-  { const ds2=[]; for(var dd2=start;dd2<=end;){ds2.push(dd2);var nd2=new Date(dd2);nd2.setDate(nd2.getDate()+1);dd2=nd2.toISOString().slice(0,10);}
-    let hd=false;
-    ds2.forEach(d=>{ var v=tgtMap['brand|day|'+d]; if(v!==undefined){brandTarget+=v;hd=true;} });
-    if(!hd){ const m2=[...new Set(ds2.map(d=>d.slice(0,7)))]; m2.forEach(ym=>{ var v=tgtMap['brand|month|'+ym]; if(v!==undefined)brandTarget+=v; }); }
-    if(!brandTarget){ var v=tgtMap['brand|year|'+start.slice(0,4)]; if(v!==undefined)brandTarget=v; }
+  // 范围求和：优先 day 逐日求和；否则覆盖到的月各计一次；否则 year；否则 0
+  function rangeSumOf(map, key, s, e){
+    const ds=[]; for(var dd=s;dd<=e;){ds.push(dd);var nd=new Date(dd);nd.setDate(nd.getDate()+1);dd=nd.toISOString().slice(0,10);}
+    let t=0, has=false;
+    ds.forEach(d=>{ var v=map[key+'|day|'+d]; if(v!==undefined){ t+=v; has=true; } });
+    if(has) return t;
+    const ms=[...new Set(ds.map(d=>d.slice(0,7)))];
+    ms.forEach(ym=>{ var v=map[key+'|month|'+ym]; if(v!==undefined) t+=v; });
+    if(!t){ var y=s.slice(0,4); var v=map[key+'|year|'+y]; if(v!==undefined) t=v; }
+    return t;
   }
-  // 3. 四层树节点：{label, gmv, target, children[], level, isLeaf, sku}
+  Object.keys(gmvBySku).forEach(sku=>{
+    tgtBySku[sku]=rangeSumOf(tgtMap, sku, start, end);
+    posTgtBySku[sku]=rangeSumOf(posSkuMap, sku, start, end);
+  });
+  // 品牌级目标兜底（用于无 SKU 目标的节点）
+  const brandTarget=rangeSumOf(tgtMap,'brand',start,end);
+  const brandPosTarget=rangeSumOf(tgtMap,'pos',start,end);
+  // 2.6 每 SKU 的 POS 实际（未税）= Σ(浮码×昨日出库件数)÷1.129（口径同 posDailyMap，按 SKU 拆分）
+  // 回退：浮码表无日期/缺出库时，用库存明细「库存金额」估算（同 posDailyMap 的回退口径）
+  const posBySku={};
+  if(STATE.currentBrand!=='和路雪'){
+    const days=dateRange(start,end); const inRange=new Set(days);
+    const invBH={};
+    (b.inventory||[]).forEach(r=>{ const d=String(r.date||'').slice(0,10); const sk=String(r.sku||'').trim(); if(!d||!sk) return; invBH[d+'|'+sk]=num(r.outBH); });
+    let used=false;
+    (b.purchase||[]).forEach(r=>{
+      const d=String(r.date||'').slice(0,10); const sk=String(r.sku||'').trim(); if(!d||!sk) return;
+      if(!inRange.has(d)) return;
+      const price=num(r.purchase), outQ=invBH[d+'|'+sk];
+      if(!price||!outQ) return;
+      posBySku[sk]=(posBySku[sk]||0)+price*outQ/1.129; used=true;
+    });
+    if(!used){
+      (b.inventory||[]).forEach(r=>{
+        const d=String(r.date||'').slice(0,10); if(!d||!inRange.has(d)) return;
+        const sk=String(r.sku||'').trim(); if(!sk) return;
+        const amt=(num(r.invAmount)>0)?num(r.invAmount):(num(r.invQty)*num(r.purchase));
+        if(amt) posBySku[sk]=(posBySku[sk]||0)+amt/1.129;
+      });
+    }
+  }
+  // 3. 四层树节点：{label, gmv, target, pos, posTarget, children[], level, isLeaf, sku}
   const root=[];
   const l1Map={}, l2Map={}, l3Map={};
   Object.keys(gmvBySku).forEach(sku=>{
@@ -3035,24 +3059,26 @@ function buildSeriesAgg(start, end){
     const sName=String(sr.shortName||sr.sku||'').trim()||sku;
     const g=gmvBySku[sku];
     const skut=tgtBySku[sku]||0;
+    const skp=posBySku[sku]||0;
+    const skpt=posTgtBySku[sku]||0;
     // L1: 大类
-    if(!l1Map[cL]){ l1Map[cL]={key:cL,level:1,label:cL,gmv:0,target:0,children:[],factoryDirect:sr.factoryDirect}; root.push(l1Map[cL]); }
-    l1Map[cL].gmv+=g; l1Map[cL].target+=skut;
+    if(!l1Map[cL]){ l1Map[cL]={key:cL,level:1,label:cL,gmv:0,target:0,pos:0,posTarget:0,children:[],factoryDirect:sr.factoryDirect}; root.push(l1Map[cL]); }
+    l1Map[cL].gmv+=g; l1Map[cL].target+=skut; l1Map[cL].pos+=skp; l1Map[cL].posTarget+=skpt;
     // L2: 中类
     const l2key=cL+'||'+cM;
-    if(!l2Map[l2key]){ l2Map[l2key]={key:l2key,level:2,label:cM,gmv:0,target:0,children:[],parent:l1Map[cL]}; l1Map[cL].children.push(l2Map[l2key]); }
-    l2Map[l2key].gmv+=g; l2Map[l2key].target+=skut;
+    if(!l2Map[l2key]){ l2Map[l2key]={key:l2key,level:2,label:cM,gmv:0,target:0,pos:0,posTarget:0,children:[],parent:l1Map[cL]}; l1Map[cL].children.push(l2Map[l2key]); }
+    l2Map[l2key].gmv+=g; l2Map[l2key].target+=skut; l2Map[l2key].pos+=skp; l2Map[l2key].posTarget+=skpt;
     // L3: 系列
     const l3key=l2key+'||'+cS;
-    if(!l3Map[l3key]){ l3Map[l3key]={key:l3key,level:3,label:cS,gmv:0,target:0,children:[],parent:l2Map[l2key]}; l2Map[l2key].children.push(l3Map[l3key]); }
-    l3Map[l3key].gmv+=g; l3Map[l3key].target+=skut;
+    if(!l3Map[l3key]){ l3Map[l3key]={key:l3key,level:3,label:cS,gmv:0,target:0,pos:0,posTarget:0,children:[],parent:l2Map[l2key]}; l2Map[l2key].children.push(l3Map[l3key]); }
+    l3Map[l3key].gmv+=g; l3Map[l3key].target+=skut; l3Map[l3key].pos+=skp; l3Map[l3key].posTarget+=skpt;
     // L4: 叶子(产品简称/SKU)
-    l3Map[l3key].children.push({level:4,label:sName,gmv:g,target:skut,isLeaf:true,sku:sku});
+    l3Map[l3key].children.push({level:4,label:sName,gmv:g,target:skut,pos:skp,posTarget:skpt,isLeaf:true,sku:sku});
   });
   // 排序：按 GMV 降序
   const sortNode=(arr)=>{ arr.sort((a,b)=>b.gmv-a.gmv); arr.forEach(n=>{ if(n.children&&n.children.length) sortNode(n.children); }); };
   sortNode(root);
-  return {root, brandTarget};
+  return {root, brandTarget, brandPosTarget};
 }
 // fix69af：系列明细使用销售目标达成的时间范围（resolveTvRange），不再按年份筛选
 
@@ -3076,6 +3102,7 @@ function renderSeriesDetail(){
   let aggResult=buildSeriesAgg(start, end);
   let tree=aggResult.root || [];
   const brandTarget=aggResult.brandTarget || 0;
+  const brandPosTarget=aggResult.brandPosTarget || 0;
   // 厂直过滤
   if(filtFactory==='厂直') tree=tree.filter(n=>String(n.factoryDirect||'').trim()==='厂直');
   else if(filtFactory==='__nonfactory__') tree=tree.filter(n=>String(n.factoryDirect||'').trim()!=='厂直');
@@ -3084,12 +3111,12 @@ function renderSeriesDetail(){
   const lastEnd=end.length>=10?(String(Number(end.slice(0,4))-1)+end.slice(4)):'';
   const lastAgg=(lastStart&&lastEnd)?buildSeriesAgg(lastStart, lastEnd):{root:[]};
   const lastTree=lastAgg.root || [];
-  // 扁平化去年数据为 { labelPath → gmv }
-  const lastGmv={};
+  // 扁平化去年数据为 { labelPath → gmv / pos }
+  const lastGmv={}, lastPos={};
   (function flatten(nodes, prefix){
     nodes.forEach(function(n){
       var key=prefix+n.label;
-      lastGmv[key]=n.gmv;
+      lastGmv[key]=n.gmv; lastPos[key]=(n.pos||0);
       if(n.children) flatten(n.children, key+'>');
     });
   })(lastTree, '');
@@ -3098,9 +3125,17 @@ function renderSeriesDetail(){
   var totalTarget=tree.reduce(function(s,n){ return s+(n.target||0); }, 0) || brandTarget;
   var lastTotalGmv=Object.values(lastGmv).reduce(function(s,v){ return typeof v==='number'?s+v:s; }, 0)||0;
   var totalYoy=lastTotalGmv?((totalGmv-lastTotalGmv)/lastTotalGmv*100):null;
+  // 总 POS / 总 POS 目标
+  var totalPos=tree.reduce(function(s,n){ return s+(n.pos||0); }, 0);
+  var totalPosTarget=tree.reduce(function(s,n){ return s+(n.posTarget||0); }, 0) || brandPosTarget;
+  var lastTotalPos=Object.values(lastPos).reduce(function(s,v){ return typeof v==='number'?s+v:s; }, 0)||0;
+  var totalPosYoy=lastTotalPos?((totalPos-lastTotalPos)/lastTotalPos*100):null;
   if(summaryEl){
     var rateTxt=totalTarget?fmtPct(totalGmv/totalTarget):'—';
-    summaryEl.textContent='合计：'+fmtMoney(totalGmv)+' / 目标'+fmtMoney(totalTarget)+' · 达成率 '+rateTxt+' · YOY '+(totalYoy!=null?((totalYoy>=0?'+':'')+totalYoy.toFixed(2)+'%'):'—')+' · '+tree.reduce(function(s,n){ return s+countLeaves(n); }, 0)+' 个 SKU';
+    var posRateTxt=totalPosTarget?fmtPct(totalPos/totalPosTarget):'—';
+    summaryEl.textContent='合计：GMV '+fmtMoney(totalGmv)+' / 目标'+fmtMoney(totalTarget)+' · 达成率 '+rateTxt+' · YOY '+(totalYoy!=null?((totalYoy>=0?'+':'')+totalYoy.toFixed(2)+'%'):'—')
+      +'  |  POS '+fmtMoney(totalPos)+' / 目标'+fmtMoney(totalPosTarget)+' · 达成率 '+posRateTxt+' · YOY '+(totalPosYoy!=null?((totalPosYoy>=0?'+':'')+totalPosYoy.toFixed(2)+'%'):'—')
+      +'  · '+tree.reduce(function(s,n){ return s+countLeaves(n); }, 0)+' 个 SKU';
   }
 
   // ===== DOM 渲染 =====
@@ -3183,6 +3218,24 @@ function renderSeriesDetail(){
       var td5=document.createElement('td'); td5.textContent=shareTxt; tr.appendChild(td5);
       // 列6：同比(YOY%)
       var td6=document.createElement('td'); td6.className='sd-yoy '+yoyCls; td6.textContent=yoyTxt; tr.appendChild(td6);
+      // 列7：POS目标
+      var td7=document.createElement('td'); td7.className='sd-gmv';
+      td7.textContent=(n.posTarget)?fmtMoney(n.posTarget):(depth<=3&&brandPosTarget?fmtMoney(brandPosTarget):'—');
+      tr.appendChild(td7);
+      // 列8：POS达成
+      var td8=document.createElement('td'); td8.className='sd-gmv'; td8.textContent=fmtMoney(n.pos||0); tr.appendChild(td8);
+      // 列9：POS达成率
+      var posAchRate=(n.posTarget>0)?(n.pos/n.posTarget):null;
+      var posAchCls=posAchRate==null?'':(posAchRate>=1?'pos':(posAchRate>=0.8?'amber':'neg'));
+      var td9=document.createElement('td'); td9.className='sd-yoy '+posAchCls; td9.textContent=posAchRate!=null?fmtPct(posAchRate):'—'; tr.appendChild(td9);
+      // 列10：POS占比
+      var posShare=(totalPos>0)?((n.pos||0)/totalPos*100):null;
+      var td10=document.createElement('td'); td10.textContent=posShare!=null?posShare.toFixed(1)+'%':'—'; tr.appendChild(td10);
+      // 列11：POS同比(YOY%)
+      var posLast=lastPos[pathKey]||0;
+      var posYoy=posLast?((n.pos-posLast)/posLast*100):null;
+      var posYoyCls=posYoy==null?'':(posYoy>=0?'pos':'neg');
+      var td11=document.createElement('td'); td11.className='sd-yoy '+posYoyCls; td11.textContent=posYoy!=null?(posYoy>=0?'+':'')+posYoy.toFixed(2)+'%':'—'; tr.appendChild(td11);
 
       tbody.appendChild(tr);
       allRows.push({tr:tr, node:n});
@@ -3210,7 +3263,7 @@ renderNodes(tree, 1, '', null);
 
   if(!tree.length){
     var emptyRow=document.createElement('tr');
-    var emptyCell=document.createElement('td'); emptyCell.colSpan=6;
+    var emptyCell=document.createElement('td'); emptyCell.colSpan=11;
     emptyCell.style.textAlign='center'; emptyCell.style.padding='20px'; emptyCell.style.color='#9ca3af';
     emptyCell.textContent=filtFactory?'当前厂直筛选无匹配数据':'暂无系列划分数据（请先在「系列划分」区录入 SKU 映射表）';
     emptyRow.appendChild(emptyCell); tbody.appendChild(emptyRow);
@@ -4615,8 +4668,9 @@ const sdExportBtn=$('#sdExportBtn'); if(sdExportBtn) sdExportBtn.addEventListene
   const lastStart=start.length>=10?(String(Number(start.slice(0,4))-1)+start.slice(4)):'';
   const lastEnd=end.length>=10?(String(Number(end.slice(0,4))-1)+end.slice(4)):'';
   const lastAgg=(lastStart&&lastEnd)?buildSeriesAgg(lastStart,lastEnd):{root:[]};
-  const lastGmv={}; (function f(ns,p){ ns.forEach(function(n){ var k=p+n.label; lastGmv[k]=n.gmv; if(n.children) f(n.children,k+'>'); }); })(lastAgg.root||[],'');
+  const lastGmv={}, lastPos={}; (function f(ns,p){ ns.forEach(function(n){ var k=p+n.label; lastGmv[k]=n.gmv; lastPos[k]=(n.pos||0); if(n.children) f(n.children,k+'>'); }); })(lastAgg.root||[],'');
   const totalGmv=tree.reduce(function(s,n){ return s+n.gmv; },0);
+  const totalPos=tree.reduce(function(s,n){ return s+(n.pos||0); },0);
   const rows=[];
   (function f(ns,p){
     ns.forEach(function(n){
@@ -4625,14 +4679,20 @@ const sdExportBtn=$('#sdExportBtn'); if(sdExportBtn) sdExportBtn.addEventListene
       var yoy=lgLast?((lg-lgLast)/lgLast*100):null;
       var ach=lt>0?(lg/lt):null;
       var share=totalGmv>0?(lg/totalGmv*100):null;
-      rows.push([path, lt||'', lg, ach!=null?fmtPct(ach):'—', share!=null?share.toFixed(1)+'%':'—', yoy!=null?(yoy>=0?'+':'')+yoy.toFixed(2)+'%':'—', lgLast||'']);
+      var pos=n.pos||0, posT=n.posTarget||0, posLast=lastPos[path]||0;
+      var posYoy=posLast?((pos-posLast)/posLast*100):null;
+      var posAch=posT>0?(pos/posT):null;
+      var posShare=totalPos>0?(pos/totalPos*100):null;
+      rows.push([path,
+        lt||'', lg, ach!=null?fmtPct(ach):'—', share!=null?share.toFixed(1)+'%':'—', yoy!=null?(yoy>=0?'+':'')+yoy.toFixed(2)+'%':'—', lgLast||'',
+        posT||'', pos, posAch!=null?fmtPct(posAch):'—', posShare!=null?posShare.toFixed(1)+'%':'—', posYoy!=null?(posYoy>=0?'+':'')+posYoy.toFixed(2)+'%':'—', posLast||'']);
       if(n.children) f(n.children, path+'>');
     });
   })(tree,'');
-  const header=['类目','目标','达成(GMV)','达成率','占比','同比(YOY%)','去年GMV'];
+  const header=['类目','GMV目标','GMV达成','GMV达成率','GMV占比','GMV同比','去年GMV','POS目标','POS达成','POS达成率','POS占比','POS同比','去年POS'];
   const tsv=[header.join('\t')].concat(rows.map(function(r){ return r.join('\t'); })).join('\n');
-  try{ if(navigator.clipboard&&navigator.clipboard.writeText){ await navigator.clipboard.writeText(tsv); toast('已复制 '+rows.length+' 行（含去年GMV）到剪贴板'); return; } }catch(e){}
-  const a2=document.createElement('a'); a2.href=URL.createObjectURL(new Blob([tsv],{type:'text/tab-separated-values;charset=utf-8'})); a2.download='系列明细_'+(start+'~'+end)+'.tsv'; a2.click(); toast('已导出 '+rows.length+' 行');
+  try{ if(navigator.clipboard&&navigator.clipboard.writeText){ await navigator.clipboard.writeText(tsv); toast('已复制 '+rows.length+' 行（含去年GMV/POS）到剪贴板'); return; } }catch(e){}
+  const a2=document.createElement('a'); a2.href=URL.createObjectURL(new Blob([tsv],{type:'text/tab-separated-values;charset=utf-8'})); a2.download='系列明细_'+(start+'~'+end)+'.tsv'; a2.click(); toast('已导出 '+rows.length+' 行（含去年GMV/POS）');
 });
 
 
