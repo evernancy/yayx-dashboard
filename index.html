@@ -999,7 +999,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-09-04-fix69ck-nd-fold-leaf';
+const APP_VERSION = '2026-09-04-fix69cl-brand-lock';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -4816,7 +4816,33 @@ function updateMwChannelBar(){
     const cur=document.getElementById('mwChCur'); if(cur) cur.textContent=STATE.currentBrand;
   }
 }
+/* fix69cl：?brand= 专属品牌链接 —— 打开即锁定该品牌、隐藏其他品牌入口与数据输入区（数据源不变，仍全量加载） */
+var URL_BRAND='';
+try{ URL_BRAND=(new URLSearchParams(location.search).get('brand')||'').trim(); }catch(e){ URL_BRAND=''; }
+function brandLockAllowed(name){
+  if(!URL_BRAND) return true;
+  var mw=['麦维他','麦维他自营','麦维他POP'];
+  var allow=(mw.indexOf(URL_BRAND)>=0)?mw:[URL_BRAND];
+  return allow.indexOf(name)>=0;
+}
+function applyBrandLock(){
+  if(!URL_BRAND) return;
+  if(!STATE.brands || (!STATE.brands[URL_BRAND] && ['麦维他','麦维他自营','麦维他POP'].indexOf(URL_BRAND)<0)) return; // 品牌不存在则不锁，正常显示
+  // 隐藏其他品牌 tab
+  $$('.tab[data-view="lijx"][data-brand]').forEach(function(t){
+    if(!brandLockAllowed(t.dataset.brand)) t.style.display='none';
+  });
+  // 隐藏数据输入区（含全部品牌原始数据，专属链接不暴露）
+  var inputTab=document.querySelector('.tab[data-view="input"]'); if(inputTab) inputTab.style.display='none';
+  // 当前品牌不在允许范围 → 强制切到目标品牌
+  if(!brandLockAllowed(STATE.currentBrand) && typeof switchBrand==='function') switchBrand(URL_BRAND);
+  document.title='【'+URL_BRAND+'专属】'+(document.title+'').replace(/^【.*?】/,'');
+  // 默认落到该品牌视图（首次打开停在总览时）
+  try{ if(typeof currentView!=='undefined' && currentView==='overview' && typeof setView==='function') setView('lijx'); }catch(_){}
+}
 function switchBrand(name){
+  // fix69cl：专属品牌链接（?brand=）锁定 —— 拦截切换到其他品牌
+  if(URL_BRAND && !brandLockAllowed(name)){ toast('此链接为「'+URL_BRAND+'」专属视图，已锁定品牌'); return; }
   // 「麦维他」为顶层品牌 tab，实际数据按渠道存于「麦维他自营」（默认渠道）
   todoView={}; // fix69cf：切换品牌时清空历史只读视图，避免跨品牌串味
   const displayName=name;
@@ -7114,6 +7140,7 @@ async function boot(){
   syncBrandUI(); // 确保品牌栏与输入区选择器高亮当前品牌
   updateMwChannelBar(); // fix65c：麦维他渠道切换条按恢复后的当前品牌显示
   applyBrandSubtabs(); // 家乐/联合利华/和路雪：临时隐藏京准通推广/库存周转子视图（保留代码，后续改 JZT_INV_HIDDEN_BRANDS 即可放出）
+  try{ applyBrandLock(); }catch(e){ console.error('[boot] applyBrandLock error:', e); } // fix69cl：?brand= 专属品牌链接锁定
   } catch(bootErr){ // fix69z：boot() 全局错误捕获——确保页面不会静默卡死
     var _stack = (bootErr.stack || '').split('\n').slice(0, 10).join(' | ');
     _dbg('❌ FATAL: '+(bootErr.message||bootErr).slice(0,150) + ' | STACK: ' + _stack);
