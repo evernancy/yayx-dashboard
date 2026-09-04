@@ -272,7 +272,7 @@
 <body data-page-node-id="TnJopYRx03FYyUEAnM7EON">
 <!-- fix69af 版本标记：厂直值改"厂直"+系列明细时间联动 -->
 <div id="versionMarker" style="background:linear-gradient(135deg,#16a34a,#2563eb);color:#fff;text-align:center;padding:4px 10px;font:bold 13px system-ui;position:relative;z-index:99998;">
-  🟢 fix69ci · <span id="vmMode"></span> v2026-09-04 · <span id="vmTime"></span> · <span id="vmDebug" style="font-weight:normal;opacity:.9;background:rgba(0,0,0,.2);padding:1px 6px;border-radius:3px"></span>
+  🟢 fix69cj · <span id="vmMode"></span> v2026-09-04 · <span id="vmTime"></span> · <span id="vmDebug" style="font-weight:normal;opacity:.9;background:rgba(0,0,0,.2);padding:1px 6px;border-radius:3px"></span>
 </div>
 <!-- fix69aa 终极诊断：独立小脚本（不在主282KB块内），测试JS能否执行 -->
 <script>
@@ -999,7 +999,7 @@ const num = v => { if(v==null) return 0; const s=String(v).replace(/[¥$,\s%]/g,
 function B(){ return STATE.brands[STATE.currentBrand] || STATE.brands[BRANDS[0]]; }
 
 /* ===== 版本号（每次修复后递增，用于确认线上是否生效）===== */
-const APP_VERSION = '2026-09-04-fix69ci-const-root-fix';
+const APP_VERSION = '2026-09-04-fix69cj-empty-hint';
 /* 品牌列表（fix43 恢复：fix41/fix42 误删此声明，导致 BRANDS is not defined、整个看板加载即崩溃）*/
 const BRANDS=['李锦记','麦维他自营','麦维他POP','丝蕴','和路雪','家乐','联合利华'];
 // 全局 STATE 初始化：fix47——之前 STATE 仅靠 hydrateFromState/applyState 内部赋值，
@@ -3275,7 +3275,8 @@ function buildSeriesAgg(start, end){
     return kept;
   }
   root=pruneEmpty(root);
-  return {root, brandTarget, brandPosTarget};
+  // fix69cj：带上范围内实际有销售的 SKU 数，供空态提示区分「真没数据」和「有数据但没建系列映射」
+  return {root, brandTarget, brandPosTarget, salesSkuCount: Object.keys(gmvBySku).length};
 }
 // fix69cb：新品 / 下架品 识别（数据来源：商智销售明细 b.sales，与系列明细同口径）
 //   新品   = 今年区间(start~end)有销售 GMV>0 且 去年同期(lastStart~lastEnd)无销售 GMV==0
@@ -3553,9 +3554,12 @@ renderNodes(tree, 1, '', null);
     // fix69ch：空态提示带上数据最新日期，避免"选了未来日期范围但数据未更新"造成困惑
     var _maxD='';
     (function(){ var b=B(); (b.sales||[]).forEach(function(r){ var d=String(r.date||'').slice(0,10); if(d>_maxD)_maxD=d; }); })();
-    var _hint=filtFactory?'当前厂直筛选无匹配数据':'当前日期范围（'+start+' ~ '+end+'）内无销售数据';
+    // fix69cj：区分「真没数据」和「有销售但未建系列映射」
+    var _hint;
+    if(filtFactory){ _hint='当前厂直筛选无匹配数据'; }
+    else if(aggResult.salesSkuCount>0){ _hint='该日期范围（'+start+' ~ '+end+'）内有 '+aggResult.salesSkuCount+' 个 SKU 的销售数据，但均未建立系列划分映射——请先在「系列划分」区录入 SKU 映射表后显示'; }
+    else { _hint='当前日期范围（'+start+' ~ '+end+'）内无销售数据'; }
     if(_maxD && end && end>_maxD) _hint+='——数据最新日期为 '+_maxD+'，请把时间范围调整到该日期之前';
-    else if(!filtFactory) _hint+='（请先在「系列划分」区录入 SKU 映射表）';
     emptyCell.textContent=_hint;
     emptyRow.appendChild(emptyCell); tbody.appendChild(emptyRow);
   }
